@@ -23,12 +23,9 @@ constexpr int BLACK_QUEEN  = 10;
 constexpr int BLACK_KING   = 11;
 constexpr int NO_PIECE     = 12;
 
-constexpr int PAWN   = 0;
-constexpr int KNIGHT = 1;
-constexpr int BISHOP = 2;
-constexpr int ROOK   = 3;
-constexpr int QUEEN  = 4;
-constexpr int KING   = 5;
+enum PieceType {
+    PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING
+};
 
 constexpr int PROMO_KNIGHT = 0;
 constexpr int PROMO_BISHOP = 1;
@@ -54,6 +51,15 @@ constexpr u64 FILED = FILEH << 4;
 constexpr u64 FILEC = FILEH << 5;
 constexpr u64 FILEB = FILEH << 6;
 constexpr u64 FILEA = FILEH << 7;
+
+constexpr int WHITE_CASTLE_KINGSIDE  = 1;
+constexpr int WHITE_CASTLE_QUEENSIDE = 2;
+constexpr int BLACK_CASTLE_KINGSIDE  = 4;
+constexpr int BLACK_CASTLE_QUEENSIDE = 8;
+constexpr u64 WHITE_CASTLING_SQUARES_KINGSIDE  = (FILEF | FILEG) & RANK1;
+constexpr u64 WHITE_CASTLING_SQUARES_QUEENSIDE = (FILED | FILEC) & RANK1;
+constexpr u64 BLACK_CASTLING_SQUARES_KINGSIDE  = (FILEF | FILEG) & RANK8;
+constexpr u64 BLACK_CASTLING_SQUARES_QUEENSIDE = (FILEC | FILED) & RANK8;
 
 constexpr u64 edgeFiles = FILEA | FILEH;
 

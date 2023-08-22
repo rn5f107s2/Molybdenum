@@ -1,0 +1,57 @@
+#ifndef MOLYBDENUM_PERFT_H
+#define MOLYBDENUM_PERFT_H
+
+#include "Position.h"
+#include "Movegen.h"
+
+
+template <bool BULK, bool ROOT>
+int perft(int depth, Position &pos) {
+    if constexpr (!BULK) {
+        if (depth <= 0)
+            return 1;
+    }
+
+    MoveList ml;
+    int nodeCountThis;
+    int nodeCount = 0;
+
+    if constexpr (BULK && !ROOT) {
+        if (depth <= 0)
+            return 1;
+    }
+
+    generateMoves(pos, ml);
+
+    if constexpr (BULK && !ROOT) {
+        if (depth == 1)
+            return ml.length;
+    }
+
+    while (ml.currentIdx > 0) {
+        pos.makeMove(ml.moves[ml.currentIdx - 1].move);
+
+        nodeCountThis = perft<BULK, false>(depth - 1, pos);
+        nodeCount += nodeCountThis;
+
+        if constexpr (ROOT)
+            std::cout << moveToString(ml.moves[ml.currentIdx - 1].move) << ": " << nodeCountThis << std::endl;
+
+        pos.unmakeMove(ml.moves[ml.currentIdx - 1].move);
+        ml.currentIdx--;
+    }
+
+    return nodeCount;
+}
+
+int startPerft(int depth, Position &pos, bool bulk) {
+    if (depth <= 0)
+        return 1;
+
+    return bulk ? perft<true, true>(depth, pos) : perft<false, true>(depth, pos);
+}
+
+
+
+
+#endif //MOLYBDENUM_PERFT_H

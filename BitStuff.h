@@ -11,6 +11,12 @@ inline int lsb(u64 &bitboard) {
     return __builtin_ctzll(bitboard);
 }
 
+inline int popLSB(u64 &bitboard) {
+    int bit = lsb(bitboard);
+    bitboard &= bitboard - 1;
+    return  bit;
+}
+
 inline constexpr int fileOf(int square) {
     return 7 - (square & 7);
 }
@@ -27,8 +33,16 @@ inline constexpr u64 lRankOf(int square) {
     return RANK1 << (rankOf(square) * 8);
 }
 
+inline int typeOf(int piece) {
+    return piece % 6;
+}
+
 inline u64 createSquare(int file, int rank) {
-    return (rank * 8) + file;
+    return 1ULL << ((rank * 8) + file);
+}
+
+inline bool multipleBits(u64 bb) {
+    return bb & (bb - 1);
 }
 
 constexpr std::array<u64, 64> knightMask = {};
@@ -42,24 +56,73 @@ constexpr std::array<u64, 64> initKnightMasks() {
         u64 mask = 0;
 
         if (file < 6) {
-            mask |= squareL >>  6;
-            mask |= squareL << 10;
-        }
-
-        if (file < 7) {
-            mask |= squareL >> 15;
-            mask |= squareL << 17;
-        }
-
-        if (file > 1) {
             mask |= squareL <<  6;
             mask |= squareL >> 10;
         }
 
-        if (file > 0) {
+        if (file < 7) {
             mask |= squareL << 15;
             mask |= squareL >> 17;
         }
+
+        if (file > 1) {
+            mask |= squareL >>  6;
+            mask |= squareL << 10;
+        }
+
+        if (file > 0) {
+            mask |= squareL >> 15;
+            mask |= squareL << 17;
+        }
+
+        masks[square] = mask;
+    }
+
+    return masks;
+}
+
+constexpr std::array<u64, 64> initKingMasks() {
+    std::array<u64, 64> masks = {};
+
+    for (int square = 0; square != 64; square++) {
+        u64 squareL = 1ULL << square;
+        u64 mask = 0ULL;
+        int file = fileOf(square);
+
+        mask |= squareL << 8;
+        mask |= squareL >> 8;
+
+        if (file < 7) {
+            mask |= squareL >> 1;
+            mask |= squareL << 7;
+            mask |= squareL >> 9;
+        }
+
+        if (file > 0) {
+            mask |= squareL << 1;
+            mask |= squareL >> 7;
+            mask |= squareL << 9;
+        }
+
+        masks[square] = mask;
+    }
+
+    return masks;
+}
+
+constexpr std::array<u64, 64> initPawnMasks() {
+    std::array<u64, 64> masks = {};
+
+    for (int square = 0; square != 64; square++) {
+        u64 mask = 0;
+        u64 squareL = 1ULL << square;
+        int file = fileOf(square);
+
+        if (file > 0)
+            mask |= squareL << 9;
+
+        if (file < 7)
+            mask |= squareL << 7;
 
         masks[square] = mask;
     }
@@ -81,6 +144,10 @@ inline void printBB(u64 bitboard) {
     }
 
     std::cout << std::endl;
+}
+
+inline u64 movePawn(u64 squareL, bool white) {
+    return white ? squareL << 8 : squareL >> 8;
 }
 
 #endif //MOLYBDENUM_BITSTUFF_H

@@ -31,7 +31,7 @@ void Position::setBoard(std::string fen) {
 
         if (spaceCount == 2) {
             int idx = castlingCharToIndex(charIntToPiece(charAsInt));
-            castlingRights[idx] = true;
+            castlingRights |= 1 << idx;
             continue;
         }
 
@@ -57,7 +57,7 @@ void Position::setBoard(std::string fen) {
     }
 
     enPassantSquare = !epSquare.empty() ? stringToSquare(epSquare) : 0ULL;
-    plys50moveRule  = stringRoRule50(plys50mr);
+    plys50moveRule  = !plys50mr.empty() ? stringRoRule50(plys50mr) : 0;
 }
 
 Move Position::fromToToMove(int from, int to, int promotionPiece) {
@@ -66,10 +66,8 @@ Move Position::fromToToMove(int from, int to, int promotionPiece) {
     bool captured = pieceLocations[to] != NO_PIECE;
 
     if (typeOf(movingPiece) == PAWN) {
-        if (fileOf(from) != fileOf(to) && !captured) {
+        if (fileOf(from) != fileOf(to) && !captured)
             flag = ENPASSANT;
-            enPassantSquare = createSquare(fileOf(to), rankOf(from));
-        }
 
         if ((1L << to) & promotionRanks)
             flag = PROMOTION;
@@ -88,6 +86,11 @@ void Position::makeMove(Move move) {
     int movedPiece    = pieceLocations[from];
     int capturedPiece = pieceLocations[to];
 
+    plys50mrHistory.push(plys50moveRule);
+    castlingHistory.push(castlingRights);
+    capturedHistory.push(capturedPiece);
+    enPassantHistory.push(enPassantSquare);
+
     plys50moveRule++;
     pieceLocations[from] = NO_PIECE;
     bitBoards[movedPiece] ^= 1ULL << from;
@@ -99,8 +102,9 @@ void Position::makeMove(Move move) {
 
     if (flag == ENPASSANT) {
         int capturedPawn = movedPiece == WHITE_PAWN ? BLACK_PAWN : WHITE_PAWN;
-        bitBoards[capturedPawn] ^= enPassantSquare;
-        pieceLocations[lsb(enPassantSquare)] = NO_PIECE;
+        u64 captureSquare = movePawn(enPassantSquare, !sideToMove);
+        bitBoards[capturedPawn] ^= captureSquare;
+        pieceLocations[lsb(captureSquare)] = NO_PIECE;
     }
 
     if (flag == CASTLING) {
@@ -113,7 +117,9 @@ void Position::makeMove(Move move) {
         bitBoards[rook] ^= (1ULL << rookFrom) | (1ULL << rookTo);
     }
 
-    if (movedPiece == PAWN) {
+    enPassantSquare = 0ULL;
+
+    if (typeOf(movedPiece) == PAWN) {
         if ((from ^ to) == 16)
             enPassantSquare = 1L << (to - (from > to ? -8 : 8));
 
@@ -130,12 +136,53 @@ void Position::makeMove(Move move) {
     sideToMove = !sideToMove;
 }
 
+void Position::unmakeMove(Move move) {
+    int from = extract<FROM>(move);
+    int to   = extract<TO  >(move);
+    int flag = extract<FLAG>(move);
+    int movingPiece = pieceLocations[to];
+    int capturedPiece = capturedHistory.pop();
+
+    plys50moveRule = plys50mrHistory.pop();
+    castlingRights = castlingHistory.pop();
+    enPassantSquare = enPassantHistory.pop();
+
+    pieceLocations[from] = movingPiece;
+    pieceLocations[to  ] = capturedPiece;
+    bitBoards[movingPiece] ^= 1ULL << to;
+
+    if (flag == PROMOTION)
+        movingPiece = sideToMove ? WHITE_PAWN : BLACK_PAWN;
+
+    bitBoards[movingPiece] ^= 1ULL << from;
+    bitBoards[capturedPiece] ^= 1ULL << to;
+
+    if (flag == CASTLING) {
+        int rookFrom = from > to ? to - 1 : to + 2;
+        int rookTo   = from > to ? to + 1 : to - 1;
+        int rook     = pieceLocations[rookTo];
+
+        pieceLocations[rookTo  ] = NO_PIECE;
+        pieceLocations[rookFrom] = rook;
+        bitBoards[rook] ^= (1ULL << rookFrom) | (1ULL << rookTo);
+    }
+
+    if (flag == ENPASSANT) {
+        int capturedPawn  = movingPiece == WHITE_PAWN ? BLACK_PAWN : WHITE_PAWN;
+        u64 captureSquare = movePawn(enPassantSquare, sideToMove);
+        bitBoards[capturedPawn] ^= captureSquare;
+        pieceLocations[lsb(captureSquare)] = capturedPawn;
+    }
+
+    sideToMove = !sideToMove;
+}
+
 void Position::clearBoard() {
     for (int i = 0; i != 64; i++)
         pieceLocations[i] = NO_PIECE;
 
     memset(&bitBoards, 0ULL, bitBoards.size() * sizeof(typeof(bitBoards[0])));
-    memset(&castlingRights, false, castlingRights.size() * sizeof(typeof(castlingRights[0])));
+    castlingRights = 0;
     plys50moveRule = 0;
     enPassantSquare = 0;
     sideToMove = WHITE;
@@ -163,10 +210,10 @@ void Position::printBoard() {
         }
     }
 
-    if (castlingRights[0]) castling += "K";
-    if (castlingRights[1]) castling += "Q";
-    if (castlingRights[2]) castling += "k";
-    if (castlingRights[3]) castling += "q";
+    if (castlingRights & WHITE_CASTLE_KINGSIDE ) castling += "K";
+    if (castlingRights & WHITE_CASTLE_QUEENSIDE) castling += "Q";
+    if (castlingRights & BLACK_CASTLE_KINGSIDE ) castling += "k";
+    if (castlingRights & BLACK_CASTLE_QUEENSIDE) castling += "q";
 
     std::cout << "\n";
     std::cout << "50 move rule counter: " << plys50moveRule << "\n";

@@ -3,6 +3,8 @@
 #include "UCI.h"
 #include "Position.h"
 #include "BitStuff.h"
+#include "Perft.h"
+#include <chrono>
 
 void uciCommunication() {
     Position internalBoard = Position();
@@ -24,7 +26,6 @@ void uciCommunication() {
             internalBoard.setBoard(fen);
 
             if (contains(input, "moves")) {
-                int loopCount;
                 size_t start = input.find("moves") + 6;
                 std::string moves = input.substr(start, input.length());
 
@@ -44,15 +45,35 @@ void uciCommunication() {
                     toSquare   = lsb(to);
 
                     internalBoard.makeMove(internalBoard.fromToToMove(fromSquare, toSquare, promotionPiece));
+                    std::cout << moveToString(internalBoard.fromToToMove(fromSquare, toSquare, promotionPiece)) << "\n";
 
                     if (moves.find(' ') == std::string ::npos)
                         break;
-                    moves = moves.substr(moves.find(' '));
+                    moves = moves.substr(moves.find(' ') + 1);
                 }
             }
         }
 
-        if (input == "d")
+        if (input == "d") {
             internalBoard.printBoard();
+            continue;
+        }
+
+        if (contains(input, "go perft")) {
+            std::string depthS = input.substr(9);
+            int depthI = std::stoi(depthS);
+
+            //std::cout << startPerft(depthI, internalBoard, true) << "\n";
+
+            std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+
+            u64 nodeCount = startPerft(depthI, internalBoard, true);
+
+            std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+
+            std::cout << "______________\n";
+            std::cout << "Nodes searched " << nodeCount << "\n";
+            std::cout << "Took " << std::chrono::duration_cast<std::chrono::milliseconds> (end - begin).count() << " milliseconds" << "\n";
+        }
     }
 }

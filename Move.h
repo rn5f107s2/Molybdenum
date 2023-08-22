@@ -3,6 +3,9 @@
 
 #include <cstdint>
 #include <array>
+#include "Constants.h"
+#include "BitStuff.h"
+#include "Utility.h"
 
 using Move = uint16_t;
 
@@ -33,13 +36,32 @@ inline int extract(Move move) {
     return (move & maskArray[idx]) >> shiftArray[idx];
 }
 
-inline Move createMove(int from, int to, int promotionPiece, int flag) {
+inline Move createMove(int from, int to, int promotionPiece = PROMO_KNIGHT, int flag = NORMAL) {
     Move move;
     move  = flag << flagShift;
     move |= promotionPiece << promotionShift;
     move |= to << toShift;
     move |= from;
     return move;
+}
+
+inline std::string moveToString(Move move) {
+    int from = extract<FROM>(move);
+    int to   = extract<TO  >(move);
+
+    char fromFile = char('a' + (fileOf(from)));
+    char toFile   = char('a' + (fileOf(to  )));
+
+    std::string moveS;
+    moveS += fromFile;
+    moveS += char('1' + (rankOf(from)));
+    moveS += toFile;
+    moveS += char('1' + (rankOf(to)));
+
+    if (extract<FLAG>(move) == PROMOTION)
+        moveS += pieceToChar(extract<PROMOTIONTYPE>(move) + 7);
+
+    return moveS;
 }
 
 #endif //MOLYBDENUM_MOVE_H
