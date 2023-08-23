@@ -15,7 +15,7 @@ class Position {
         void printBoard();
         void makeMove(Move move);
         void unmakeMove(Move move);
-        Move fromToToMove(int from, int to, int promotionPiece);
+        Move fromToToMove(int from, int to, int promotionPiece, int flag = NORMAL);
         std::array<u64, 13> bitBoards;
         std::array<int, 64> pieceLocations;
         int castlingRights;

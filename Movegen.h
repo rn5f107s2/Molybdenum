@@ -9,7 +9,7 @@
 std::array<std::array<u64, 64>, 64> initMaskBB();
 inline std::array<std::array<u64, 64>, 64> initExtendedMaskBB();
 
-constexpr std::array<u64, 64> pawnMasks = initPawnMasks();
+constexpr std::array<std::array<u64, 64>, 2> pawnMasks = initPawnMasks();
 constexpr std::array<u64, 64> knightMasks = initKnightMasks();
 constexpr std::array<u64, 64> kingMasks = initKingMasks();
 const std::array<std::array<u64, 64>, 64> masksBBs = initMaskBB();
@@ -52,7 +52,7 @@ u64 getAttacks(int square, u64 blockers = 0ULL, bool white = true) {
     [[maybe_unused]] u64 squareL = 1ULL << square;
     switch (TYPE) {
         case PAWN:
-            return pawnMasks[square] >> (!white * 16);
+            return pawnMasks[white][square];
         case KNIGHT:
             return knightMasks[square];
         case BISHOP:
@@ -254,12 +254,12 @@ inline void generateEnPassant(Position &pos, MovegenVariables &mv, MoveList &ml)
 inline void generateCastling(Position &pos, MovegenVariables &mv, MoveList &ml) {
     u64 possibleTargets = 0ULL;
 
-    if (pos.castlingRights & mv.castlingKs && !(mv.occupied & mv.qsSquares)) {
+    if (pos.castlingRights & mv.castlingKs && !(mv.occupied & mv.ksSquares)) {
         if (!attackersTo<true, false>(mv.kingSquare - 1, mv.occupied, mv.oppPawnIdx, pos))
             possibleTargets |= pos.bitBoards[mv.pawnIdx + KING] >> 2;
     }
 
-    if (pos.castlingRights & mv.castlingQs && !(mv.occupied & mv.ksSquares)) {
+    if (pos.castlingRights & mv.castlingQs && !(mv.occupied & mv.qsSquares)) {
         if (!attackersTo<true, false>(mv.kingSquare + 1, mv.occupied, mv.oppPawnIdx, pos))
             possibleTargets |= pos.bitBoards[mv.pawnIdx + KING] << 2;
     }
@@ -283,8 +283,8 @@ inline bool generateMoves(Position &pos, MoveList &ml) {
     mv.enemyOrEmpty = mv.enemy | mv.empty;
     mv.pawnIdx = pos.sideToMove ? WHITE_PAWN : BLACK_PAWN;
     mv.oppPawnIdx = pos.sideToMove ? BLACK_PAWN : WHITE_PAWN;
-    mv.pinnedPieces = generatePinnedPieces(pos, mv);
     mv.kingSquare = lsb(pos.bitBoards[mv.pawnIdx + KING]);
+    mv.pinnedPieces = generatePinnedPieces(pos, mv);
     bool doubleCheck;
 
     u64 checkers = attackersTo<false, false>(mv.kingSquare, mv.occupied, mv.oppPawnIdx, pos);
@@ -303,7 +303,7 @@ inline bool generateMoves(Position &pos, MoveList &ml) {
     generateEnPassant(pos, mv, ml);
 
     if (!checkers)
-        //generateCastling(pos, mv, ml);
+        generateCastling(pos, mv, ml);
 
     return checkers;
 }

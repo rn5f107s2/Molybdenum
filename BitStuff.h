@@ -110,21 +110,27 @@ constexpr std::array<u64, 64> initKingMasks() {
     return masks;
 }
 
-constexpr std::array<u64, 64> initPawnMasks() {
-    std::array<u64, 64> masks = {};
+constexpr std::array<std::array<u64, 64>, 2> initPawnMasks() {
+    std::array<std::array<u64, 64>, 2> masks = {};
 
     for (int square = 0; square != 64; square++) {
         u64 mask = 0;
+        u64 mask2 = 0;
         u64 squareL = 1ULL << square;
         int file = fileOf(square);
 
-        if (file > 0)
-            mask |= squareL << 9;
+        if (file > 0) {
+            mask  |= squareL << 9;
+            mask2 |= squareL >> 7;
+        }
 
-        if (file < 7)
-            mask |= squareL << 7;
+        if (file < 7) {
+            mask  |= squareL << 7;
+            mask2 |= squareL >> 9;
+        }
 
-        masks[square] = mask;
+        masks[0][square] = mask2;
+        masks[1][square] = mask;
     }
 
     return masks;

@@ -60,20 +60,16 @@ void Position::setBoard(std::string fen) {
     plys50moveRule  = !plys50mr.empty() ? stringRoRule50(plys50mr) : 0;
 }
 
-Move Position::fromToToMove(int from, int to, int promotionPiece) {
-    int flag = NORMAL;
+Move Position::fromToToMove(int from, int to, int promotionPiece, int flag) {
     int movingPiece = pieceLocations[from];
     bool captured = pieceLocations[to] != NO_PIECE;
 
-    if (typeOf(movingPiece) == PAWN) {
+    if (typeOf(movingPiece) == PAWN && !flag) {
         if (fileOf(from) != fileOf(to) && !captured)
             flag = ENPASSANT;
-
-        if ((1L << to) & promotionRanks)
-            flag = PROMOTION;
     }
 
-    if (typeOf(movingPiece) == KING && std::abs(fileOf(from) - fileOf(to)) == 2)
+    if (typeOf(movingPiece) == KING && std::abs(fileOf(from) - fileOf(to)) == 2 && !flag)
         flag = CASTLING;
 
     return createMove(from, to, promotionPiece, flag);
@@ -96,7 +92,7 @@ void Position::makeMove(Move move) {
     bitBoards[movedPiece] ^= 1ULL << from;
 
     if (flag == PROMOTION) {
-        movedPiece = extract<PROMOTIONTYPE>(move);
+        movedPiece = extract<PROMOTIONTYPE>(move) + 1 + 6 * !sideToMove;
         plys50moveRule = 0;
     }
 
@@ -126,6 +122,8 @@ void Position::makeMove(Move move) {
         plys50moveRule = 0;
     }
 
+    castlingRights &= ~(castlingMask[from] | castlingMask[to]);
+
     if (capturedPiece != NO_PIECE) {
         bitBoards[capturedPiece] ^= 1ULL << to;
         plys50moveRule = 0;
@@ -147,15 +145,15 @@ void Position::unmakeMove(Move move) {
     castlingRights = castlingHistory.pop();
     enPassantSquare = enPassantHistory.pop();
 
-    pieceLocations[from] = movingPiece;
     pieceLocations[to  ] = capturedPiece;
     bitBoards[movingPiece] ^= 1ULL << to;
+    bitBoards[capturedPiece] ^= 1ULL << to;
 
     if (flag == PROMOTION)
-        movingPiece = sideToMove ? WHITE_PAWN : BLACK_PAWN;
+        movingPiece = sideToMove ? BLACK_PAWN : WHITE_PAWN;
 
+    pieceLocations[from] = movingPiece;
     bitBoards[movingPiece] ^= 1ULL << from;
-    bitBoards[capturedPiece] ^= 1ULL << to;
 
     if (flag == CASTLING) {
         int rookFrom = from > to ? to - 1 : to + 2;

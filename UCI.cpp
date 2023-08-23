@@ -33,10 +33,13 @@ void uciCommunication() {
                     int promotionPiece = PROMO_KNIGHT;
                     int fromSquare;
                     int toSquare;
+                    int flag = NORMAL;
                     std::string move = moves.substr(0, moves.find(' '));
 
-                    if (move.length() == 5)
-                        promotionPiece = charIntToPiece(toupper(move.at(4))) - 1;
+                    if (move.length() == 5) {
+                        promotionPiece = charIntToPiece(toupper(move.at(4)) - '0') - 1;
+                        flag = PROMOTION;
+                    }
 
                     u64 from = stringToSquare(move.substr(0, 2));
                     u64 to   = stringToSquare(move.substr(2, 2));
@@ -44,8 +47,7 @@ void uciCommunication() {
                     fromSquare = lsb(from);
                     toSquare   = lsb(to);
 
-                    internalBoard.makeMove(internalBoard.fromToToMove(fromSquare, toSquare, promotionPiece));
-                    std::cout << moveToString(internalBoard.fromToToMove(fromSquare, toSquare, promotionPiece)) << "\n";
+                    internalBoard.makeMove(internalBoard.fromToToMove(fromSquare, toSquare, promotionPiece, flag));
 
                     if (moves.find(' ') == std::string ::npos)
                         break;
@@ -67,7 +69,7 @@ void uciCommunication() {
 
             std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
-            u64 nodeCount = startPerft(depthI, internalBoard, true);
+            int nodeCount = startPerft(depthI, internalBoard, true);
 
             std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 

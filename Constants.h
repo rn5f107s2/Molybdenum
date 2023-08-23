@@ -54,12 +54,24 @@ constexpr u64 FILEA = FILEH << 7;
 
 constexpr int WHITE_CASTLE_KINGSIDE  = 1;
 constexpr int WHITE_CASTLE_QUEENSIDE = 2;
+constexpr int WHITE_CASTLING = WHITE_CASTLE_KINGSIDE | WHITE_CASTLE_QUEENSIDE;
 constexpr int BLACK_CASTLE_KINGSIDE  = 4;
 constexpr int BLACK_CASTLE_QUEENSIDE = 8;
+constexpr int BLACK_CASTLING = BLACK_CASTLE_KINGSIDE | BLACK_CASTLE_QUEENSIDE;
 constexpr u64 WHITE_CASTLING_SQUARES_KINGSIDE  = (FILEF | FILEG) & RANK1;
-constexpr u64 WHITE_CASTLING_SQUARES_QUEENSIDE = (FILED | FILEC) & RANK1;
+constexpr u64 WHITE_CASTLING_SQUARES_QUEENSIDE = (FILED | FILEC | FILEB) & RANK1;
 constexpr u64 BLACK_CASTLING_SQUARES_KINGSIDE  = (FILEF | FILEG) & RANK8;
-constexpr u64 BLACK_CASTLING_SQUARES_QUEENSIDE = (FILEC | FILED) & RANK8;
+constexpr u64 BLACK_CASTLING_SQUARES_QUEENSIDE = (FILEC | FILED | FILEB) & RANK8;
+constexpr std::array<int, 64> castlingMask =
+        {WHITE_CASTLE_KINGSIDE, 0, 0, WHITE_CASTLING, 0, 0, 0, WHITE_CASTLE_QUEENSIDE,
+                             0, 0, 0,              0, 0, 0, 0,                      0,
+                             0, 0, 0,              0, 0, 0, 0,                      0,
+                             0, 0, 0,              0, 0, 0, 0,                      0,
+                             0, 0, 0,              0, 0, 0, 0,                      0,
+                             0, 0, 0,              0, 0, 0, 0,                      0,
+                             0, 0, 0,              0, 0, 0, 0,                      0,
+        BLACK_CASTLE_KINGSIDE , 0, 0, BLACK_CASTLING, 0, 0, 0, BLACK_CASTLE_QUEENSIDE,
+        };
 
 constexpr u64 edgeFiles = FILEA | FILEH;
 
