@@ -12,10 +12,16 @@ class Stack {
         T pop();
         T at(int idx);
         void push(T t);
-        int size = 0;
+        void clear();
     private:
         std::array<T, MAX_STACK_SIZE> stack;
+        int size = 0;
 };
+
+template<typename T>
+void Stack<T>::clear() {
+    size = 0;
+}
 
 template<typename T>
 void Stack<T>::push(T t) {

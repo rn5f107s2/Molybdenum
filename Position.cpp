@@ -180,6 +180,11 @@ void Position::clearBoard() {
         pieceLocations[i] = NO_PIECE;
 
     memset(&bitBoards, 0ULL, bitBoards.size() * sizeof(typeof(bitBoards[0])));
+
+    enPassantHistory.clear();
+    castlingHistory.clear();
+    capturedHistory.clear();
+    plys50mrHistory.clear();
     castlingRights = 0;
     plys50moveRule = 0;
     enPassantSquare = 0;
