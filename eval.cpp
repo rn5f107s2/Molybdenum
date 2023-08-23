@@ -13,9 +13,11 @@ int evaluate(Position &pos) {
 
 int evalColor(Position &pos, bool color) {
     int pawnIdx = color ? WHITE_PAWN : BLACK_PAWN;
-    return  __builtin_popcount(pos.bitBoards[pawnIdx + PAWN]) * PawnValue
-          + __builtin_popcount(pos.bitBoards[pawnIdx + KNIGHT]) * KnightValue
-          + __builtin_popcount(pos.bitBoards[pawnIdx + BISHOP]) * BishopValue
-          + __builtin_popcount(pos.bitBoards[pawnIdx + ROOK]) * RookValue
-          + __builtin_popcount(pos.bitBoards[pawnIdx + QUEEN]) * QueenValue;
+    int eval = 0;
+    eval +=  __builtin_popcountll(pos.bitBoards[pawnIdx + PAWN]) * PawnValue;
+    eval += __builtin_popcountll(pos.bitBoards[pawnIdx + KNIGHT]) * KnightValue;
+    eval += __builtin_popcountll(pos.bitBoards[pawnIdx + BISHOP]) * BishopValue;
+    eval += __builtin_popcountll(pos.bitBoards[pawnIdx + ROOK]) * RookValue;
+    eval += __builtin_popcountll(pos.bitBoards[pawnIdx + QUEEN]) * QueenValue;
+    return eval;
 }

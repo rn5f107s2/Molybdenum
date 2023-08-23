@@ -6,6 +6,7 @@
 #include "Perft.h"
 #include "search.h"
 #include <chrono>
+#include "eval.h"
 
 void uciCommunication() {
     Position internalBoard = Position();
@@ -88,7 +89,12 @@ void uciCommunication() {
         }
 
         if (contains(input, "go")) {
-            std::cout << startSearch(internalBoard, 5) << "\n";
+            startSearch(internalBoard);
+            continue;
+        }
+
+        if (contains(input, "eval")) {
+            std::cout << evaluate(internalBoard) << "\n";
         }
     }
 }

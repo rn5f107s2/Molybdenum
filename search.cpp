@@ -5,17 +5,27 @@
 #include "Constants.h"
 
 template<bool ROOT>
-int search(int alpha, int beta, Position &pos, int depth);
+int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si);
 
-int nodeCount = 0;
+int startSearch(Position &pos) {
+    return iterativeDeepening(pos);
+}
 
-int startSearch(Position &pos, int depth) {
-    nodeCount = 0;
-    return search<true>(-INFINITE, INFINITE, pos, depth);
+int iterativeDeepening(Position  &pos) {
+    int score;
+    SearchInfo si;
+
+    for (int depth = 1; depth != 6; depth++) {
+        score = search<true>(-INFINITE, INFINITE, pos, depth, si);
+        std::cout << "info depth " << depth << " currmove " << moveToString(si.bestRootMove) << " score cp " << score << "\n";
+    }
+
+    std::cout << "bestmove " << moveToString(si.bestRootMove) << "\n";
+    return score;
 }
 
 template<bool ROOT>
-int search(int alpha, int beta, Position &pos, int depth) {
+int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si) {
     if (depth <= 0)
         return evaluate(pos);
 
@@ -27,9 +37,9 @@ int search(int alpha, int beta, Position &pos, int depth) {
     while (ml.currentIdx > 0) {
         Move currentMove = ml.moves[--ml.currentIdx].move;
         pos.makeMove(currentMove);
-        nodeCount++;
+        si.nodeCount++;
 
-        int score = -search<false>(-beta, -alpha, pos, depth - 1);
+        int score = -search<false>(-beta, -alpha, pos, depth - 1, si);
 
         pos.unmakeMove(currentMove);
 
@@ -51,6 +61,6 @@ int search(int alpha, int beta, Position &pos, int depth) {
     }
 
     if constexpr (ROOT)
-        std::cout << "bestmove " << moveToString(bestMove) << "\n";
+        si.bestRootMove = bestMove;
     return bestScore;
 }
