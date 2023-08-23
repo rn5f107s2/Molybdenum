@@ -33,7 +33,7 @@ inline constexpr u64 lRankOf(int square) {
     return RANK1 << (rankOf(square) * 8);
 }
 
-inline int typeOf(int piece) {
+inline constexpr int typeOf(int piece) {
     return piece % 6;
 }
 

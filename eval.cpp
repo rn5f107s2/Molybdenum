@@ -1,23 +1,23 @@
 #include "Position.h"
 #include "eval.h"
-
-const int PawnValue   = 100;
-const int KnightValue = 300;
-const int BishopValue = 300;
-const int RookValue   = 500;
-const int QueenValue  = 900;
+#include "PSQT.h"
 
 int evaluate(Position &pos) {
-    return evalColor(pos, pos.sideToMove) - evalColor(pos, !pos.sideToMove);
+    return evalPSQT(pos) * (pos.sideToMove ? -1 : 1);
 }
 
-int evalColor(Position &pos, bool color) {
-    int pawnIdx = color ? WHITE_PAWN : BLACK_PAWN;
+int evalPSQT(Position &pos) {
     int eval = 0;
-    eval +=  __builtin_popcountll(pos.bitBoards[pawnIdx + PAWN]) * PawnValue;
-    eval += __builtin_popcountll(pos.bitBoards[pawnIdx + KNIGHT]) * KnightValue;
-    eval += __builtin_popcountll(pos.bitBoards[pawnIdx + BISHOP]) * BishopValue;
-    eval += __builtin_popcountll(pos.bitBoards[pawnIdx + ROOK]) * RookValue;
-    eval += __builtin_popcountll(pos.bitBoards[pawnIdx + QUEEN]) * QueenValue;
+
+    for (int pt = WHITE_PAWN; pt != NO_PIECE; pt++) {
+        u64 pieceBB = pos.bitBoards[pt];
+
+        while (pieceBB) {
+            int square = popLSB(pieceBB);
+
+            eval += PSQT[pt][square];
+        }
+    }
+
     return eval;
 }

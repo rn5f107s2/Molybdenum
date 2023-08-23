@@ -4,6 +4,6 @@
 #include "Position.h"
 
 int evaluate(Position &pos);
-int evalColor(Position &pos, bool color);
+int evalPSQT(Position &pos);
 
 #endif //MOLYBDENUM_EVAL_H
