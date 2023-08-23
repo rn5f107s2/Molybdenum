@@ -9,19 +9,12 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} O3")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic")
 
-add_executable(Molybdenum main.cpp Position.cpp Position.h Constants.h UCI.cpp UCI.h
-        Movegen.cpp
-        Movegen.h
-        Move.h
-        BitStuff.h
-        MagicBitboards.h
-        Perft.h
-        Utility.h
-        search.cpp
-        search.h
-        eval.cpp
-        eval.h
-        timemanagment.cpp
-        timemanagement.h
-        PSQT.h
+add_executable(Molybdenum
+        src/main.cpp
+        src/Position.cpp
+        src/UCI.cpp
+        src/Movegen.cpp
+        src/search.cpp
+        src/eval.cpp
+        src/timemanagment.cpp
 )
