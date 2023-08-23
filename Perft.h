@@ -6,15 +6,15 @@
 
 
 template <bool BULK, bool ROOT>
-int perft(int depth, Position &pos) {
+u64 perft(int depth, Position &pos) {
     if constexpr (!BULK) {
         if (depth <= 0)
             return 1;
     }
 
     MoveList ml;
-    int nodeCountThis;
-    int nodeCount = 0;
+    u64 nodeCountThis;
+    u64 nodeCount = 0;
 
     if constexpr (BULK && !ROOT) {
         if (depth <= 0)
@@ -44,7 +44,7 @@ int perft(int depth, Position &pos) {
     return nodeCount;
 }
 
-int startPerft(int depth, Position &pos, bool bulk) {
+u64 startPerft(int depth, Position &pos, bool bulk) {
     if (depth <= 0)
         return 1;
 

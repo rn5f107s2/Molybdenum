@@ -13,9 +13,9 @@ constexpr std::array<std::array<u64, 64>, 2> pawnMasks = initPawnMasks();
 constexpr std::array<u64, 64> knightMasks = initKnightMasks();
 constexpr std::array<u64, 64> kingMasks = initKingMasks();
 const std::array<std::array<u64, 64>, 64> masksBBs = initMaskBB();
-const std::array<std::array<u64, 64>, 64> extendedMasksBBs = initExtendedMaskBB();
 const std::array<std::array<u64, 512>, 64> bishopLookUpTable = initBishopLookUpTable();
 const std::array<std::array<u64, 4096>, 64> rookUpTable = initRookUpTable();
+const std::array<std::array<u64, 64>, 64> extendedMasksBBs = initExtendedMaskBB();
 
 struct ScoredMove {
     Move move;
