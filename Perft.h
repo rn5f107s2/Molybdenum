@@ -37,8 +37,7 @@ u64 perft(int depth, Position &pos) {
         if constexpr (ROOT)
             std::cout << moveToString(ml.moves[ml.currentIdx - 1].move) << ": " << nodeCountThis << std::endl;
 
-        pos.unmakeMove(ml.moves[ml.currentIdx - 1].move);
-        ml.currentIdx--;
+        pos.unmakeMove(ml.moves[--ml.currentIdx].move);
     }
 
     return nodeCount;

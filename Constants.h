@@ -79,4 +79,8 @@ enum Slider {
     BISHOP_S, QUEEN_S, ROOK_S
 };
 
+constexpr int INFINITE = 200000;
+constexpr int MATE     = 100000;
+constexpr int DRAW     = 0;
+
 #endif //MOLYBDENUM_CONSTANTS_H

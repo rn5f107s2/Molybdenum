@@ -308,6 +308,4 @@ inline bool generateMoves(Position &pos, MoveList &ml) {
     return checkers;
 }
 
-
-
 #endif //MOLYBDENUM_MOVEGEN_H

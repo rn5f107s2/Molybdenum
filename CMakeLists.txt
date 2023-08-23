@@ -17,4 +17,8 @@ add_executable(Molybdenum main.cpp Position.cpp Position.h Constants.h UCI.cpp U
         MagicBitboards.h
         Perft.h
         Utility.h
+        search.cpp
+        search.h
+        eval.cpp
+        eval.h
 )

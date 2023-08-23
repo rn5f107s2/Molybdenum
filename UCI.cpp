@@ -4,6 +4,7 @@
 #include "Position.h"
 #include "BitStuff.h"
 #include "Perft.h"
+#include "search.h"
 #include <chrono>
 
 void uciCommunication() {
@@ -15,6 +16,13 @@ void uciCommunication() {
 
         if (contains(input, "quit"))
             return;
+
+        if (contains(input, "uci"))
+            std::cout << "id name Molybdenum\nid author rn5f107s2\nuciok\n";
+
+        if (contains(input, "isready"))
+            std::cout << "readyok\n";
+
 
         if (contains(input, "position")) {
             std::string fen;
@@ -76,6 +84,11 @@ void uciCommunication() {
             std::cout << "Nodes searched: " << nodeCount << "\n";
             std::cout << "Took: " << milliseconds << " milliseconds" << "\n";
             std::cout << "Speed: " << (nodeCount / (milliseconds + 1)) / 1000 << " mnps";
+            continue;
+        }
+
+        if (contains(input, "go")) {
+            std::cout << startSearch(internalBoard, 5) << "\n";
         }
     }
 }
