@@ -21,4 +21,6 @@ add_executable(Molybdenum main.cpp Position.cpp Position.h Constants.h UCI.cpp U
         search.h
         eval.cpp
         eval.h
+        timemanagment.cpp
+        timemanagement.h
 )

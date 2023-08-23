@@ -7,6 +7,7 @@
 #include "search.h"
 #include <chrono>
 #include "eval.h"
+#include "timemanagement.h"
 
 void uciCommunication() {
     Position internalBoard = Position();
@@ -89,7 +90,41 @@ void uciCommunication() {
         }
 
         if (contains(input, "go")) {
-            startSearch(internalBoard);
+            int wtime = 0;
+            int btime = 0;
+            int winc = 0;
+            int binc = 0;
+
+            if (contains(input, "wtime")) {
+                int start = int(input.find("wtime")) + 6;
+                int end   = int(input.find(' ', start));
+
+                wtime = std::stoi(input.substr(start, end));
+
+                start = int(input.find("btime")) + 6;
+                end   = int(input.find(' ', start));
+
+                btime = std::stoi(input.substr(start, end));
+
+                if (contains(input, "winc")) {
+                    start = int(input.find("winc")) + 5;
+                    end   = int(input.find(' ', start));
+
+                    winc = std::stoi(input.substr(start, end));
+
+                    start = int(input.find("binc")) + 5;
+                    end   = int(input.find(' ', start));
+
+                    binc = std::stoi(input.substr(start, end));
+                }
+            }
+
+            int timeLeft  = internalBoard.sideToMove ? wtime : btime;
+            int increment = internalBoard.sideToMove ? winc  : binc;
+
+            searchTime st = calcThinkingTime(timeLeft, increment);
+
+            startSearch(internalBoard, st);
             continue;
         }
 
