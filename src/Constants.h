@@ -2,6 +2,7 @@
 #define MOLYBDENUM_CONSTANTS_H
 
 #include <array>
+#include <cstdint>
 
 using u64 = uint64_t;
 

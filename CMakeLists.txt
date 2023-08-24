@@ -17,4 +17,6 @@ add_executable(Molybdenum
         src/search.cpp
         src/eval.cpp
         src/timemanagment.cpp
+        src/Transpositiontable.cpp
+        src/Transpositiontable.h
 )
