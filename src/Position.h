@@ -7,6 +7,7 @@
 #include "BitStuff.h"
 #include "Move.h"
 #include "Utility.h"
+#include "Transpositiontable.h"
 
 class Position {
     public:
@@ -22,11 +23,14 @@ class Position {
         u64 enPassantSquare;
         int plys50moveRule;
         bool sideToMove;
+        u64 key();
+        bool hasRepeated(int plysInSearch);
     private:
         Stack<int>  capturedHistory;
         Stack<int>  plys50mrHistory;
         Stack<int>  castlingHistory;
         Stack<u64> enPassantHistory;
+        Stack<u64> keyHistory;
 };
 
 

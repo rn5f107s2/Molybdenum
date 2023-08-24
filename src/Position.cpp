@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cstring>
 #include "Position.h"
+#include "Transpositiontable.h"
 
 void Position::setBoard(std::string fen) {
     clearBoard();
@@ -58,6 +59,7 @@ void Position::setBoard(std::string fen) {
 
     enPassantSquare = !epSquare.empty() ? stringToSquare(epSquare) : 0ULL;
     plys50moveRule  = !plys50mr.empty() ? stringRoRule50(plys50mr) : 0;
+    keyHistory.push(positionToKey(bitBoards, castlingRights, enPassantSquare, sideToMove));
 }
 
 Move Position::fromToToMove(int from, int to, int promotionPiece, int flag) {
@@ -81,15 +83,20 @@ void Position::makeMove(Move move) {
     int flag = extract<FLAG>(move);
     int movedPiece    = pieceLocations[from];
     int capturedPiece = pieceLocations[to];
+    u64 key           = keyHistory.top();
 
     plys50mrHistory.push(plys50moveRule);
     castlingHistory.push(castlingRights);
     capturedHistory.push(capturedPiece);
     enPassantHistory.push(enPassantSquare);
 
+    if (enPassantSquare)
+        updateKey(fileOf(lsb(enPassantSquare)), key);
+
     plys50moveRule++;
     pieceLocations[from] = NO_PIECE;
     bitBoards[movedPiece] ^= 1ULL << from;
+    updateKey(movedPiece,  from, key);
 
     if (flag == PROMOTION) {
         movedPiece = extract<PROMOTIONTYPE>(move) + 1 + 6 * !sideToMove;
@@ -111,17 +118,22 @@ void Position::makeMove(Move move) {
         pieceLocations[rookFrom] = NO_PIECE;
         pieceLocations[rookTo  ] = rook;
         bitBoards[rook] ^= (1ULL << rookFrom) | (1ULL << rookTo);
+        updateKey(rook, rookFrom, key);
+        updateKey(rook, rookTo, key);
     }
 
     enPassantSquare = 0ULL;
 
     if (typeOf(movedPiece) == PAWN) {
-        if ((from ^ to) == 16)
+        if ((from ^ to) == 16) {
             enPassantSquare = 1L << (to - (from > to ? -8 : 8));
+            updateKey(fileOf(from), key);
+        }
 
         plys50moveRule = 0;
     }
 
+    updateKey((castlingMask[from] | castlingMask[to]) & castlingRights, key, true);
     castlingRights &= ~(castlingMask[from] | castlingMask[to]);
 
     if (capturedPiece != NO_PIECE) {
@@ -131,6 +143,9 @@ void Position::makeMove(Move move) {
 
     pieceLocations[to] = movedPiece;
     bitBoards[movedPiece] ^= 1L << to;
+    updateKey(movedPiece, to, key);
+    updateKey(key);
+    keyHistory.push(key);
     sideToMove = !sideToMove;
 }
 
@@ -144,6 +159,7 @@ void Position::unmakeMove(Move move) {
     plys50moveRule = plys50mrHistory.pop();
     castlingRights = castlingHistory.pop();
     enPassantSquare = enPassantHistory.pop();
+    keyHistory.pop();
 
     pieceLocations[to  ] = capturedPiece;
     bitBoards[movingPiece] ^= 1ULL << to;
@@ -185,6 +201,7 @@ void Position::clearBoard() {
     castlingHistory.clear();
     capturedHistory.clear();
     plys50mrHistory.clear();
+    keyHistory.clear();
     castlingRights = 0;
     plys50moveRule = 0;
     enPassantSquare = 0;
@@ -223,5 +240,26 @@ void Position::printBoard() {
     std::cout << "side to move        : " << (sideToMove ? "w" : "b") << "\n";
     std::cout << "en passant square   : " << (enPassantSquare) << "\n";
     std::cout << "castling rights     : " << castling << "\n";
+    std::cout << "key                 : " << key() << "\n";
 }
 
+u64 Position::key() {
+    return keyHistory.top();
+}
+
+bool Position::hasRepeated(int plysInSearch) {
+    int currentIdx = keyHistory.getSize() - 1;
+    int repetitions = 0;
+    u64 currentKey = keyHistory.top();
+
+    for (int idx = currentIdx - 2; idx >= currentIdx - plys50moveRule; idx -= 2) {
+        if(keyHistory.at(idx) == currentKey) {
+            repetitions++;
+
+            if (repetitions > ((currentIdx - idx) > plysInSearch))
+                return true;
+        }
+    }
+
+    return false;
+}

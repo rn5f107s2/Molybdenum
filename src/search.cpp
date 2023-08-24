@@ -6,7 +6,7 @@
 #include <chrono>
 
 template<bool ROOT>
-int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si);
+int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int plysInSearch = 0);
 
 int startSearch(Position &pos, searchTime &st) {
     return iterativeDeepening(pos, st);
@@ -30,7 +30,7 @@ int iterativeDeepening(Position  &pos, searchTime &st) {
 }
 
 template<bool ROOT>
-int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si) {
+int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int plysInSearch) {
     if (depth <= 0)
         return evaluate(pos);
 
@@ -42,12 +42,17 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si) {
     if (!(si.nodeCount & 1023) && (std::chrono::steady_clock::now() > (si.st.searchStart + si.st.thinkingTime)))
         si.stop = true;
 
+    if constexpr (!ROOT) {
+        if (pos.hasRepeated(plysInSearch) || pos.plys50moveRule > 99)
+            return 0;
+    }
+
     while (ml.currentIdx > 0) {
         Move currentMove = ml.moves[--ml.currentIdx].move;
         pos.makeMove(currentMove);
         si.nodeCount++;
 
-        int score = -search<false>(-beta, -alpha, pos, depth - 1, si);
+        int score = -search<false>(-beta, -alpha, pos, depth - 1, si, plysInSearch + 1);
 
         pos.unmakeMove(currentMove);
 
@@ -68,7 +73,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si) {
     }
 
     if (bestScore == -INFINITE) {
-        return check ? -MATE : DRAW;
+        return check ? (-MATE + plysInSearch) : DRAW;
     }
 
     if constexpr (ROOT)

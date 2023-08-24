@@ -11,7 +11,17 @@ inline int lsb(u64 &bitboard) {
     return __builtin_ctzll(bitboard);
 }
 
+inline int lsb(int &bitboard) {
+    return __builtin_ctz(bitboard);
+}
+
 inline int popLSB(u64 &bitboard) {
+    int bit = lsb(bitboard);
+    bitboard &= bitboard - 1;
+    return  bit;
+}
+
+inline int popLSB(int &bitboard) {
     int bit = lsb(bitboard);
     bitboard &= bitboard - 1;
     return  bit;

@@ -85,7 +85,7 @@ void uciCommunication() {
             std::cout << "______________\n";
             std::cout << "Nodes searched: " << nodeCount << "\n";
             std::cout << "Took: " << milliseconds << " milliseconds" << "\n";
-            std::cout << "Speed: " << (nodeCount / (milliseconds + 1)) / 1000 << " mnps";
+            std::cout << "Speed: " << (nodeCount / (milliseconds + 1)) / 1000 << " mnps\n";
             continue;
         }
 
