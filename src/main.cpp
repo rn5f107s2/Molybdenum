@@ -6,7 +6,7 @@
 #include "Movegen.h"
 
 int main() {
-    //TT.setSize(16);
+    TT.setSize(16);
     uciCommunication();
     return 0;
 }
