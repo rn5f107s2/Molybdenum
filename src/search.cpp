@@ -56,25 +56,25 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
             return 0;
     }
 
-    //int ttScore;
-    //int ttBound;
-    //int ttDepth;
-    //Move ttMove = 0;
-    //bool ttHit = false;
-    //u64 key = pos.key();
-    //TTEntry* tte = TT.probe(key);
+    int ttScore;
+    int ttBound;
+    int ttDepth;
+    Move ttMove = 0;
+    bool ttHit = false;
+    u64 key = pos.key();
+    TTEntry* tte = TT.probe(key);
 
-    //if (tte->key == key) {
-    //    ttScore = tte->score;
-    //    ttBound = tte->bound;
-    //    ttMove  = tte->move;
-    //    ttDepth = tte->depth;
-    //    ttHit   = true;
-    //}
+    if (tte->key == key) {
+        ttScore = tte->score;
+        ttBound = tte->bound;
+        ttMove  = tte->move;
+        ttDepth = tte->depth;
+        ttHit   = true;
+    }
 
     Movepicker mp;
     bool check = false;
-    while ((currentMove = pickNextMove< false>(mp, 0, pos, check, killers[plysInSearch])) != 0) {
+    while ((currentMove = pickNextMove< false>(mp, ttMove, pos, check, killers[plysInSearch])) != 0) {
         pos.makeMove(currentMove);
         si.nodeCount++;
         moveCount++;
@@ -103,7 +103,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
                         killers[plysInSearch][1] = killers[plysInSearch][0];
                         killers[plysInSearch][0] = bestMove;
                     }
-                    //TT.save(tte, key, bestScore, LOWER, bestMove, depth);
+                    TT.save(tte, key, bestScore, LOWER, bestMove, depth);
                     return bestScore;
                 }
             }
@@ -117,7 +117,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
     if constexpr (ROOT)
         si.bestRootMove = bestMove;
 
-    //TT.save(tte, key, bestScore, exact ? EXACT : UPPER, bestMove, depth);
+    TT.save(tte, key, bestScore, exact ? EXACT : UPPER, bestMove, depth);
     return bestScore;
 }
 
