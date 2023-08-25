@@ -2,6 +2,7 @@
 #include <cstring>
 #include "Position.h"
 #include "Transpositiontable.h"
+#include "Movegen.h"
 
 void Position::setBoard(std::string fen) {
     clearBoard();
@@ -262,4 +263,8 @@ bool Position::hasRepeated(int plysInSearch) {
     }
 
     return false;
+}
+
+bool Position::isCapture(Move move) {
+    return pieceLocations[extract<TO>(move)] != NO_PIECE;
 }

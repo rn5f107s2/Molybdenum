@@ -25,6 +25,7 @@ class Position {
         bool sideToMove;
         u64 key();
         bool hasRepeated(int plysInSearch);
+        bool isCapture(Move move);
     private:
         Stack<int>  capturedHistory;
         Stack<int>  plys50mrHistory;
