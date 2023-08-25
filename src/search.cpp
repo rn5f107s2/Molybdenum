@@ -41,7 +41,9 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
     Move bestMove;
     Move currentMove = 0;
     int bestScore = -INFINITE;
-    //bool exact = false;
+    int score = - INFINITE;
+    int moveCount = 0;
+    bool exact = false;
 
     if (!(si.nodeCount & 1023) && (std::chrono::steady_clock::now() > (si.st.searchStart + si.st.thinkingTime)))
         si.stop = true;
@@ -72,8 +74,13 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
     while ((currentMove = pickNextMove< false>(mp, 0, pos, check)) != 0) {
         pos.makeMove(currentMove);
         si.nodeCount++;
+        moveCount++;
 
-        int score = -search<false>(-beta, -alpha, pos, depth - 1, si, plysInSearch + 1);
+        if (exact)
+            score = -search<false>(-alpha, -alpha - 1, pos, depth - 1, si, plysInSearch + 1);
+
+        if (!exact || (score > alpha && score < beta))
+            score = -search<false>(-beta, -alpha, pos, depth - 1, si, plysInSearch + 1);
 
         pos.unmakeMove(currentMove);
 
@@ -86,9 +93,9 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
 
             if(score > alpha) {
                 alpha = score;
-                //exact = true;
+                exact = true;
 
-                if (score > beta) {
+                if (score >= beta) {
                     //TT.save(tte, key, bestScore, LOWER, bestMove, depth);
                     return bestScore;
                 }
@@ -113,7 +120,7 @@ int qsearch(int alpha, int beta, Position &pos, SearchInfo &si) {
     bool check;
     int bestScore = evaluate(pos);
 
-    if (bestScore > beta)
+    if (bestScore >= beta)
         return bestScore;
 
     Movepicker mp;
@@ -132,7 +139,7 @@ int qsearch(int alpha, int beta, Position &pos, SearchInfo &si) {
                 alpha = score;
                 bestMove = currentMove;
 
-                if (score > beta)
+                if (score >= beta)
                     return score;
             }
         }
