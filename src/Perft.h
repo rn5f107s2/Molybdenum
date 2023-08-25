@@ -21,7 +21,7 @@ u64 perft(int depth, Position &pos) {
             return 1;
     }
 
-    generateMoves(pos, ml);
+    generateMoves<false>(pos, ml);
 
     if constexpr (BULK && !ROOT) {
         if (depth == 1)

@@ -167,7 +167,7 @@ u64 getOccupied(Position &pos) {
     return occ;
 }
 
-template<bool ISKING, MoveFlags FLAG>
+template<bool ISKING, MoveFlags FLAG, bool CAPTURESONLY>
 inline void pushTargetsToMoveList(int fromSquare, u64 possibleTargets, MoveList &ml, MovegenVariables &mv, Position &pos) {
     [[maybe_unused]] u64 blockers = mv.occupied ^ (1ULL << fromSquare);
     while (possibleTargets) {
@@ -186,10 +186,10 @@ inline void pushTargetsToMoveList(int fromSquare, u64 possibleTargets, MoveList 
         }
 
 
-        Move move = createMove(fromSquare, toSquare, PROMO_KNIGHT, FLAG);
+        Move move = createMove(fromSquare, toSquare, PROMO_QUEEN, FLAG);
         pushBack(ml, move);
 
-        if constexpr (FLAG == PROMOTION)
+        if constexpr (FLAG == PROMOTION && !CAPTURESONLY)
             for(int promoPiece = PROMO_BISHOP; promoPiece != PROMO_QUEEN + 1; promoPiece++) {
                 move = createMove(fromSquare, toSquare, promoPiece, FLAG);
                 pushBack(ml, move);
@@ -197,15 +197,16 @@ inline void pushTargetsToMoveList(int fromSquare, u64 possibleTargets, MoveList 
     }
 }
 
-template<PieceType PIECE>
+template<PieceType PIECE, bool CAPTURESONLY>
 inline void generateMoves(Position &pos ,MovegenVariables &mv, MoveList &ml) {
     int piece = mv.pawnIdx + PIECE;
     u64 pieceBB = pos.bitBoards[piece];
+    u64 target = CAPTURESONLY ? mv.enemy : mv.enemyOrEmpty;
 
     while (pieceBB) {
         int fromSquare = popLSB(pieceBB);
         u64 possibleTargets = getAttacks<PIECE>(fromSquare, mv.occupied);
-        possibleTargets &= mv.enemyOrEmpty;
+        possibleTargets &= target;
 
         if constexpr (PIECE != KING) {
             possibleTargets &= mv.checkMask;
@@ -213,20 +214,26 @@ inline void generateMoves(Position &pos ,MovegenVariables &mv, MoveList &ml) {
                 possibleTargets &= extendedMasksBBs[fromSquare][mv.kingSquare];
         }
 
-        pushTargetsToMoveList<PIECE == KING, NORMAL>(fromSquare, possibleTargets, ml, mv, pos);
+        pushTargetsToMoveList<PIECE == KING, NORMAL, CAPTURESONLY>(fromSquare, possibleTargets, ml, mv, pos);
     }
 }
 
+template<bool CAPTURESONLY>
 inline void generatePawnMoves(Position &pos ,MovegenVariables &mv, MoveList &ml) {
     u64 pieceBB = pos.bitBoards[mv.pawnIdx];
 
     while (pieceBB) {
         int fromSquare = popLSB(pieceBB);
         u64 fromSquareL = 1ULL << fromSquare;
-        u64 possibleTargets  = movePawn(fromSquareL, pos.sideToMove) & mv.empty;
+        u64 possibleTargets  = 0;
 
-        if (rankOf(fromSquare) == (pos.sideToMove ? 1 : 6))
-            possibleTargets |= movePawn(possibleTargets, pos.sideToMove) & mv.empty;
+
+        if constexpr (!CAPTURESONLY) {
+            possibleTargets |= movePawn(fromSquareL, pos.sideToMove) & mv.empty;
+
+            if (rankOf(fromSquare) == (pos.sideToMove ? 1 : 6))
+                possibleTargets |= movePawn(possibleTargets, pos.sideToMove) & mv.empty;
+        }
 
         possibleTargets |= getAttacks<PAWN>(fromSquare, 0ULL, pos.sideToMove) & mv.enemy;
         possibleTargets &= mv.checkMask;
@@ -235,9 +242,9 @@ inline void generatePawnMoves(Position &pos ,MovegenVariables &mv, MoveList &ml)
             possibleTargets &= extendedMasksBBs[fromSquare][mv.kingSquare];
 
         if (fromSquareL & (pos.sideToMove ? RANK7 : RANK2))
-            pushTargetsToMoveList<false, PROMOTION>(fromSquare, possibleTargets, ml, mv, pos);
+            pushTargetsToMoveList<false, PROMOTION, CAPTURESONLY>(fromSquare, possibleTargets, ml, mv, pos);
         else
-            pushTargetsToMoveList<false, NORMAL>(fromSquare, possibleTargets, ml, mv, pos);
+            pushTargetsToMoveList<false, NORMAL, CAPTURESONLY>(fromSquare, possibleTargets, ml, mv, pos);
     }
 }
 
@@ -248,7 +255,7 @@ inline void generateEnPassant(Position &pos, MovegenVariables &mv, MoveList &ml)
     u64 possiblePawns = getAttacks<PAWN>(lsb(pos.enPassantSquare), 0ULL,!pos.sideToMove) & pos.bitBoards[mv.pawnIdx];
 
     while (possiblePawns)
-        pushTargetsToMoveList<false, ENPASSANT>(popLSB(possiblePawns), pos.enPassantSquare, ml, mv, pos);
+        pushTargetsToMoveList<false, ENPASSANT, false>(popLSB(possiblePawns), pos.enPassantSquare, ml, mv, pos);
 }
 
 inline void generateCastling(Position &pos, MovegenVariables &mv, MoveList &ml) {
@@ -264,9 +271,10 @@ inline void generateCastling(Position &pos, MovegenVariables &mv, MoveList &ml) 
             possibleTargets |= pos.bitBoards[mv.pawnIdx + KING] << 2;
     }
 
-    pushTargetsToMoveList<true, CASTLING>(mv.kingSquare, possibleTargets, ml, mv, pos);
+    pushTargetsToMoveList<true, CASTLING, false>(mv.kingSquare, possibleTargets, ml, mv, pos);
 }
 
+template<bool CAPTURESONLY>
 inline bool generateMoves(Position &pos, MoveList &ml) {
     MovegenVariables mv = {};
 
@@ -292,14 +300,14 @@ inline bool generateMoves(Position &pos, MoveList &ml) {
     doubleCheck = checkers && multipleBits(checkers);
 
     if (!doubleCheck) {
-        generatePawnMoves(pos, mv, ml);
-        generateMoves<KNIGHT>(pos, mv, ml);
-        generateMoves<BISHOP>(pos, mv, ml);
-        generateMoves<ROOK>(pos, mv, ml);
-        generateMoves<QUEEN>(pos, mv, ml);
+        generatePawnMoves<CAPTURESONLY>(pos, mv, ml);
+        generateMoves<KNIGHT, CAPTURESONLY>(pos, mv, ml);
+        generateMoves<BISHOP, CAPTURESONLY>(pos, mv, ml);
+        generateMoves<ROOK, CAPTURESONLY>(pos, mv, ml);
+        generateMoves<QUEEN, CAPTURESONLY>(pos, mv, ml);
     }
 
-    generateMoves<KING  >(pos, mv, ml);
+    generateMoves<KING, CAPTURESONLY>(pos, mv, ml);
     generateEnPassant(pos, mv, ml);
 
     if (!checkers)

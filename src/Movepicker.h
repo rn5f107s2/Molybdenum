@@ -56,9 +56,10 @@ inline Move scoreMoves(Movepicker &mp, Move ttMove, Position &pos) {
     return mp.ml.moves[mp.moveIndex++].move;
 }
 
-inline Move pickNextMove(Movepicker &mp, Move ttMove, Position &pos) {
+template<bool qsearch> inline
+Move pickNextMove(Movepicker &mp, Move ttMove, Position &pos, bool &check) {
     if (!mp.moveListInitialized)
-        generateMoves(pos, mp.ml);
+        check = generateMoves<qsearch>(pos, mp.ml);
 
     mp.moveListInitialized = true;
 

@@ -8,6 +8,7 @@
 
 template<bool ROOT>
 int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int plysInSearch = 0);
+int qsearch(int alpha, int beta, Position &pos, SearchInfo &si);
 
 int startSearch(Position &pos, searchTime &st) {
     return iterativeDeepening(pos, st);
@@ -34,14 +35,13 @@ int iterativeDeepening(Position  &pos, searchTime &st) {
 template<bool ROOT>
 int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int plysInSearch) {
     if (depth <= 0)
-        return evaluate(pos);
+        return qsearch(alpha, beta, pos, si);
 
     MoveList ml;
     Move bestMove;
     Move currentMove = 0;
     int bestScore = -INFINITE;
     //bool exact = false;
-    bool check = generateMoves(pos, ml);
 
     if (!(si.nodeCount & 1023) && (std::chrono::steady_clock::now() > (si.st.searchStart + si.st.thinkingTime)))
         si.stop = true;
@@ -68,7 +68,8 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
     //}
 
     Movepicker mp;
-    while ((currentMove = pickNextMove(mp, 0, pos)) != 0) {
+    bool check = false;
+    while ((currentMove = pickNextMove< false>(mp, 0, pos, check)) != 0) {
         pos.makeMove(currentMove);
         si.nodeCount++;
 
@@ -103,5 +104,39 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
         si.bestRootMove = bestMove;
 
     //TT.save(tte, key, bestScore, exact ? EXACT : UPPER, bestMove, depth);
+    return bestScore;
+}
+
+int qsearch(int alpha, int beta, Position &pos, SearchInfo &si) {
+    Move bestMove = 0;
+    Move currentMove;
+    bool check;
+    int bestScore = evaluate(pos);
+
+    if (bestScore > beta)
+        return bestScore;
+
+    Movepicker mp;
+    while ((currentMove = pickNextMove<true>(mp, 0, pos, check)) != 0) {
+        pos.makeMove(currentMove);
+        si.nodeCount++;
+
+        int score = -qsearch(-beta, -alpha, pos, si);
+
+        pos.unmakeMove(currentMove);
+
+        if (score > bestScore) {
+            bestScore = score;
+
+            if (score > alpha) {
+                alpha = score;
+                bestMove = currentMove;
+
+                if (score > beta)
+                    return score;
+            }
+        }
+    }
+
     return bestScore;
 }
