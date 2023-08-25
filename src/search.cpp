@@ -6,6 +6,8 @@
 #include "Movepicker.h"
 #include <chrono>
 
+std::array<std::array<Move, 2>, 100> killers;
+
 template<bool ROOT>
 int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int plysInSearch = 0);
 int qsearch(int alpha, int beta, Position &pos, SearchInfo &si);
@@ -21,11 +23,12 @@ int iterativeDeepening(Position  &pos, searchTime &st) {
 
     for (int depth = 1; depth != 100; depth++) {
         score = search<true>(-INFINITE, INFINITE, pos, depth, si);
-        std::cout << "info depth " << depth << " currmove " << moveToString(si.bestRootMove) << " score cp " << score <<
-        " nodes: " << si.nodeCount << "\n";
 
         if (std::chrono::steady_clock::now() > (si.st.searchStart + si.st.thinkingTime))
             break;
+
+        std::cout << "info depth " << depth << " currmove " << moveToString(si.bestRootMove) << " score cp " << score <<
+        " nodes: " << si.nodeCount << "\n";
     }
 
     std::cout << "bestmove " << moveToString(si.bestRootMove) << "\n";
@@ -71,7 +74,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
 
     Movepicker mp;
     bool check = false;
-    while ((currentMove = pickNextMove< false>(mp, 0, pos, check)) != 0) {
+    while ((currentMove = pickNextMove< false>(mp, 0, pos, check, killers[plysInSearch])) != 0) {
         pos.makeMove(currentMove);
         si.nodeCount++;
         moveCount++;
@@ -96,6 +99,10 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
                 exact = true;
 
                 if (score >= beta) {
+                    if (!pos.isCapture(bestMove) && bestMove != killers[plysInSearch][0]) {
+                        killers[plysInSearch][1] = killers[plysInSearch][0];
+                        killers[plysInSearch][0] = bestMove;
+                    }
                     //TT.save(tte, key, bestScore, LOWER, bestMove, depth);
                     return bestScore;
                 }

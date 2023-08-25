@@ -10,6 +10,8 @@ struct Movepicker {
     bool moveListInitialized = false;
 };
 
+std::array<Move, 2> empty = {0, 0};
+
 const std::array<std::array<int, 13>, 13> MVVLVA =
          {{       //Pawn  Knight  Bishop  Rook    Queen   King    Pawn    Knight  Bishop  Rook    Queen   King    NONE
                  {105000, 205000, 305000, 405000, 505000, 605000, 105000, 205000, 305000, 405000, 505000, 605000, 0},
@@ -28,13 +30,17 @@ const std::array<std::array<int, 13>, 13> MVVLVA =
          }};
 
 //This also returns the best move
-inline Move scoreMoves(Movepicker &mp, Move ttMove, Position &pos) {
+inline Move scoreMoves(Movepicker &mp, Move ttMove, Position &pos, const std::array<Move, 2> &killers) {
     int bestScore = -1000000;
     int bestIndex = 0;
 
     for (int i = mp.moveIndex; i < mp.ml.length; i++) {
         if (mp.ml.moves[i].move == ttMove)
             mp.ml.moves[i].score = 1000000;
+        else if (mp.ml.moves[i].move == killers[0])
+            mp.ml.moves[i].score = 90000;
+        else if (mp.ml.moves[i].move == killers[1])
+            mp.ml.moves[i].score = 80000;
 
         int from = extract<FROM>(mp.ml.moves[i].move);
         int to   = extract<TO  >(mp.ml.moves[i].move);
@@ -57,7 +63,7 @@ inline Move scoreMoves(Movepicker &mp, Move ttMove, Position &pos) {
 }
 
 template<bool qsearch> inline
-Move pickNextMove(Movepicker &mp, Move ttMove, Position &pos, bool &check) {
+Move pickNextMove(Movepicker &mp, Move ttMove, Position &pos, bool &check, const std::array<Move, 2> &killers = empty) {
     if (!mp.moveListInitialized)
         check = generateMoves<qsearch>(pos, mp.ml);
 
@@ -65,7 +71,7 @@ Move pickNextMove(Movepicker &mp, Move ttMove, Position &pos, bool &check) {
 
     if (!mp.scored) {
         mp.scored = true;
-        return scoreMoves(mp, ttMove, pos);
+        return scoreMoves(mp, ttMove, pos, killers);
     }
 
 
