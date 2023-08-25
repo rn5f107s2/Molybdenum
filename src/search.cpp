@@ -3,6 +3,7 @@
 #include "search.h"
 #include "eval.h"
 #include "Constants.h"
+#include "Movepicker.h"
 #include <chrono>
 
 template<bool ROOT>
@@ -19,7 +20,8 @@ int iterativeDeepening(Position  &pos, searchTime &st) {
 
     for (int depth = 1; depth != 100; depth++) {
         score = search<true>(-INFINITE, INFINITE, pos, depth, si);
-        std::cout << "info depth " << depth << " currmove " << moveToString(si.bestRootMove) << " score cp " << score << "\n";
+        std::cout << "info depth " << depth << " currmove " << moveToString(si.bestRootMove) << " score cp " << score <<
+        " nodes: " << si.nodeCount << "\n";
 
         if (std::chrono::steady_clock::now() > (si.st.searchStart + si.st.thinkingTime))
             break;
@@ -36,7 +38,9 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
 
     MoveList ml;
     Move bestMove;
+    Move currentMove = 0;
     int bestScore = -INFINITE;
+    //bool exact = false;
     bool check = generateMoves(pos, ml);
 
     if (!(si.nodeCount & 1023) && (std::chrono::steady_clock::now() > (si.st.searchStart + si.st.thinkingTime)))
@@ -47,8 +51,24 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
             return 0;
     }
 
-    while (ml.currentIdx > 0) {
-        Move currentMove = ml.moves[--ml.currentIdx].move;
+    //int ttScore;
+    //int ttBound;
+    //int ttDepth;
+    //Move ttMove = 0;
+    //bool ttHit = false;
+    //u64 key = pos.key();
+    //TTEntry* tte = TT.probe(key);
+
+    //if (tte->key == key) {
+    //    ttScore = tte->score;
+    //    ttBound = tte->bound;
+    //    ttMove  = tte->move;
+    //    ttDepth = tte->depth;
+    //    ttHit   = true;
+    //}
+
+    Movepicker mp;
+    while ((currentMove = pickNextMove(mp, 0, pos)) != 0) {
         pos.makeMove(currentMove);
         si.nodeCount++;
 
@@ -65,9 +85,12 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
 
             if(score > alpha) {
                 alpha = score;
+                //exact = true;
 
-                if (score > beta)
-                    return beta;
+                if (score > beta) {
+                    //TT.save(tte, key, bestScore, LOWER, bestMove, depth);
+                    return bestScore;
+                }
             }
         }
     }
@@ -78,5 +101,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
 
     if constexpr (ROOT)
         si.bestRootMove = bestMove;
+
+    //TT.save(tte, key, bestScore, exact ? EXACT : UPPER, bestMove, depth);
     return bestScore;
 }

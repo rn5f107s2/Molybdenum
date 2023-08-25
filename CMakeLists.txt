@@ -18,5 +18,5 @@ add_executable(Molybdenum
         src/eval.cpp
         src/timemanagment.cpp
         src/Transpositiontable.cpp
-        src/Transpositiontable.h
+        src/Movepicker.h
 )

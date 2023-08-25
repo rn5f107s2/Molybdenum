@@ -4,6 +4,31 @@
 #include "Constants.h"
 #include "BitStuff.h"
 #include "MagicBitboards.h"
+#include "Move.h"
+
+enum TTBound {
+    LOWER, UPPER, EXACT
+};
+
+struct TTEntry {
+    int score;
+    int depth;
+    TTBound bound;
+    Move move;
+    u64 key;
+};
+
+class TranspositionTable{
+public:
+    TTEntry *probe(u64 key);
+    static void save(TTEntry *tte, u64 key, int score, TTBound flag, Move move, int depth);
+    void setSize(int sizeInMb);
+private:
+    TTEntry *tt;
+    u64 amountOfEntries;
+};
+
+extern TranspositionTable TT;
 
 constexpr std::array<u64, 781> genPRNs() {
     u64 initialSeed = 0x5F10752;
