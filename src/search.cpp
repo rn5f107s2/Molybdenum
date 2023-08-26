@@ -39,8 +39,8 @@ template<bool ROOT>
 int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int plysInSearch, bool doNull) {
     u64 checkers = attackersTo<false, false>(lsb(pos.bitBoards[pos.sideToMove ? WHITE_KING : BLACK_KING]),getOccupied<WHITE>(pos) | getOccupied<BLACK>(pos), pos.sideToMove ? BLACK_PAWN : WHITE_PAWN, pos);
     Move bestMove, currentMove;
-    int bestScore = -INFINITE, score = -INFINITE, moveCount;
-    bool exact = false, check = checkers;
+    int bestScore = -INFINITE, score = -INFINITE, moveCount, staticEval = evaluate(pos);
+    bool exact = false, check = checkers, pvNode = (beta - alpha) > 1;
 
     depth += check;
 
@@ -71,14 +71,15 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
         ttHit   = true;
     }
 
-    //if (!ROOT && !check && depth >= 4 && doNull) {
-    //    pos.makeNullMove();
-    //    int nullScore = -search<false>(-beta, -alpha, pos, depth - 3, si, plysInSearch + 1);
-    //    pos.unmakeNullMove();
-    //
-    //    if (nullScore >= beta)
-    //        return nullScore;
-    //}
+    if (!pvNode && !check && depth >= 2 && doNull && staticEval >= beta) {
+        pos.makeNullMove();
+        int reduction = std::min(depth, (3 + (staticEval >= beta + 250) + (depth > 6)));
+        int nullScore = -search<false>(-beta, -alpha, pos, depth - reduction, si, plysInSearch + 1, false);
+        pos.unmakeNullMove();
+
+        if (nullScore >= beta)
+            return nullScore;
+    }
 
     Movepicker mp;
     while ((currentMove = pickNextMove< false>(mp, ttMove, pos, checkers, killers[plysInSearch])) != 0) {
