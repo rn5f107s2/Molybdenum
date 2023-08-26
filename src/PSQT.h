@@ -156,10 +156,10 @@ constexpr std::array<std::array<std::array<int, 64>, 13>, 2> initPSQT() {
             bool white = piece < BLACK_PAWN;
             int sq = square ^ (piece < BLACK_PAWN ? 63 : 7);
             int pt = typeOf(piece);
-            int pvm = white ? -PieceValuesMG[pt] : PieceValuesMG[pt];
-            int pve = white ? -PieceValuesEG[pt] : PieceValuesEG[pt];
-            int pbm = white ? -PieceSquareBonusesMG[pt][sq] : PieceSquareBonusesMG[pt][sq];
-            int pbe = white ? -PieceSquareBonusesEG[pt][sq] : PieceSquareBonusesEG[pt][sq];
+            int pvm = white ? PieceValuesMG[pt] : -PieceValuesMG[pt];
+            int pve = white ? PieceValuesEG[pt] : -PieceValuesEG[pt];
+            int pbm = white ? PieceSquareBonusesMG[pt][sq] : -PieceSquareBonusesMG[pt][sq];
+            int pbe = white ? PieceSquareBonusesEG[pt][sq] : -PieceSquareBonusesEG[pt][sq];
 
             if (piece != 12) {
                 PSQT[0][piece][square] = pvm + pbm;

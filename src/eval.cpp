@@ -4,7 +4,7 @@
 
 int evaluate(Position &pos) {
     int gamePhase = getGamePhase(pos);
-    return evalPSQT(pos, gamePhase) * (pos.sideToMove ? -1 : 1);
+    return evalPSQT(pos, gamePhase) * (pos.sideToMove ? 1 : -1);
 }
 
 int evalPSQT(Position &pos, int gamePhase) {
