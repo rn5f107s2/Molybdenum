@@ -13,7 +13,6 @@ add_executable(Molybdenum
         src/main.cpp
         src/Position.cpp
         src/UCI.cpp
-        src/Movegen.cpp
         src/search.cpp
         src/eval.cpp
         src/timemanagment.cpp
