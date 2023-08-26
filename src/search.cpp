@@ -37,6 +37,12 @@ int iterativeDeepening(Position  &pos, searchTime &st) {
 
 template<bool ROOT>
 int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int plysInSearch) {
+    u64 checkers = attackersTo<false, false>(lsb(pos.bitBoards[pos.sideToMove ? WHITE_KING : BLACK_KING]),
+                   getOccupied<WHITE>(pos) | getOccupied<BLACK>(pos), pos.sideToMove ? BLACK_PAWN : WHITE_PAWN, pos);
+    bool check = checkers;
+
+    depth += check;
+
     if (depth <= 0)
         return qsearch(alpha, beta, pos, si);
 
@@ -73,8 +79,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
     }
 
     Movepicker mp;
-    bool check = false;
-    while ((currentMove = pickNextMove< false>(mp, ttMove, pos, check, killers[plysInSearch])) != 0) {
+    while ((currentMove = pickNextMove< false>(mp, ttMove, pos, checkers, killers[plysInSearch])) != 0) {
         pos.makeMove(currentMove);
         si.nodeCount++;
         moveCount++;
@@ -111,7 +116,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
     }
 
     if (bestScore == -INFINITE) {
-        return check ? (-MATE + plysInSearch) : DRAW;
+        return checkers ? (-MATE + plysInSearch) : DRAW;
     }
 
     if constexpr (ROOT)

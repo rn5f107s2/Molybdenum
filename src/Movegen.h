@@ -275,7 +275,7 @@ inline void generateCastling(Position &pos, MovegenVariables &mv, MoveList &ml) 
 }
 
 template<bool CAPTURESONLY>
-inline bool generateMoves(Position &pos, MoveList &ml) {
+inline bool generateMoves(Position &pos, MoveList &ml, u64 checkingPieces = 0ULL) {
     MovegenVariables mv = {};
 
     mv.white = getOccupied<WHITE>(pos);
@@ -294,8 +294,13 @@ inline bool generateMoves(Position &pos, MoveList &ml) {
     mv.kingSquare = lsb(pos.bitBoards[mv.pawnIdx + KING]);
     mv.pinnedPieces = generatePinnedPieces(pos, mv);
     bool doubleCheck;
+    u64 checkers;
 
-    u64 checkers = attackersTo<false, false>(mv.kingSquare, mv.occupied, mv.oppPawnIdx, pos);
+    if (CAPTURESONLY)
+        checkers = attackersTo<false, false>(mv.kingSquare, mv.occupied, mv.oppPawnIdx, pos);
+    else
+        checkers = checkingPieces;
+
     mv.checkMask = checkers ? masksBBs[mv.kingSquare][lsb(checkers)] : -1ULL;
     doubleCheck = checkers && multipleBits(checkers);
 
