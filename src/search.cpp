@@ -37,9 +37,10 @@ int iterativeDeepening(Position  &pos, searchTime &st) {
 
 template<bool ROOT>
 int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int plysInSearch) {
-    u64 checkers = attackersTo<false, false>(lsb(pos.bitBoards[pos.sideToMove ? WHITE_KING : BLACK_KING]),
-                   getOccupied<WHITE>(pos) | getOccupied<BLACK>(pos), pos.sideToMove ? BLACK_PAWN : WHITE_PAWN, pos);
-    bool check = checkers;
+    u64 checkers = attackersTo<false, false>(lsb(pos.bitBoards[pos.sideToMove ? WHITE_KING : BLACK_KING]),getOccupied<WHITE>(pos) | getOccupied<BLACK>(pos), pos.sideToMove ? BLACK_PAWN : WHITE_PAWN, pos);
+    Move bestMove, currentMove;
+    int bestScore = -INFINITE, score = -INFINITE, moveCount;
+    bool exact = false, check = checkers;
 
     depth += check;
 
@@ -47,12 +48,6 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
         return qsearch(alpha, beta, pos, si);
 
     MoveList ml;
-    Move bestMove;
-    Move currentMove = 0;
-    int bestScore = -INFINITE;
-    int score = - INFINITE;
-    int moveCount = 0;
-    bool exact = false;
 
     if (!(si.nodeCount & 1023) && (std::chrono::steady_clock::now() > (si.st.searchStart + si.st.thinkingTime)))
         si.stop = true;
@@ -62,9 +57,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
             return 0;
     }
 
-    int ttScore;
-    int ttBound;
-    int ttDepth;
+    int ttScore, ttBound, ttDepth;
     Move ttMove = 0;
     bool ttHit = false;
     u64 key = pos.key();

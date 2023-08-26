@@ -21,7 +21,9 @@ u64 perft(int depth, Position &pos) {
             return 1;
     }
 
-    generateMoves<false>(pos, ml);
+    u64 checkers = attackersTo<false, false>(lsb(pos.bitBoards[pos.sideToMove ? WHITE_KING : BLACK_KING]),getOccupied<WHITE>(pos) | getOccupied<BLACK>(pos), pos.sideToMove ? BLACK_PAWN : WHITE_PAWN, pos);
+
+    generateMoves<false>(pos, ml, checkers);
 
     if constexpr (BULK && !ROOT) {
         if (depth == 1)
