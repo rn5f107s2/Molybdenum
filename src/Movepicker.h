@@ -63,9 +63,9 @@ inline Move scoreMoves(Movepicker &mp, Move ttMove, Position &pos, const std::ar
 }
 
 template<bool qsearch> inline
-Move pickNextMove(Movepicker &mp, Move ttMove, Position &pos, bool &check, const std::array<Move, 2> &killers = empty) {
+Move pickNextMove(Movepicker &mp, Move ttMove, Position &pos, u64 check = 0ULL, const std::array<Move, 2> &killers = empty) {
     if (!mp.moveListInitialized)
-        check = generateMoves<qsearch>(pos, mp.ml);
+        generateMoves<qsearch>(pos, mp.ml, check);
 
     mp.moveListInitialized = true;
 
