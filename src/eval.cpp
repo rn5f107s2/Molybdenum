@@ -18,7 +18,7 @@ int evalPSQT(Position &pos, int gamePhase) {
             int square = popLSB(pieceBB);
 
             mgEval += PSQT[0][pt][square];
-            egEval += PSQT[0][pt][square];
+            egEval += PSQT[1][pt][square];
         }
     }
 

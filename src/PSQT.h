@@ -6,13 +6,21 @@
 #include "BitStuff.h"
 
 
-constexpr int PawnValue   = 100;
-constexpr int KnightValue = 300;
-constexpr int BishopValue = 300;
-constexpr int RookValue   = 500;
-constexpr int QueenValue  = 900;
+constexpr int PawnValueMG   =   80;
+constexpr int KnightValueMG =  280;
+constexpr int BishopValueMG =  320;
+constexpr int RookValueMG   =  480;
+constexpr int QueenValueMG  = 1050;
 
-constexpr std::array<int, 6> PieceValues = {PawnValue, KnightValue, BishopValue, RookValue, QueenValue, 0};
+constexpr int PawnValueEG   =  120;
+constexpr int KnightValueEG =  280;
+constexpr int BishopValueEG =  320;
+constexpr int RookValueEG   =  520;
+constexpr int QueenValueEG  = 1050;
+
+constexpr std::array<int, 6> PieceValuesMG = {PawnValueMG, KnightValueMG, BishopValueMG, RookValueMG, QueenValueMG, 0};
+constexpr std::array<int, 6> PieceValuesEG = {PawnValueMG, KnightValueMG, BishopValueMG, RookValueMG, QueenValueMG, 0};
+
 
 constexpr std::array<std::array<int, 64>, 6> PieceSquareBonusesMG {{
     //Pawn
@@ -82,11 +90,11 @@ constexpr std::array<std::array<int, 64>, 6> PieceSquareBonusesEG {{
         //A8
         {  0,   0,   0,   0,   0,   0,   0,   0,
          100, 100, 100, 100, 100, 100, 100, 100,
-          60,  60,  60,  60,  60,  60,  60,  60,
-          30,  30,  30,  30,  30,  30,  30,  30,
-          20,  20,  20,  20,  20,  10,  10,  10,
-          10,  10,  10,  10,  10,   5,   5,   5,
-           0,   0,   0,   0,   0,   0,   0,   0,
+          40,  40,  40,  40,  40,  40,  40,  40,
+          20,  20,  20,  20,  20,  20,  20,  20,
+          10,  10,  10,  10,   0,   0,   0,   0,
+           5,   5,   5,   5,   0,   0,   0,   0,
+           2,   2,   2,   2,   0,   0,   0,   0,
            0,   0,   0,   0,   0,   0,   0,   0},
 
          //Knight
@@ -148,13 +156,14 @@ constexpr std::array<std::array<std::array<int, 64>, 13>, 2> initPSQT() {
             bool white = piece < BLACK_PAWN;
             int sq = square ^ (piece < BLACK_PAWN ? 63 : 7);
             int pt = typeOf(piece);
-            int pv = white ? -PieceValues[pt] : PieceValues[pt];
+            int pvm = white ? -PieceValuesMG[pt] : PieceValuesMG[pt];
+            int pve = white ? -PieceValuesEG[pt] : PieceValuesEG[pt];
             int pbm = white ? -PieceSquareBonusesMG[pt][sq] : PieceSquareBonusesMG[pt][sq];
             int pbe = white ? -PieceSquareBonusesEG[pt][sq] : PieceSquareBonusesEG[pt][sq];
 
             if (piece != 12) {
-                PSQT[0][piece][square] = pv + pbm;
-                PSQT[1][piece][square] = pv + pbe;
+                PSQT[0][piece][square] = pvm + pbm;
+                PSQT[1][piece][square] = pve + pbe;
             } else {
                 PSQT[0][piece][square] = 0;
                 PSQT[1][piece][square] = 0;
