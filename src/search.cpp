@@ -47,6 +47,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
     int score = - INFINITE;
     int moveCount = 0;
     bool exact = false;
+    bool pvNode = (beta - alpha) > 1;
 
     if (!(si.nodeCount & 1023) && (std::chrono::steady_clock::now() > (si.st.searchStart + si.st.thinkingTime)))
         si.stop = true;
