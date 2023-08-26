@@ -9,7 +9,7 @@
 std::array<std::array<Move, 2>, 100> killers;
 
 template<bool ROOT>
-int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int plysInSearch = 0);
+int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int plysInSearch = 0, bool doNull = true);
 int qsearch(int alpha, int beta, Position &pos, SearchInfo &si);
 
 int startSearch(Position &pos, searchTime &st) {
@@ -36,7 +36,7 @@ int iterativeDeepening(Position  &pos, searchTime &st) {
 }
 
 template<bool ROOT>
-int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int plysInSearch) {
+int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int plysInSearch, bool doNull) {
     u64 checkers = attackersTo<false, false>(lsb(pos.bitBoards[pos.sideToMove ? WHITE_KING : BLACK_KING]),getOccupied<WHITE>(pos) | getOccupied<BLACK>(pos), pos.sideToMove ? BLACK_PAWN : WHITE_PAWN, pos);
     Move bestMove, currentMove;
     int bestScore = -INFINITE, score = -INFINITE, moveCount;
@@ -71,6 +71,15 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
         ttHit   = true;
     }
 
+    //if (!ROOT && !check && depth >= 4 && doNull) {
+    //    pos.makeNullMove();
+    //    int nullScore = -search<false>(-beta, -alpha, pos, depth - 3, si, plysInSearch + 1);
+    //    pos.unmakeNullMove();
+    //
+    //    if (nullScore >= beta)
+    //        return nullScore;
+    //}
+
     Movepicker mp;
     while ((currentMove = pickNextMove< false>(mp, ttMove, pos, checkers, killers[plysInSearch])) != 0) {
         pos.makeMove(currentMove);
@@ -78,7 +87,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
         moveCount++;
 
         if (exact)
-            score = -search<false>(-alpha, -alpha - 1, pos, depth - 1, si, plysInSearch + 1);
+            score = -search<false>(-alpha - 1, -alpha, pos, depth - 1, si, plysInSearch + 1);
 
         if (!exact || (score > alpha && score < beta))
             score = -search<false>(-beta, -alpha, pos, depth - 1, si, plysInSearch + 1);

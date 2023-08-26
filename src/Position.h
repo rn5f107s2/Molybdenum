@@ -24,6 +24,8 @@ class Position {
         int plys50moveRule;
         bool sideToMove;
         u64 key();
+        void makeNullMove();
+        void unmakeNullMove();
         bool hasRepeated(int plysInSearch);
         bool isCapture(Move move);
     private:

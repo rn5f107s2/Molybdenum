@@ -268,3 +268,24 @@ bool Position::hasRepeated(int plysInSearch) {
 bool Position::isCapture(Move move) {
     return pieceLocations[extract<TO>(move)] != NO_PIECE;
 }
+
+void Position::makeNullMove() {
+    enPassantHistory.push(enPassantSquare);
+    u64 key = keyHistory.top();
+
+    if (enPassantSquare)
+        updateKey(fileOf(lsb(enPassantSquare)), key);
+
+    updateKey(key);
+    keyHistory.push(key);
+    enPassantSquare = 0ULL;
+    plys50moveRule++;
+    sideToMove = !sideToMove;
+}
+
+void Position::unmakeNullMove() {
+    enPassantSquare = enPassantHistory.pop();
+    keyHistory.pop();
+    plys50moveRule--;
+    sideToMove = !sideToMove;
+}
