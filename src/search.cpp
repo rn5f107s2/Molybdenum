@@ -40,7 +40,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
     u64 checkers = attackersTo<false, false>(lsb(pos.bitBoards[pos.sideToMove ? WHITE_KING : BLACK_KING]),getOccupied<WHITE>(pos) | getOccupied<BLACK>(pos), pos.sideToMove ? BLACK_PAWN : WHITE_PAWN, pos);
     Move bestMove, currentMove;
     int bestScore = -INFINITE, score = -INFINITE, moveCount, staticEval = evaluate(pos);
-    bool exact = false, check = checkers, pvNode = (beta - alpha) > 1;
+    bool exact = false, check = checkers, pvNode = (beta - alpha) > 1, ttHit = false;;
 
     depth += check;
 
@@ -59,7 +59,6 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
 
     int ttScore, ttBound, ttDepth;
     Move ttMove = 0;
-    bool ttHit = false;
     u64 key = pos.key();
     TTEntry* tte = TT.probe(key);
 
@@ -70,6 +69,9 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
         ttDepth = tte->depth;
         ttHit   = true;
     }
+
+    if (!pvNode && ttHit && ttDepth >= depth && (ttBound == EXACT || (ttBound == LOWER && ttScore >= beta)))
+        return ttScore;
 
     if (!pvNode && !check && depth >= 2 && doNull && staticEval >= beta) {
         pos.makeNullMove();
