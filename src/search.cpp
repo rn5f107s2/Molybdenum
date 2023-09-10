@@ -27,8 +27,28 @@ int iterativeDeepening(Position  &pos, searchTime &st) {
         if (std::chrono::steady_clock::now() > (si.st.searchStart + si.st.thinkingTime))
             break;
 
-        std::cout << "info depth " << depth << " currmove " << moveToString(si.bestRootMove) << " score cp " << score <<
-        " nodes: " << si.nodeCount << "\n";
+        std::string uciOutput;
+        auto searchTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - si.st.searchStart).count();
+        uciOutput += "info depth ";
+        uciOutput += std::to_string(depth);
+
+        uciOutput += " currmove ";
+        uciOutput += moveToString(si.bestRootMove);
+
+        uciOutput += " score ";
+        uciOutput += abs(score) > MAXMATE ? "mate " : "cp ";
+        uciOutput += std::to_string(abs(score) > MAXMATE ? mateInPlies(score) : score);
+
+        uciOutput += " nodes ";
+        uciOutput += std::to_string(si.nodeCount);
+
+        uciOutput += " time ";
+        uciOutput += std::to_string(searchTime);
+
+        uciOutput += " nps ";
+        uciOutput += std::to_string((si.nodeCount / std::max(int(searchTime), 1)) * 1000);
+
+        std::cout << uciOutput << "\n";
     }
 
     std::cout << "bestmove " << moveToString(si.bestRootMove) << "\n";
@@ -84,7 +104,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
     }
 
     Movepicker mp;
-    while ((currentMove = pickNextMove< false>(mp, ttMove, pos, checkers, killers[plysInSearch])) != 0) {
+    while ((currentMove = pickNextMove<false>(mp, ttMove, pos, checkers, killers[plysInSearch])) != 0) {
         pos.makeMove(currentMove);
         si.nodeCount++;
         moveCount++;

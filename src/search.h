@@ -15,4 +15,10 @@ struct SearchInfo {
     searchTime st;
 };
 
+inline int mateInPlies(int score) {
+    bool mating = score > MAXMATE;
+    int  plies  = (mating ? MATE - score : MATE + score) / 2 + (score < 0 ? 0 : 1);
+    return plies;
+}
+
 #endif //MOLYBDENUM_SEARCH_H
