@@ -3,10 +3,8 @@
 
 #include "Position.h"
 #include "timemanagement.h"
+#include "Movepicker.h"
 #include <chrono>
-
-int startSearch(Position &pos, searchTime &st);
-int iterativeDeepening(Position  &pos, searchTime &st);
 
 struct SearchInfo {
     int nodeCount = 0;
@@ -14,6 +12,10 @@ struct SearchInfo {
     bool stop = false;
     searchTime st;
 };
+
+int startSearch(Position &pos, searchTime &st);
+int iterativeDeepening(Position  &pos, searchTime &st);
+int searchRoot(Position &pos, SearchInfo &si, int depth, int alpha = -INFINITE, int beta = INFINITE);
 
 inline int mateInPlies(int score) {
     bool mating = score > MAXMATE;

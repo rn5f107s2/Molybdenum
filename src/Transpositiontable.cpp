@@ -45,5 +45,5 @@ void TranspositionTable::setSize(int sizeInMb) {
     tt = (TTEntry*) malloc(sizeInByte);
     u64 numberOfEntries = sizeInByte / sizeof(TTEntry);
     amountOfEntries = u64(numberOfEntries);
-    std::cout << "TranspositionTable initialized with " << amountOfEntries << " entries\n";
+    //std::cout << "TranspositionTable initialized with " << amountOfEntries << " entries\n";
 }
