@@ -20,4 +20,6 @@ add_executable(Molybdenum
         src/Movepicker.h
         src/Datagen/datagen.cpp
         src/Datagen/datagen.h
+        src/Tuner/tuner.cpp
+        src/Tuner/tuner.h
 )
