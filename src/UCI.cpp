@@ -8,6 +8,7 @@
 #include <chrono>
 #include "eval.h"
 #include "timemanagement.h"
+#include "Tuner/tuner.h"
 #include "Datagen/datagen.h"
 
 void uciCommunication() {
@@ -28,8 +29,12 @@ void uciCommunication() {
     std::cin >> filename;
     datagenLoop(internalBoard, gamesToPlay, timeControl, filename, exitDepth, 1);
 #endif
+#ifdef tuneDef
+    tune(internalBoard, "Moly1.txt");
+    //calcK(internalBoard, "Moly.txt");
+#endif
 #ifndef datagen
-
+#ifndef tuneDef
     while (true) {
         std::getline(std::cin, input);
 
@@ -149,5 +154,6 @@ void uciCommunication() {
             std::cout << evaluate(internalBoard) << "\n";
         }
     }
+#endif
 #endif
 }
