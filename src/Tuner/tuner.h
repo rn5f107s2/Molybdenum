@@ -16,10 +16,11 @@ double getWinProbability(double score);
 double getErrorAllFens(const std::string& filename, Position &pos);
 double getMeanSquaredError(int score, double correct);
 double getErrorFen(const std::string& fen, Position &pos);
-int tweakValues(int index, bool pos);
+int tweakValues(int index, int amount);
 void printPSQB();
 
 static double K = 0.777;
+static const std::array<int, 4> changeValues = {10, 5, 2, 1};
 const int numParams = 780;
 static std::array<int, 6> PieceValuesMGTune = PieceValuesMG;
 static std::array<int, 6> PieceValuesEGTune = PieceValuesEG;

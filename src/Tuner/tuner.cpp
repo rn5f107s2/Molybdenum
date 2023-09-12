@@ -16,43 +16,45 @@ void tune(Position &pos, const std::string& filename) {
     bool improving;
     bool decreasing;
     bool increasing;
-    int initialValue;
     for (int i = 0; i != numParams; i++) {
-        tweakValues(i, true);
-        tweakValues(i, false);
-        initialValue = tweakValues(i, true);
-        decreasing = false;
-        increasing = false;
-        do {
-            improving = false;
-            currentValue = tweakValues(i, true);
-            double newError = smallestError;
-            if (!decreasing) {
-                newError = getErrorAllFens(filename, pos);
-                std::cout << "Epoch " << ++epochs << "\n";
-                std::cout << "Current param value: " << currentValue << "\n";
-            }
-
-            if (newError < smallestError) {
-                smallestError = newError;
-                improving = true;
-                increasing = true;
-            }else if (!increasing){
-                currentValue = tweakValues(i, false);
-                newError = getErrorAllFens(filename, pos);
-                std::cout << "Epoch " << ++epochs << "\n";
-                std::cout << "Current param value: " << currentValue << "\n";
+        int bestValue = 0;
+        for (int j = 0; j != 4; j++) {
+            int amount = changeValues[j];
+            decreasing = false;
+            increasing = false;
+            do {
+                improving = false;
+                currentValue = tweakValues(i, amount);
+                double newError = smallestError;
+                if (!decreasing) {
+                    newError = getErrorAllFens(filename, pos);
+                    std::cout << "Epoch " << ++epochs << "\n";
+                }
 
                 if (newError < smallestError) {
-                    improving = true;
-                    decreasing = true;
                     smallestError = newError;
-                }
-            }
-        } while (improving);
+                    improving = true;
+                    increasing = true;
+                } else if (!increasing) {
+                    currentValue = tweakValues(i, -(amount * 2));
+                    newError = getErrorAllFens(filename, pos);
+                    std::cout << "Epoch " << ++epochs << "\n";
 
-        tweakValues(i, true);
+                    if (newError < smallestError) {
+                        improving = true;
+                        decreasing = true;
+                        smallestError = newError;
+                    }else {
+                        bestValue = tweakValues(i, amount);
+                    }
+                }else {
+                    bestValue = tweakValues(i, -amount);
+                }
+            } while (improving);
+        }
+
         std::cout << "Tuning " << i << " done\n";
+        std::cout << "Value: " << bestValue << "\n";
         std::cout << "Error: " << std::setprecision(15) << smallestError << "\n";
     }
 
@@ -142,13 +144,14 @@ void printPSQB() {
     }
 }
 
-int tweakValues(int index, bool pos) {
+int tweakValues(int index, int amount) {
     if (index < 768) {
-        return PieceSquareBonusesTune[index % 2][index % 6][index % 64] += pos ? 1 : -2;
+        int pcidx = (index % 384) / 64;
+        return PieceSquareBonusesTune[index < 384][pcidx][index % 64] += amount;
     } else if (index < 775) {
-        return PieceValuesMGTune[index % 6] += pos ? 1 : -2;
+        return PieceValuesMGTune[index % 6] += amount;
     } else
-        return PieceValuesEGTune[index % 6] += pos ? 1 : -2;
+        return PieceValuesEGTune[index % 6] += amount;
 }
 
 double getErrorAllFens(const std::string& filename, Position &pos) {

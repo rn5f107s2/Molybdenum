@@ -30,7 +30,7 @@ void uciCommunication() {
     datagenLoop(internalBoard, gamesToPlay, timeControl, filename, exitDepth, 1);
 #endif
 #ifdef tuneDef
-    tune(internalBoard, "Moly1.txt");
+    tune(internalBoard, "Moly.txt");
     //calcK(internalBoard, "Moly.txt");
 #endif
 #ifndef datagen
