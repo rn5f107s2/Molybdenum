@@ -10,7 +10,7 @@ struct Movepicker {
     bool moveListInitialized = false;
 };
 
-std::array<Move, 2> empty = {0, 0};
+static std::array<Move, 2> empty = {0, 0};
 
 const std::array<std::array<int, 13>, 13> MVVLVA =
          {{       //Pawn  Knight  Bishop  Rook    Queen   King    Pawn    Knight  Bishop  Rook    Queen   King    NONE

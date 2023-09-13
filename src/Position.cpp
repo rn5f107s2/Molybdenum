@@ -242,6 +242,7 @@ void Position::printBoard() {
     std::cout << "en passant square   : " << (enPassantSquare) << "\n";
     std::cout << "castling rights     : " << castling << "\n";
     std::cout << "key                 : " << key() << "\n";
+    std::cout << "FEN                 : " << fen() << "\n";
 }
 
 u64 Position::key() {
@@ -288,4 +289,59 @@ void Position::unmakeNullMove() {
     keyHistory.pop();
     plys50moveRule--;
     sideToMove = !sideToMove;
+}
+
+std::string Position::fen() {
+    std::string fen;
+    std::string castling;
+    int emptyCounter = 0;
+    int epSquare = enPassantSquare ? lsb(enPassantSquare) : 0;
+
+    for (int square = 63; square >= 0; square--) {
+        if (pieceLocations[square] == NO_PIECE)
+            emptyCounter++;
+        else {
+            if (emptyCounter)
+                fen += std::to_string(emptyCounter);
+
+            emptyCounter = 0;
+            fen += pieceToChar(pieceLocations[square]);
+        }
+
+        if (square % 8 == 0) {
+            if (emptyCounter)
+                fen += std::to_string(emptyCounter);
+
+            emptyCounter = 0;
+
+            if (square != 0)
+                fen += "/";
+        }
+    }
+
+    fen += " ";
+    fen += sideToMove ? "w " : "b ";
+
+    if (castlingRights & WHITE_CASTLE_KINGSIDE ) castling += "K";
+    if (castlingRights & WHITE_CASTLE_QUEENSIDE) castling += "Q";
+    if (castlingRights & BLACK_CASTLE_KINGSIDE ) castling += "k";
+    if (castlingRights & BLACK_CASTLE_QUEENSIDE) castling += "q";
+    if (castling.empty()) castling += "-";
+
+    fen += castling;
+    fen += " ";
+
+    if (enPassantSquare) {
+        fen += char('a' + (fileOf(epSquare)));
+        fen += char('1' + (rankOf(epSquare)));
+        fen += " ";
+    }else {
+        fen += "- ";
+    }
+
+    fen += std::to_string(plys50moveRule);
+    fen += " ";
+    fen += std::to_string(plys50moveRule);
+
+    return fen;
 }

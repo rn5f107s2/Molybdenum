@@ -28,6 +28,7 @@ class Position {
         void unmakeNullMove();
         bool hasRepeated(int plysInSearch);
         bool isCapture(Move move);
+        std::string fen();
     private:
         Stack<int>  capturedHistory;
         Stack<int>  plys50mrHistory;

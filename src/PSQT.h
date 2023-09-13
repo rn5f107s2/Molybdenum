@@ -18,6 +18,7 @@ constexpr int BishopValueEG =  317;
 constexpr int RookValueEG   =  604;
 constexpr int QueenValueEG  = 1169;
 
+
 constexpr std::array<int, 6> PieceValuesMG = {PawnValueMG, KnightValueMG, BishopValueMG, RookValueMG, QueenValueMG, 0};
 constexpr std::array<int, 6> PieceValuesEG = {PawnValueEG, KnightValueEG, BishopValueEG, RookValueEG, QueenValueEG, 0};
 
