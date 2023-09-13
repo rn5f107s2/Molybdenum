@@ -29,6 +29,16 @@ inline std::array<double, 256> initReductions() {
 
 static std::array<double, 256> Log = initReductions();
 
+inline std::array<double, 256> initReductions() {
+    std::array<double, 256> R{};
+
+    for (int i = 0; i < 256; i++) R[i] = std::log(i);
+
+    return R;
+}
+
+static std::array<double, 256> Log = initReductions();
+
 inline int mateInPlies(int score) {
     bool mating = score > MAXMATE;
     int  plies  = (mating ? MATE - score : MATE + score) / 2 + (score < 0 ? 0 : 1);
