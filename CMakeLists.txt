@@ -18,4 +18,8 @@ add_executable(Molybdenum
         src/timemanagment.cpp
         src/Transpositiontable.cpp
         src/Movepicker.h
+        src/Datagen/datagen.cpp
+        src/Datagen/datagen.h
+        src/Tuner/tuner.cpp
+        src/Tuner/tuner.h
 )

@@ -16,6 +16,11 @@ int startSearch(Position &pos, searchTime &st) {
     return iterativeDeepening(pos, st);
 }
 
+int searchRoot(Position &pos, SearchInfo &si, int depth, int alpha, int beta) {
+    int score = search<true>(alpha, beta, pos, depth, si);
+    return score;
+}
+
 int iterativeDeepening(Position  &pos, searchTime &st) {
     int score;
     SearchInfo si;
@@ -27,8 +32,28 @@ int iterativeDeepening(Position  &pos, searchTime &st) {
         if (std::chrono::steady_clock::now() > (si.st.searchStart + si.st.thinkingTime))
             break;
 
-        std::cout << "info depth " << depth << " currmove " << moveToString(si.bestRootMove) << " score cp " << score <<
-        " nodes: " << si.nodeCount << "\n";
+        std::string uciOutput;
+        auto searchTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - si.st.searchStart).count();
+        uciOutput += "info depth ";
+        uciOutput += std::to_string(depth);
+
+        uciOutput += " currmove ";
+        uciOutput += moveToString(si.bestRootMove);
+
+        uciOutput += " score ";
+        uciOutput += abs(score) > MAXMATE ? "mate " : "cp ";
+        uciOutput += std::to_string(abs(score) > MAXMATE ? mateInPlies(score) : score);
+
+        uciOutput += " nodes ";
+        uciOutput += std::to_string(si.nodeCount);
+
+        uciOutput += " time ";
+        uciOutput += std::to_string(searchTime);
+
+        uciOutput += " nps ";
+        uciOutput += std::to_string((si.nodeCount / std::max(int(searchTime), 1)) * 1000);
+
+        std::cout << uciOutput << "\n";
     }
 
     std::cout << "bestmove " << moveToString(si.bestRootMove) << "\n";
@@ -38,9 +63,9 @@ int iterativeDeepening(Position  &pos, searchTime &st) {
 template<bool ROOT>
 int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int plysInSearch, bool doNull) {
     u64 checkers = attackersTo<false, false>(lsb(pos.bitBoards[pos.sideToMove ? WHITE_KING : BLACK_KING]),getOccupied<WHITE>(pos) | getOccupied<BLACK>(pos), pos.sideToMove ? BLACK_PAWN : WHITE_PAWN, pos);
-    Move bestMove, currentMove;
+    Move bestMove = 0, currentMove = 0;
     int bestScore = -INFINITE, score = -INFINITE, moveCount, staticEval = evaluate(pos);
-    bool exact = false, check = checkers, pvNode = (beta - alpha) > 1, ttHit = false;;
+    bool exact = false, check = checkers, pvNode = (beta - alpha) > 1, ttHit = false;
 
     depth += check;
 
@@ -84,7 +109,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
     }
 
     Movepicker mp;
-    while ((currentMove = pickNextMove< false>(mp, ttMove, pos, checkers, killers[plysInSearch])) != 0) {
+    while ((currentMove = pickNextMove<false>(mp, ttMove, pos, checkers, killers[plysInSearch])) != 0) {
         pos.makeMove(currentMove);
         si.nodeCount++;
         moveCount++;
@@ -97,7 +122,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
 
         pos.unmakeMove(currentMove);
 
-        if (si.stop)
+        if (si.stop && !(ROOT && depth == (1 + check)))
             return DRAW;
 
         if (score > bestScore) {
@@ -120,12 +145,12 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
         }
     }
 
+    if constexpr (ROOT)
+        si.bestRootMove = bestMove;
+
     if (bestScore == -INFINITE) {
         return checkers ? (-MATE + plysInSearch) : DRAW;
     }
-
-    if constexpr (ROOT)
-        si.bestRootMove = bestMove;
 
     TT.save(tte, key, bestScore, exact ? EXACT : UPPER, bestMove, depth);
     return bestScore;

@@ -3,10 +3,8 @@
 
 #include "Position.h"
 #include "timemanagement.h"
+#include "Movepicker.h"
 #include <chrono>
-
-int startSearch(Position &pos, searchTime &st);
-int iterativeDeepening(Position  &pos, searchTime &st);
 
 struct SearchInfo {
     int nodeCount = 0;
@@ -14,5 +12,15 @@ struct SearchInfo {
     bool stop = false;
     searchTime st;
 };
+
+int startSearch(Position &pos, searchTime &st);
+int iterativeDeepening(Position  &pos, searchTime &st);
+int searchRoot(Position &pos, SearchInfo &si, int depth, int alpha = -INFINITE, int beta = INFINITE);
+
+inline int mateInPlies(int score) {
+    bool mating = score > MAXMATE;
+    int  plies  = (mating ? MATE - score : MATE + score) / 2 + (score < 0 ? 0 : 1);
+    return plies;
+}
 
 #endif //MOLYBDENUM_SEARCH_H
