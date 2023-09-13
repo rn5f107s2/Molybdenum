@@ -27,7 +27,7 @@ int iterativeDeepening(Position  &pos, searchTime &st) {
     si.st = st;
 
     for (int depth = 1; depth != 100; depth++) {
-        score = search<true>(-INFINITE, INFINITE, pos, depth, si);
+        score = aspirationWindow(pos, depth, si, score);
 
         if (std::chrono::steady_clock::now() > (si.st.searchStart + si.st.thinkingTime))
             break;
@@ -57,6 +57,36 @@ int iterativeDeepening(Position  &pos, searchTime &st) {
     }
 
     std::cout << "bestmove " << moveToString(si.bestRootMove) << "\n";
+    return score;
+}
+
+int aspirationWindow(Position &pos, int depth, SearchInfo &si, int prevScore) {
+    int alpha = -INFINITE;
+    int beta  =  INFINITE;
+    int score =  INFINITE;
+    int failCount = 0;
+
+    if (depth >= 6) {
+        alpha = prevScore - 75;
+        beta  = prevScore + 75;
+    }
+
+    search:
+    score = search<true>(alpha, beta, pos, depth, si);
+
+    if (std::chrono::steady_clock::now() > (si.st.searchStart + si.st.thinkingTime))
+        return score;
+
+    if (score < alpha) {
+        alpha -= 50 * ++failCount;
+        //beta = score + 1;
+        goto search;
+    } else if (score >= beta) {
+        beta += 50 * ++failCount;
+        //alpha = score - 1;
+        goto search;
+    }
+
     return score;
 }
 
@@ -145,7 +175,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
         }
     }
 
-    if constexpr (ROOT)
+    if (ROOT && exact)
         si.bestRootMove = bestMove;
 
     if (bestScore == -INFINITE) {

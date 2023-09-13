@@ -16,6 +16,7 @@ struct SearchInfo {
 int startSearch(Position &pos, searchTime &st);
 int iterativeDeepening(Position  &pos, searchTime &st);
 int searchRoot(Position &pos, SearchInfo &si, int depth, int alpha = -INFINITE, int beta = INFINITE);
+int aspirationWindow(Position &pos, int depth, SearchInfo &si, int prevScore);
 
 inline int mateInPlies(int score) {
     bool mating = score > MAXMATE;

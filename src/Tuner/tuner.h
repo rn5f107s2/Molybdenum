@@ -5,7 +5,7 @@
 #include "../PSQT.h"
 #include "../eval.h"
 
-#define tuneDef
+//#define tuneDef
 #ifdef tuneDef
 
 void tune(Position &pos, const std::string& filename);
