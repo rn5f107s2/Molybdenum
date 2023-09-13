@@ -114,11 +114,21 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
         si.nodeCount++;
         moveCount++;
 
-        if (exact)
-            score = -search<false>(-alpha - 1, -alpha, pos, depth - 1, si, plysInSearch + 1);
+        int reductions = lmrReduction(depth, moveCount);
 
-        if (!exact || (score > alpha && score < beta))
-            score = -search<false>(-beta, -alpha, pos, depth - 1, si, plysInSearch + 1);
+        if (moveCount > 3 && !pvNode && depth > 2 && !check && reductions > 0) {
+            score = -search<false>(-beta, -alpha, pos, depth - 1 - reductions, si, plysInSearch + 1);
+
+            if (score > alpha && (depth - 1 - reductions) < depth -1) {
+                score = -search<false>(-beta, -alpha, pos, depth - 1, si, plysInSearch + 1);
+            }
+        }else {
+            if (exact)
+                score = -search<false>(-alpha - 1, -alpha, pos, depth - 1, si, plysInSearch + 1);
+
+            if (!exact || (score > alpha && score < beta))
+                score = -search<false>(-beta, -alpha, pos, depth - 1, si, plysInSearch + 1);
+        }
 
         pos.unmakeMove(currentMove);
 
