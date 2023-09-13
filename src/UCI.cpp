@@ -30,7 +30,7 @@ void uciCommunication() {
     datagenLoop(internalBoard, gamesToPlay, timeControl, filename, exitDepth, 1);
 #endif
 #ifdef tuneDef
-    tune(internalBoard, "Moly.txt");
+    tune(internalBoard, "lichess-big3-resolved.book");
     //calcK(internalBoard, "Moly.txt");
 #endif
 #ifndef datagen
