@@ -88,11 +88,16 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
     TTEntry* tte = TT.probe(key);
 
     if (tte->key == key) {
-        ttScore = tte->score;
         ttBound = tte->bound;
         ttMove  = tte->move;
         ttDepth = tte->depth;
         ttHit   = true;
+        ttScore = tte->score;
+
+        if (ttScore > MAXMATE)
+            ttScore -= plysInSearch;
+        else if (ttScore < -MAXMATE)
+            ttScore += plysInSearch;
     }
 
     if (!pvNode && ttHit && ttDepth >= depth && (ttBound == EXACT || (ttBound == LOWER && ttScore >= beta)))
@@ -138,7 +143,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
                         killers[plysInSearch][1] = killers[plysInSearch][0];
                         killers[plysInSearch][0] = bestMove;
                     }
-                    TT.save(tte, key, bestScore, LOWER, bestMove, depth);
+                    TT.save(tte, key, bestScore, LOWER, bestMove, depth, plysInSearch);
                     return bestScore;
                 }
             }
@@ -152,7 +157,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
         return checkers ? (-MATE + plysInSearch) : DRAW;
     }
 
-    TT.save(tte, key, bestScore, exact ? EXACT : UPPER, bestMove, depth);
+    TT.save(tte, key, bestScore, exact ? EXACT : UPPER, bestMove, depth, plysInSearch);
     return bestScore;
 }
 

@@ -32,12 +32,19 @@ TTEntry *TranspositionTable::probe(u64 key) {
     return &tt[idx];
 }
 
-void TranspositionTable::save(TTEntry *tte, u64 key, int score, TTBound bound, Move move, int depth) {
+void TranspositionTable::save(TTEntry *tte, u64 key, int score, TTBound bound, Move move, int depth, int plysInSearch) {
     tte->key = key;
-    tte->score = score;
     tte->move = move;
     tte->bound = bound;
     tte->depth = depth;
+
+    if (score > MAXMATE)
+        score += plysInSearch;
+    else if (score < -MAXMATE) {
+        score -= plysInSearch;
+    }
+
+    tte->score = score;
 }
 
 void TranspositionTable::setSize(int sizeInMb) {

@@ -21,7 +21,7 @@ struct TTEntry {
 class TranspositionTable{
 public:
     TTEntry *probe(u64 key);
-    static void save(TTEntry *tte, u64 key, int score, TTBound flag, Move move, int depth);
+    static void save(TTEntry *tte, u64 key, int score, TTBound flag, Move move, int depth, int plys);
     void setSize(int sizeInMb);
 private:
     TTEntry *tt;
