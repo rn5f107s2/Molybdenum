@@ -5,8 +5,10 @@
 #include "Constants.h"
 #include "Movepicker.h"
 #include <chrono>
+#include <algorithm>
 
 std::array<std::array<Move, 2>, 100> killers;
+std::array<std::array<int, 64>, 12> history;
 
 template<bool ROOT>
 int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int plysInSearch = 0, bool doNull = true);
@@ -14,6 +16,10 @@ int qsearch(int alpha, int beta, Position &pos, SearchInfo &si);
 
 int startSearch(Position &pos, searchTime &st) {
     return iterativeDeepening(pos, st);
+}
+
+void clearHistory() {
+    memset(&history, 0, sizeof(history[0]) * history.size());
 }
 
 int searchRoot(Position &pos, SearchInfo &si, int depth, int alpha, int beta) {
@@ -114,7 +120,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
     }
 
     Movepicker mp;
-    while ((currentMove = pickNextMove<false>(mp, ttMove, pos, checkers, killers[plysInSearch])) != 0) {
+    while ((currentMove = pickNextMove<false>(mp, ttMove, pos, checkers, killers[plysInSearch], history)) != 0) {
         pos.makeMove(currentMove);
         si.nodeCount++;
         moveCount++;
@@ -143,6 +149,10 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
                         killers[plysInSearch][1] = killers[plysInSearch][0];
                         killers[plysInSearch][0] = bestMove;
                     }
+
+                    if (!pos.isCapture(bestMove))
+                        history[pos.pieceLocations[extract<FROM>(currentMove)]][extract<TO>(currentMove)] += depth * depth;
+
                     TT.save(tte, key, bestScore, LOWER, bestMove, depth, plysInSearch);
                     return bestScore;
                 }
