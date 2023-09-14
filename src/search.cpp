@@ -8,7 +8,7 @@
 #include <algorithm>
 
 std::array<std::array<Move, 2>, 100> killers;
-std::array<std::array<int, 64>, 12> history;
+std::array<std::array<std::array<int, 64>, 64>, 2> history;
 
 template<bool ROOT>
 int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int plysInSearch = 0, bool doNull = true);
@@ -120,7 +120,9 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
     }
 
     Movepicker mp;
-    while ((currentMove = pickNextMove<false>(mp, ttMove, pos, checkers, killers[plysInSearch], history)) != 0) {
+    while ((currentMove = pickNextMove<false>(mp, ttMove, pos, checkers, killers[plysInSearch], history[pos.sideToMove])) != 0) {
+        int from = extract<FROM>(currentMove);
+        int to   = extract<TO>(currentMove);
         pos.makeMove(currentMove);
         si.nodeCount++;
         moveCount++;
@@ -151,7 +153,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
                     }
 
                     if (!pos.isCapture(bestMove))
-                        history[pos.pieceLocations[extract<FROM>(currentMove)]][extract<TO>(currentMove)] += depth * depth;
+                        history[pos.sideToMove][from][to] += depth * depth;
 
                     TT.save(tte, key, bestScore, LOWER, bestMove, depth, plysInSearch);
                     return bestScore;
