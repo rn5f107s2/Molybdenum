@@ -41,7 +41,9 @@ void uciCommunication() {
         if (contains(input, "quit"))
             return;
 
-        if (contains(input, "uci"))
+        if (contains(input, "ucinewgame"))
+            clearHistory();
+        else if (contains(input, "uci"))
             std::cout << "id name Molybdenum\nid author rn5f107s2\nuciok\n";
 
         if (contains(input, "isready"))
