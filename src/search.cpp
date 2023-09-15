@@ -130,17 +130,16 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
         int reductions = lmrReduction(depth, moveCount);
         reductions = std::max(reductions, 1);
 
-        if (moveCount > 2 && !pvNode && depth > 2 && !check && !pos.isCapture(currentMove)) {
-            score = -search<false>(-beta, -alpha, pos, depth - reductions, si, plysInSearch + 1);
+        if (depth > 2 && moveCount > 2 && !pvNode) {
+            score = -search<false>(-alpha - 1, -alpha, pos, depth - reductions, si, plysInSearch + 1);
 
-            if (score > alpha && reductions > 1) {
-                score = -search<false>(-beta, -alpha, pos, depth - 1, si, plysInSearch + 1);
-            }
+            if (score > alpha && reductions > 1)
+                score = -search<false>(-alpha - 1, -alpha, pos, depth - 1, si, plysInSearch + 1);
         }else {
-            if (exact)
+            if (!pvNode || moveCount > 1)
                 score = -search<false>(-alpha - 1, -alpha, pos, depth - 1, si, plysInSearch + 1);
 
-            if (!exact || (score > alpha && score < beta))
+            if (pvNode && ((score > alpha && score < beta) || moveCount == 1))
                 score = -search<false>(-beta, -alpha, pos, depth - 1, si, plysInSearch + 1);
         }
 
