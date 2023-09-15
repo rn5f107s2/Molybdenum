@@ -70,7 +70,7 @@ template<bool ROOT>
 int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int plysInSearch, bool doNull) {
     u64 checkers = attackersTo<false, false>(lsb(pos.bitBoards[pos.sideToMove ? WHITE_KING : BLACK_KING]),getOccupied<WHITE>(pos) | getOccupied<BLACK>(pos), pos.sideToMove ? BLACK_PAWN : WHITE_PAWN, pos);
     Move bestMove = 0, currentMove = 0;
-    int bestScore = -INFINITE, score = -INFINITE, moveCount, staticEval = evaluate(pos);
+    int bestScore = -INFINITE, score = -INFINITE, moveCount = 0, staticEval = evaluate(pos);
     bool exact = false, check = checkers, pvNode = (beta - alpha) > 1, ttHit = false;
 
     depth += check;
@@ -123,14 +123,15 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
     while ((currentMove = pickNextMove<false>(mp, ttMove, pos, checkers, killers[plysInSearch], history[pos.sideToMove])) != 0) {
         int from = extract<FROM>(currentMove);
         int to   = extract<TO>(currentMove);
+        score = -INFINITE;
         pos.makeMove(currentMove);
         si.nodeCount++;
         moveCount++;
 
-        if (exact)
+        if (!pvNode || moveCount > 1)
             score = -search<false>(-alpha - 1, -alpha, pos, depth - 1, si, plysInSearch + 1);
 
-        if (!exact || (score > alpha && score < beta))
+        if (pvNode && ((score > alpha && score < beta) || moveCount == 1))
             score = -search<false>(-beta, -alpha, pos, depth - 1, si, plysInSearch + 1);
 
         pos.unmakeMove(currentMove);
