@@ -127,11 +127,21 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
         si.nodeCount++;
         moveCount++;
 
-        if (exact)
-            score = -search<false>(-alpha - 1, -alpha, pos, depth - 1, si, plysInSearch + 1);
+        int reductions = lmrReduction(depth, moveCount);
+        reductions = std::max(reductions, 1);
 
-        if (!exact || (score > alpha && score < beta))
-            score = -search<false>(-beta, -alpha, pos, depth - 1, si, plysInSearch + 1);
+        if (depth > 2 && moveCount > 2 && !pvNode) {
+            score = -search<false>(-alpha - 1, -alpha, pos, depth - reductions, si, plysInSearch + 1);
+
+            if (score > alpha && reductions > 1)
+                score = -search<false>(-alpha - 1, -alpha, pos, depth - 1, si, plysInSearch + 1);
+        }else {
+            if (!pvNode || moveCount > 1)
+                score = -search<false>(-alpha - 1, -alpha, pos, depth - 1, si, plysInSearch + 1);
+
+            if (pvNode && ((score > alpha && score < beta) || moveCount == 1))
+                score = -search<false>(-beta, -alpha, pos, depth - 1, si, plysInSearch + 1);
+        }
 
         pos.unmakeMove(currentMove);
 
