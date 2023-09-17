@@ -139,6 +139,7 @@ void Position::makeMove(Move move) {
 
     if (capturedPiece != NO_PIECE) {
         bitBoards[capturedPiece] ^= 1ULL << to;
+        updateKey(capturedPiece, to, key);
         plys50moveRule = 0;
     }
 
