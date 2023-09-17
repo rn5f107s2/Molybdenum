@@ -109,6 +109,9 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
     if (!pvNode && ttHit && ttDepth >= depth && (ttBound == EXACT || (ttBound == LOWER && ttScore >= beta) || (ttBound == UPPER && ttScore <= alpha)))
         return ttScore;
 
+    if (!pvNode && !check && staticEval - 100 * depth >= beta)
+        return staticEval;
+
     if (!pvNode && !check && depth >= 2 && doNull && staticEval >= beta) {
         pos.makeNullMove();
         int reduction = std::min(depth, (3 + (staticEval >= beta + 250) + (depth > 6)));
