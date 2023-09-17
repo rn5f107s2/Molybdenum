@@ -31,7 +31,7 @@ void uciCommunication() {
 #endif
 #ifdef tuneDef
     tune(internalBoard, "lichess-big3-resolved.book");
-    //calcK(internalBoard, "Moly.txt");
+    //calcK(internalBoard, "lichess-big3-resolved.book");
 #endif
 #ifndef datagen
 #ifndef tuneDef
