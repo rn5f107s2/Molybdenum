@@ -106,7 +106,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
             ttScore += plysInSearch;
     }
 
-    if (!pvNode && ttHit && ttDepth >= depth && (ttBound == EXACT || (ttBound == LOWER && ttScore >= beta)))
+    if (!pvNode && ttHit && ttDepth >= depth && (ttBound == EXACT || (ttBound == LOWER && ttScore >= beta) || (ttBound == UPPER && ttScore <= alpha)))
         return ttScore;
 
     if (!pvNode && !check && depth >= 2 && doNull && staticEval >= beta) {
