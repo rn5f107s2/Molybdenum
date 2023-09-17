@@ -12,19 +12,23 @@
 void tune(Position &pos, const std::string& filename) {
     double smallestError = getErrorAllFens(filename, pos);
     int epochs = 1;
+    int changeStage = 32;
     int currentValue = 0;
     bool improving;
     bool decreasing;
     bool increasing;
-    for (int i = 0; i != numParams; i++) {
-        int bestValue = 0;
-        for (int j = 0; j != 4; j++) {
-            int amount = changeValues[j];
+    bool stageImproving;
+
+    while (changeStage) {
+        stageImproving = false;
+        for (int i = 0; i != numParams; i++) {
+            int bestValue = 0;
             decreasing = false;
             increasing = false;
+
             do {
                 improving = false;
-                currentValue = tweakValues(i, amount);
+                currentValue = tweakValues(i, changeStage);
                 double newError = smallestError;
                 if (!decreasing) {
                     newError = getErrorAllFens(filename, pos);
@@ -32,11 +36,11 @@ void tune(Position &pos, const std::string& filename) {
                 }
 
                 if (newError < smallestError) {
-                    smallestError = newError;
-                    improving = true;
-                    increasing = true;
+                     smallestError = newError;
+                     improving = true;
+                     increasing = true;
                 } else if (!increasing) {
-                    currentValue = tweakValues(i, -(amount * 2));
+                    currentValue = tweakValues(i, -(changeStage * 2));
                     newError = getErrorAllFens(filename, pos);
                     std::cout << "Epoch " << ++epochs << "\n";
 
@@ -44,18 +48,22 @@ void tune(Position &pos, const std::string& filename) {
                         improving = true;
                         decreasing = true;
                         smallestError = newError;
-                    }else {
-                        bestValue = tweakValues(i, amount);
+                    } else {
+                        bestValue = tweakValues(i, changeStage);
                     }
-                }else {
-                    bestValue = tweakValues(i, -amount);
+                } else {
+                    bestValue = tweakValues(i, -changeStage);
                 }
+                stageImproving = stageImproving || improving;
             } while (improving);
+
+            std::cout << "Tuning " << i << " done\n";
+            std::cout << "Value: " << bestValue << "\n";
+            std::cout << "Error: " << std::setprecision(15) << smallestError << "\n";
         }
 
-        std::cout << "Tuning " << i << " done\n";
-        std::cout << "Value: " << bestValue << "\n";
-        std::cout << "Error: " << std::setprecision(15) << smallestError << "\n";
+        if (!stageImproving)
+            changeStage /= 2;
     }
 
     printPSQB();
@@ -74,14 +82,14 @@ void calcK(Position &pos, const std::string& filename) {
     bool improving;
     do {
             improving = false;
-            K += 0.1;
+            K += 0.01;
             double newError = getErrorAllFens(filename, pos);
 
             if (newError < smallestError) {
                 smallestError = newError;
                 improving = true;
             }else {
-                K -= 0.2;
+                K -= 0.02;
                 newError = getErrorAllFens(filename, pos);
 
                 if (newError < smallestError) {
@@ -92,7 +100,7 @@ void calcK(Position &pos, const std::string& filename) {
         std::cout << "Error: " << std::setprecision(15) << smallestError << "\n";
     } while (improving);
 
-    K += 0.1;
+    K += 0.01;
     std::cout << "Optimal K: " << std::setprecision(15) << K << "\n";
 }
 
@@ -132,13 +140,23 @@ int tuneQ(int alpha, int beta, Position &pos) {
 void printPSQB() {
     for (int i = 0; i != 2; i++) {
         for (int j = 0; j != 6; j++) {
+            std::cout << "Start piece " << j << "\n";
+
             for (int k = 0; k != 64; k++) {
-                std::cout << PieceSquareBonusesTune[i][j][k] << ", ";
+                int value = PieceSquareBonusesTune[i][j][k];
+                std::string toPrint;
+                int length = int(std::to_string(value).size());
+
+                while (length++ < 4)
+                    toPrint += " ";
+
+                toPrint += std::to_string(value);
+
+                std::cout << toPrint << ", ";
 
                 if (k % 8 == 7)
                     std::cout << "\n";
             }
-            std::cout << "startpiece " << j + 1 << "\n";
         }
         std::cout << "starteg\n";
     }
@@ -148,7 +166,7 @@ int tweakValues(int index, int amount) {
     if (index < 768) {
         int pcidx = (index % 384) / 64;
         return PieceSquareBonusesTune[index < 384][pcidx][index % 64] += amount;
-    } else if (index < 775) {
+    } else if (index < 774) {
         return PieceValuesMGTune[index % 6] += amount;
     } else
         return PieceValuesEGTune[index % 6] += amount;

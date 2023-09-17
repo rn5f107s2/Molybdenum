@@ -19,7 +19,7 @@ double getErrorFen(const std::string& fen, Position &pos);
 int tweakValues(int index, int amount);
 void printPSQB();
 
-static double K = 0.777;
+static double K = 1.197;
 static const std::array<int, 4> changeValues = {14, 7, 3, 1};
 const int numParams = 780;
 static std::array<int, 6> PieceValuesMGTune = PieceValuesMG;
