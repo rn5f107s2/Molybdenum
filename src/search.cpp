@@ -70,7 +70,7 @@ template<bool ROOT>
 int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int plysInSearch, bool doNull) {
     u64 checkers = attackersTo<false, false>(lsb(pos.bitBoards[pos.sideToMove ? WHITE_KING : BLACK_KING]),getOccupied<WHITE>(pos) | getOccupied<BLACK>(pos), pos.sideToMove ? BLACK_PAWN : WHITE_PAWN, pos);
     Move bestMove = 0, currentMove = 0;
-    int bestScore = -INFINITE, score = -INFINITE, moveCount, staticEval = evaluate(pos);
+    int bestScore = -INFINITE, score = -INFINITE, moveCount = 0, staticEval = evaluate(pos);
     bool exact = false, check = checkers, pvNode = (beta - alpha) > 1, ttHit = false;
 
     depth += check;
