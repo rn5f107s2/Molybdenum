@@ -73,8 +73,8 @@ int aspirationWindow(Position &pos, int depth, SearchInfo &si, int prevScore) {
     int failCount = 0;
 
     if (depth >= 6) {
-        alpha = prevScore - 75;
-        beta  = prevScore + 75;
+        alpha = prevScore - 35;
+        beta  = prevScore + 35;
     }
 
     search:
@@ -83,13 +83,13 @@ int aspirationWindow(Position &pos, int depth, SearchInfo &si, int prevScore) {
     if (std::chrono::steady_clock::now() > (si.st.searchStart + si.st.thinkingTime))
         return score;
 
-    if (score < alpha) {
-        alpha -= 50 * ++failCount;
-        //beta = score + 1;
+    if (score <= alpha) {
+        failCount++;
+        alpha -= (alpha - score) + 15 * failCount * failCount;
         goto search;
     } else if (score >= beta) {
-        beta += 50 * ++failCount;
-        //alpha = score - 1;
+        failCount++;
+        beta += (score - beta) + 15 * failCount * failCount;
         goto search;
     }
 
