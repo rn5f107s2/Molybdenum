@@ -134,6 +134,10 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
     while ((currentMove = pickNextMove<false>(mp, ttMove, pos, checkers, killers[plysInSearch], history[pos.sideToMove])) != 0) {
         int from = extract<FROM>(currentMove);
         int to   = extract<TO>(currentMove);
+
+        if (!pos.isCapture(currentMove) && depth <= 5 && moveCount > 12 * depth)
+            continue;
+
         pos.makeMove(currentMove);
         si.nodeCount++;
         moveCount++;
