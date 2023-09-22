@@ -22,4 +22,5 @@ add_executable(Molybdenum
         src/Datagen/datagen.h
         src/Tuner/tuner.cpp
         src/Tuner/tuner.h
+        src/history.h
 )

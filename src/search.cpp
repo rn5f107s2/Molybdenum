@@ -4,6 +4,7 @@
 #include "eval.h"
 #include "Constants.h"
 #include "Movepicker.h"
+#include "history.h"
 #include <chrono>
 #include <algorithm>
 
@@ -24,6 +25,12 @@ void clearHistory() {
 
 int searchRoot(Position &pos, SearchInfo &si, int depth, int alpha, int beta) {
     int score = search<true>(alpha, beta, pos, depth, si);
+
+    for (int i = 0; i != 64; i++)
+        for (int j = 0; j != 64; j++)
+            for (int k = 0; k != 64; k++)
+                history[k][j][i] /= 2;
+
     return score;
 }
 
@@ -72,6 +79,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
     Move bestMove = 0, currentMove = 0;
     int bestScore = -INFINITE, score = -INFINITE, moveCount = 0, staticEval = evaluate(pos);
     bool exact = false, check = checkers, pvNode = (beta - alpha) > 1, ttHit = false;
+    Stack<Move> historyUpdates;
 
     depth += check;
 
@@ -170,13 +178,16 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
                     }
 
                     if (!pos.isCapture(bestMove))
-                        history[pos.sideToMove][from][to] += depth * depth;
+                        updateHistory(history[pos.sideToMove], bestMove, historyUpdates, depth);
 
                     TT.save(tte, key, bestScore, LOWER, bestMove, depth, plysInSearch);
                     return bestScore;
                 }
             }
         }
+
+        if (!pos.isCapture(currentMove))
+            historyUpdates.push(currentMove);
     }
 
     if constexpr (ROOT)
