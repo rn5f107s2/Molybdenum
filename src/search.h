@@ -17,6 +17,7 @@ struct SearchInfo {
 int startSearch(Position &pos, searchTime &st);
 int iterativeDeepening(Position  &pos, searchTime &st);
 int searchRoot(Position &pos, SearchInfo &si, int depth, int alpha = -INFINITE, int beta = INFINITE);
+int aspirationWindow(int prevScore, Position &pos, SearchInfo &si, int depth);
 void clearHistory();
 
 inline std::array<double, 256> initReductions() {
