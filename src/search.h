@@ -4,6 +4,8 @@
 #include "Position.h"
 #include "timemanagement.h"
 #include "Movepicker.h"
+#include "PSQT.h"
+#include "Movegen.h"
 #include <chrono>
 #include <cmath>
 

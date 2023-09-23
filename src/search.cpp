@@ -4,7 +4,7 @@
 #include "eval.h"
 #include "Constants.h"
 #include "Movepicker.h"
-#include "history.h"
+#include "searchUtil.h"
 #include <chrono>
 #include <algorithm>
 
