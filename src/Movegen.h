@@ -66,6 +66,17 @@ u64 getAttacks(int square, u64 blockers = 0ULL, bool white = true) {
     }
 }
 
+inline u64 getAttacks(int pt, int square, u64 blockers = 0ULL, bool white = true) {
+    switch (pt) {
+        case PAWN  : return getAttacks<PAWN  >(square, blockers, white);
+        case KNIGHT: return getAttacks<KNIGHT>(square, blockers, white);
+        case BISHOP: return getAttacks<BISHOP>(square, blockers, white);
+        case ROOK  : return getAttacks<ROOK  >(square, blockers, white);
+        case QUEEN : return getAttacks<QUEEN >(square, blockers, white);
+        default    : return getAttacks<KING  >(square, blockers, white);
+    }
+}
+
 inline std::array<std::array<u64, 64>, 64> initMaskBB() {
     std::array<std::array<u64, 64>, 64> masksBB = {{{0ULL}}};
 
