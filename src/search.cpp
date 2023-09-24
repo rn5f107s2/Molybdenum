@@ -9,7 +9,7 @@
 #include <algorithm>
 
 std::array<std::array<Move, 2>, 100> killers;
-std::array<std::array<std::array<int, 64>, 64>, 2> history;
+std::array<std::array<std::array<int, 64>, 64>, 2> mainHistory;
 
 template<bool ROOT>
 int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int plysInSearch = 0, bool doNull = true);
@@ -20,7 +20,7 @@ int startSearch(Position &pos, searchTime &st) {
 }
 
 void clearHistory() {
-    memset(&history, 0, sizeof(history[0]) * history.size());
+    memset(&mainHistory, 0, sizeof(mainHistory[0]) * mainHistory.size());
 }
 
 int searchRoot(Position &pos, SearchInfo &si, int depth, int alpha, int beta) {
@@ -28,8 +28,8 @@ int searchRoot(Position &pos, SearchInfo &si, int depth, int alpha, int beta) {
 
     for (int i = 0; i != 64; i++)
         for (int j = 0; j != 64; j++)
-            for (int k = 0; k != 64; k++)
-                history[k][j][i] /= 2;
+            for (int k = 0; k != 2; k++)
+                mainHistory[k][j][i] /= 2;
 
     return score;
 }
@@ -157,7 +157,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
     }
 
     Movepicker mp;
-    while ((currentMove = pickNextMove<false>(mp, ttMove, pos, checkers, killers[plysInSearch], history[pos.sideToMove])) != 0) {
+    while ((currentMove = pickNextMove<false>(mp, ttMove, pos, checkers, killers[plysInSearch], mainHistory[pos.sideToMove])) != 0) {
         int from = extract<FROM>(currentMove);
         int to   = extract<TO>(currentMove);
 
@@ -208,7 +208,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
                     }
 
                     if (!pos.isCapture(bestMove))
-                        updateHistory(history[pos.sideToMove], bestMove, historyUpdates, depth);
+                        updateHistory(mainHistory[pos.sideToMove], bestMove, historyUpdates, depth);
 
                     TT.save(tte, key, bestScore, LOWER, bestMove, depth, plysInSearch);
                     return bestScore;
