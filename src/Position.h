@@ -22,6 +22,8 @@ class Position {
         int castlingRights;
         u64 enPassantSquare;
         int plys50moveRule;
+        int psqtMG;
+        int psqtEG;
         bool sideToMove;
         u64 key();
         void makeNullMove();

@@ -8,20 +8,8 @@ int evaluate(Position &pos) {
 }
 
 int evalPSQT(Position &pos, int gamePhase) {
-    int mgEval = 0;
-    int egEval = 0;
-
-    for (int pt = WHITE_PAWN; pt != NO_PIECE; pt++) {
-        u64 pieceBB = pos.bitBoards[pt];
-
-        while (pieceBB) {
-            int square = popLSB(pieceBB);
-
-            mgEval += PSQT[0][pt][square];
-            egEval += PSQT[1][pt][square];
-        }
-    }
-
+    int mgEval = pos.psqtMG;
+    int egEval = pos.psqtEG;
     return (mgEval * gamePhase + egEval * (maxPhase - gamePhase)) / maxPhase;
 }
 
