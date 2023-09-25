@@ -24,6 +24,7 @@ class Position {
         int plys50moveRule;
         int psqtMG;
         int psqtEG;
+        int phase;
         bool sideToMove;
         u64 key();
         void makeNullMove();

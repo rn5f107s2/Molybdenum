@@ -118,7 +118,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
         si.stop = true;
 
     if constexpr (!ROOT) {
-        if (pos.hasRepeated(plysInSearch) || pos.plys50moveRule > 99)
+        if (pos.hasRepeated(plysInSearch) || pos.plys50moveRule > 99 || (pos.phase <= 3 && !(pos.bitBoards[WHITE_PAWN] | pos.bitBoards[BLACK_PAWN])))
             return 0;
     }
 

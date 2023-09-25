@@ -3,7 +3,7 @@
 #include "PSQT.h"
 
 int evaluate(Position &pos) {
-    int gamePhase = getGamePhase(pos);
+    int gamePhase = std::min(pos.phase, maxPhase);
     return evalPSQT(pos, gamePhase) * (pos.sideToMove ? 1 : -1);
 }
 
