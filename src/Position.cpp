@@ -56,6 +56,7 @@ void Position::setBoard(std::string fen) {
         int piece = charIntToPiece(charAsInt);
         psqtMG += PSQT[0][piece][lsb(bitToSet)];
         psqtEG += PSQT[1][piece][lsb(bitToSet)];
+        phase += gamePhaseValues[typeOf(piece)];
         bitBoards[piece] ^= bitToSet;
         pieceLocations[lsb(bitToSet)] = piece;
         bitToSet = bitToSet >> 1;
@@ -106,6 +107,7 @@ void Position::makeMove(Move move) {
 
     if (flag == PROMOTION) {
         movedPiece = extract<PROMOTIONTYPE>(move) + 1 + 6 * !sideToMove;
+        phase += gamePhaseValues[typeOf(movedPiece)];
         plys50moveRule = 0;
     }
 
@@ -150,6 +152,7 @@ void Position::makeMove(Move move) {
         bitBoards[capturedPiece] ^= 1ULL << to;
         psqtMG -= PSQT[0][capturedPiece][to];
         psqtEG -= PSQT[1][capturedPiece][to];
+        phase -= gamePhaseValues[typeOf(capturedPiece)];
         updateKey(capturedPiece, to, key);
         plys50moveRule = 0;
     }
@@ -178,14 +181,19 @@ void Position::unmakeMove(Move move) {
 
     pieceLocations[to] = capturedPiece;
     bitBoards[movingPiece] ^= 1ULL << to;
+    psqtMG -= PSQT[0][movingPiece][to];
+    psqtEG -= PSQT[1][movingPiece][to];
     bitBoards[capturedPiece] ^= 1ULL << to;
     psqtMG += PSQT[0][capturedPiece][to];
     psqtEG += PSQT[1][capturedPiece][to];
-    psqtMG -= PSQT[0][movingPiece][to];
-    psqtEG -= PSQT[1][movingPiece][to];
 
-    if (flag == PROMOTION)
+    if (capturedPiece != NO_PIECE)
+        phase += gamePhaseValues[typeOf(capturedPiece)];
+
+    if (flag == PROMOTION) {
+        phase -= gamePhaseValues[typeOf(movingPiece)];
         movingPiece = sideToMove ? BLACK_PAWN : WHITE_PAWN;
+    }
 
     pieceLocations[from] = movingPiece;
     bitBoards[movingPiece] ^= 1ULL << from;
@@ -222,7 +230,7 @@ void Position::clearBoard() {
 
     memset(&bitBoards, 0ULL, bitBoards.size() * sizeof(typeof(bitBoards[0])));
 
-    psqtMG = psqtEG = 0;
+    psqtMG = psqtEG = phase = 0;
     enPassantHistory.clear();
     castlingHistory.clear();
     capturedHistory.clear();
