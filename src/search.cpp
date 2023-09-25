@@ -161,14 +161,19 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
         int from = extract<FROM>(currentMove);
         int to   = extract<TO>(currentMove);
 
+        int reductions = lmrReduction(depth, moveCount);
+        int expectedDepth = std::max(depth - reductions, 1);
+
         if (!pos.isCapture(currentMove) && depth <= 5 && moveCount > 12 * depth)
+            continue;
+
+        if (!pvNode && !pos.isCapture(currentMove) && depth < 7 && bestScore > -MAXMATE && staticEval + 75 + 125 * expectedDepth <= alpha)
             continue;
 
         pos.makeMove(currentMove);
         si.nodeCount++;
         moveCount++;
 
-        int reductions = lmrReduction(depth, moveCount);
         reductions -= pvNode;
         reductions = std::max(reductions, 1);
 
