@@ -167,9 +167,6 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
         if (!pos.isCapture(currentMove) && depth <= 5 && moveCount > 12 * depth)
             continue;
 
-        if (!pvNode && !pos.isCapture(currentMove) && depth < 7 && bestScore > -MAXMATE && staticEval + 75 + 125 * expectedDepth <= alpha)
-            continue;
-
         pos.makeMove(currentMove);
         si.nodeCount++;
         moveCount++;
