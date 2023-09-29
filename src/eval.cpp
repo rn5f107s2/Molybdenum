@@ -8,8 +8,8 @@ int evaluate(Position &pos) {
 }
 
 int evalPSQT(Position &pos, int gamePhase) {
-    int mgEval = pos.psqtMG;
-    int egEval = pos.psqtEG;
+    int mgEval = pos.psqtMG + (pos.sideToMove ? 1 : -1) * TempoMG;
+    int egEval = pos.psqtEG + (pos.sideToMove ? 1 : -1) * TempoEG;
     return (mgEval * gamePhase + egEval * (maxPhase - gamePhase)) / maxPhase;
 }
 
