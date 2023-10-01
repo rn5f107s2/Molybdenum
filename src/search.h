@@ -14,6 +14,12 @@ struct SearchInfo {
     searchTime st;
 };
 
+struct SearchStack {
+    int plysInSearch = 0;
+    int staticEval = INFINITE;
+    Move currMove = 0;
+};
+
 int startSearch(Position &pos, searchTime &st);
 int iterativeDeepening(Position  &pos, searchTime &st);
 int searchRoot(Position &pos, SearchInfo &si, int depth, int alpha = -INFINITE, int beta = INFINITE);

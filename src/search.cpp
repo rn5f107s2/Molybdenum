@@ -12,7 +12,7 @@ std::array<std::array<Move, 2>, 100> killers;
 std::array<std::array<std::array<int, 64>, 64>, 2> mainHistory;
 
 template<bool ROOT>
-int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int plysInSearch = 0, bool doNull = true);
+int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, SearchStack *stack);
 int qsearch(int alpha, int beta, Position &pos, SearchInfo &si);
 
 int startSearch(Position &pos, searchTime &st) {
@@ -24,7 +24,8 @@ void clearHistory() {
 }
 
 int searchRoot(Position &pos, SearchInfo &si, int depth, int alpha, int beta) {
-    int score = search<true>(alpha, beta, pos, depth, si);
+    std::array<SearchStack, MAXDEPTH + 2> stack;
+    int score = search<true>(alpha, beta, pos, depth, si, &stack[2]);
 
     for (int i = 0; i != 64; i++)
         for (int j = 0; j != 64; j++)
@@ -39,7 +40,7 @@ int iterativeDeepening(Position  &pos, searchTime &st) {
     SearchInfo si;
     si.st = st;
 
-    for (int depth = 1; depth != 100; depth++) {
+    for (int depth = 1; depth != MAXDEPTH; depth++) {
         score = aspirationWindow(score, pos, si, depth);
 
         if (std::chrono::steady_clock::now() > (si.st.searchStart + si.st.thinkingTime))
@@ -83,7 +84,9 @@ int aspirationWindow(int prevScore, Position &pos, SearchInfo &si, int depth) {
         beta  = std::min( INFINITE, prevScore + delta);
     }
 
-    int score = search<true>(alpha, beta, pos, depth, si);
+    std::array<SearchStack, MAXDEPTH + 2> stack;
+
+    int score = search<true>(alpha, beta, pos, depth, si, &stack[2]);
 
     while ((score >= beta || score <= alpha) && (std::chrono::steady_clock::now() < (si.st.searchStart + si.st.thinkingTime))) {
         delta += delta / 2;
@@ -93,19 +96,20 @@ int aspirationWindow(int prevScore, Position &pos, SearchInfo &si, int depth) {
         else
             alpha = std::max(score - delta, -INFINITE);
 
-        score = search<true>(alpha, beta, pos, depth, si);
+        score = search<true>(alpha, beta, pos, depth, si, &stack[2]);
     }
 
     return score;
 }
 
 template<bool ROOT>
-int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int plysInSearch, bool doNull) {
+int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, SearchStack *stack) {
     u64 checkers = attackersTo<false, false>(lsb(pos.bitBoards[pos.sideToMove ? WHITE_KING : BLACK_KING]),getOccupied<WHITE>(pos) | getOccupied<BLACK>(pos), pos.sideToMove ? BLACK_PAWN : WHITE_PAWN, pos);
     Move bestMove = 0, currentMove = 0;
-    int bestScore = -INFINITE, score = -INFINITE, moveCount = 0, staticEval = evaluate(pos);
+    int bestScore = -INFINITE, score = -INFINITE, moveCount = 0, plysInSearch = ROOT ? 0 : (stack-1)->plysInSearch + 1;
     bool exact = false, check = checkers, pvNode = (beta - alpha) > 1, ttHit = false;
     Stack<Move> historyUpdates;
+    stack->staticEval = evaluate(pos);
 
     depth += check;
 
@@ -143,13 +147,14 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
     if (!pvNode && ttHit && ttDepth >= depth && (ttBound == EXACT || (ttBound == LOWER && ttScore >= beta) || (ttBound == UPPER && ttScore <= alpha)))
         return ttScore;
 
-    if (!pvNode && !check && staticEval - 100 * depth >= beta)
-        return staticEval;
+    if (!pvNode && !check && stack->staticEval - 100 * depth >= beta)
+        return stack->staticEval;
 
-    if (!pvNode && !check && depth >= 2 && doNull && staticEval >= beta) {
+    if (!pvNode && !check && depth >= 2 && (stack-1)->currMove != 0 && stack->staticEval >= beta) {
         pos.makeNullMove();
-        int reduction = std::min(depth, (3 + (staticEval >= beta + 250) + (depth > 6)));
-        int nullScore = -search<false>(-beta, -alpha, pos, depth - reduction, si, plysInSearch + 1, false);
+        int reduction = std::min(depth, (3 + (stack->staticEval >= beta + 250) + (depth > 6)));
+        stack->currMove = 0;
+        int nullScore = -search<false>(-beta, -alpha, pos, depth - reduction, si, stack+1);
         pos.unmakeNullMove();
 
         if (nullScore >= beta)
@@ -167,10 +172,11 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
         if (!pos.isCapture(currentMove) && depth <= 5 && moveCount > 12 * depth)
             continue;
 
-        if (!pvNode && !pos.isCapture(currentMove) && bestScore > -MAXMATE && depth <= 5 && staticEval + 175 + 200 * expectedDepth <= alpha)
+        if (!pvNode && !pos.isCapture(currentMove) && bestScore > -MAXMATE && depth <= 5 && stack->staticEval + 175 + 200 * expectedDepth <= alpha)
             continue;
 
         pos.makeMove(currentMove);
+        stack->currMove = currentMove;
         si.nodeCount++;
         moveCount++;
 
@@ -178,19 +184,19 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, int pl
         reductions = std::max(reductions, 1);
 
         if (depth > 2 && moveCount > 2) {
-            score = -search<false>(-alpha - 1, -alpha, pos, depth - reductions, si, plysInSearch + 1);
+            score = -search<false>(-alpha - 1, -alpha, pos, depth - reductions, si, stack+1);
 
             if (!pvNode && score > alpha && reductions > 1)
-                score = -search<false>(-alpha - 1, -alpha, pos, depth - 1, si, plysInSearch + 1);
+                score = -search<false>(-alpha - 1, -alpha, pos, depth - 1, si, stack+1);
 
             if (pvNode && score > alpha && score < beta)
-                score = -search<false>(-beta, -alpha, pos, depth - 1, si, plysInSearch + 1);
+                score = -search<false>(-beta, -alpha, pos, depth - 1, si, stack+1);
         }else {
             if (!pvNode || moveCount > 1)
-                score = -search<false>(-alpha - 1, -alpha, pos, depth - 1, si, plysInSearch + 1);
+                score = -search<false>(-alpha - 1, -alpha, pos, depth - 1, si, stack+1);
 
             if (pvNode && ((score > alpha && score < beta) || moveCount == 1))
-                score = -search<false>(-beta, -alpha, pos, depth - 1, si, plysInSearch + 1);
+                score = -search<false>(-beta, -alpha, pos, depth - 1, si, stack+1);
         }
 
         pos.unmakeMove(currentMove);
