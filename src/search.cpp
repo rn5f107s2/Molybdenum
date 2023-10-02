@@ -205,6 +205,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         }
 
         pos.unmakeMove(currentMove);
+        stack->currMove = 0;
 
         if (si.stop && !(ROOT && depth == (1 + check)))
             return DRAW;
