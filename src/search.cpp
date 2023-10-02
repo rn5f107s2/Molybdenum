@@ -84,7 +84,7 @@ int aspirationWindow(int prevScore, Position &pos, SearchInfo &si, int depth) {
         beta  = std::min( INFINITE, prevScore + delta);
     }
 
-    std::array<SearchStack, MAXDEPTH + 2> stack;
+    std::array<SearchStack, MAXDEPTH + 3> stack;
 
     int score = search<true>(alpha, beta, pos, depth, si, &stack[2]);
 
@@ -106,12 +106,16 @@ template<bool ROOT>
 int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, SearchStack *stack) {
     u64 checkers = attackersTo<false, false>(lsb(pos.bitBoards[pos.sideToMove ? WHITE_KING : BLACK_KING]),getOccupied<WHITE>(pos) | getOccupied<BLACK>(pos), pos.sideToMove ? BLACK_PAWN : WHITE_PAWN, pos);
     Move bestMove = 0, currentMove = 0;
-    int bestScore = -INFINITE, score = -INFINITE, moveCount = 0, plysInSearch = ROOT ? 0 : (stack-1)->plysInSearch + 1;
+    int bestScore = -INFINITE, score = -INFINITE, moveCount = 0;
     bool exact = false, check = checkers, pvNode = (beta - alpha) > 1, ttHit = false;
     Stack<Move> historyUpdates;
     stack->staticEval = evaluate(pos);
+    stack->plysInSearch = ROOT ? 0 : (stack-1)->plysInSearch + 1;
 
     depth += check;
+
+    if (stack->plysInSearch >= MAXDEPTH)
+        return stack->staticEval;
 
     if (depth <= 0)
         return qsearch(alpha, beta, pos, si);
@@ -122,7 +126,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         si.stop = true;
 
     if constexpr (!ROOT) {
-        if (pos.hasRepeated(plysInSearch) || pos.plys50moveRule > 99 || (pos.phase <= 3 && !(pos.bitBoards[WHITE_PAWN] | pos.bitBoards[BLACK_PAWN])))
+        if (pos.hasRepeated(stack->plysInSearch) || pos.plys50moveRule > 99 || (pos.phase <= 3 && !(pos.bitBoards[WHITE_PAWN] | pos.bitBoards[BLACK_PAWN])))
             return 0;
     }
 
@@ -139,9 +143,9 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         ttScore = tte->score;
 
         if (ttScore > MAXMATE)
-            ttScore -= plysInSearch;
+            ttScore -= stack->plysInSearch;
         else if (ttScore < -MAXMATE)
-            ttScore += plysInSearch;
+            ttScore += stack->plysInSearch;
     }
 
     if (!pvNode && ttHit && ttDepth >= depth && (ttBound == EXACT || (ttBound == LOWER && ttScore >= beta) || (ttBound == UPPER && ttScore <= alpha)))
@@ -150,11 +154,12 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
     if (!pvNode && !check && stack->staticEval - 100 * depth >= beta)
         return stack->staticEval;
 
-    if (!pvNode && !check && depth >= 2 && (stack-1)->currMove != 0 && stack->staticEval >= beta) {
+    if (!pvNode && !check && depth >= 2 && (stack-1)->currMove != 65 && stack->staticEval >= beta) {
         pos.makeNullMove();
         int reduction = std::min(depth, (3 + (stack->staticEval >= beta + 250) + (depth > 6)));
-        stack->currMove = 0;
+        stack->currMove = 65;
         int nullScore = -search<false>(-beta, -alpha, pos, depth - reduction, si, stack+1);
+        stack->currMove = 0;
         pos.unmakeNullMove();
 
         if (nullScore >= beta)
@@ -162,7 +167,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
     }
 
     Movepicker mp;
-    while ((currentMove = pickNextMove<false>(mp, ttMove, pos, checkers, killers[plysInSearch], mainHistory[pos.sideToMove])) != 0) {
+    while ((currentMove = pickNextMove<false>(mp, ttMove, pos, checkers, killers[stack->plysInSearch], mainHistory[pos.sideToMove])) != 0) {
         int from = extract<FROM>(currentMove);
         int to   = extract<TO>(currentMove);
 
@@ -213,15 +218,15 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
                 exact = true;
 
                 if (score >= beta) {
-                    if (!pos.isCapture(bestMove) && bestMove != killers[plysInSearch][0]) {
-                        killers[plysInSearch][1] = killers[plysInSearch][0];
-                        killers[plysInSearch][0] = bestMove;
+                    if (!pos.isCapture(bestMove) && bestMove != killers[stack->plysInSearch][0]) {
+                        killers[stack->plysInSearch][1] = killers[stack->plysInSearch][0];
+                        killers[stack->plysInSearch][0] = bestMove;
                     }
 
                     if (!pos.isCapture(bestMove))
                         updateHistory(mainHistory[pos.sideToMove], bestMove, historyUpdates, depth);
 
-                    TT.save(tte, key, bestScore, LOWER, bestMove, depth, plysInSearch);
+                    TT.save(tte, key, bestScore, LOWER, bestMove, depth, stack->plysInSearch);
                     return bestScore;
                 }
             }
@@ -235,10 +240,10 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         si.bestRootMove = bestMove;
 
     if (bestScore == -INFINITE) {
-        return checkers ? (-MATE + plysInSearch) : DRAW;
+        return checkers ? (-MATE + stack->plysInSearch) : DRAW;
     }
 
-    TT.save(tte, key, bestScore, exact ? EXACT : UPPER, bestMove, depth, plysInSearch);
+    TT.save(tte, key, bestScore, exact ? EXACT : UPPER, bestMove, depth, stack->plysInSearch);
     return bestScore;
 }
 
