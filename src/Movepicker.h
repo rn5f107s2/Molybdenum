@@ -2,6 +2,7 @@
 #define MOLYBDENUM_MOVEPICKER_H
 
 #include "Movegen.h"
+#include "searchUtil.h"
 
 struct Movepicker {
     MoveList ml;
@@ -50,6 +51,9 @@ inline Move scoreMoves(Movepicker &mp, Move ttMove, Position &pos, const std::ar
 
         mp.ml.moves[i].score += MVVLVA[movingPiece][capturedPiece];
         mp.ml.moves[i].score += history[from][to];
+
+        //if (capturedPiece != NO_PIECE && !see(pos, -100, mp.ml.moves[i].move))
+        //    mp.ml.moves[i].score -= 1000000;
 
         if (mp.ml.moves[i].score > bestScore) {
             bestScore = mp.ml.moves[i].score;
