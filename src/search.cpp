@@ -252,13 +252,17 @@ int qsearch(int alpha, int beta, Position &pos, SearchInfo &si) {
     Move bestMove = 0;
     Move currentMove;
     bool check;
-    int bestScore = evaluate(pos);
+    int staticEval;
+    int bestScore = staticEval = evaluate(pos);
 
     if (bestScore >= beta)
         return bestScore;
 
     Movepicker mp;
     while ((currentMove = pickNextMove<true>(mp, 0, pos, check)) != 0) {
+        if (pos.isCapture(currentMove) && !see(pos, -101, currentMove))
+            continue;
+
         pos.makeMove(currentMove);
         si.nodeCount++;
 
