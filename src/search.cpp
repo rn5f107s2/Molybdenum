@@ -10,6 +10,7 @@
 
 std::array<std::array<Move, 2>, 100> killers;
 std::array<std::array<std::array<int, 64>, 64>, 2> mainHistory;
+std::array<std::array<std::array<std::array<int, 13>, 64>, 13>, 64> contHist;
 
 template<bool ROOT>
 int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, SearchStack *stack);
@@ -21,6 +22,7 @@ int startSearch(Position &pos, searchTime &st) {
 
 void clearHistory() {
     memset(&mainHistory, 0, sizeof(mainHistory[0]) * mainHistory.size());
+    memset(&contHist, 0, sizeof(contHist[0]) * contHist.size());
 }
 
 int searchRoot(Position &pos, SearchInfo &si, int depth, int alpha, int beta) {
@@ -30,7 +32,13 @@ int searchRoot(Position &pos, SearchInfo &si, int depth, int alpha, int beta) {
     for (int i = 0; i != 64; i++)
         for (int j = 0; j != 64; j++)
             for (int k = 0; k != 2; k++)
-                mainHistory[k][j][i] /= 2;
+                mainHistory[k][j][i] /= 4;
+
+    for (int i = 0; i != 13; i++)
+        for (int j = 0; j != 64; j++)
+            for (int k = 0; k != 13; k++)
+                for (int l = 0; l != 64; l++)
+                    contHist[i][j][k][l] /= 4;
 
     return score;
 }
@@ -86,6 +94,8 @@ int aspirationWindow(int prevScore, Position &pos, SearchInfo &si, int depth) {
 
     std::array<SearchStack, MAXDEPTH + 3> stack;
 
+    stack[0].contHist = &contHist[NO_PIECE][0];
+    stack[1].contHist = &contHist[NO_PIECE][0];
     int score = search<true>(alpha, beta, pos, depth, si, &stack[2]);
 
     while ((score >= beta || score <= alpha) && (std::chrono::steady_clock::now() < (si.st.searchStart + si.st.thinkingTime))) {
@@ -158,6 +168,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         pos.makeNullMove();
         int reduction = std::min(depth, (3 + (stack->staticEval >= beta + 250) + (depth > 6)));
         stack->currMove = 65;
+        stack->contHist = &contHist[NO_PIECE][0];
         int nullScore = -search<false>(-beta, -alpha, pos, depth - reduction, si, stack+1);
         stack->currMove = 0;
         pos.unmakeNullMove();
@@ -167,9 +178,10 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
     }
 
     Movepicker mp;
-    while ((currentMove = pickNextMove<false>(mp, ttMove, pos, checkers, killers[stack->plysInSearch], mainHistory[pos.sideToMove])) != 0) {
+    while ((currentMove = pickNextMove<false>(mp, ttMove, pos, checkers, killers[stack->plysInSearch], mainHistory[pos.sideToMove], *(stack-2)->contHist)) != 0) {
         int from = extract<FROM>(currentMove);
         int to   = extract<TO>(currentMove);
+        stack->contHist = &contHist[pos.pieceLocations[from]][to];
 
         int reductions = lmrReduction(depth, moveCount);
         int expectedDepth = std::max(depth - reductions, 1);
@@ -225,7 +237,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
                     }
 
                     if (!pos.isCapture(bestMove))
-                        updateHistory(mainHistory[pos.sideToMove], bestMove, historyUpdates, depth);
+                        updateHistory(mainHistory[pos.sideToMove], bestMove, historyUpdates, depth, *(stack-2)->contHist, pos.pieceLocations[from]);
 
                     TT.save(tte, key, bestScore, LOWER, bestMove, depth, stack->plysInSearch);
                     return bestScore;

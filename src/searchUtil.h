@@ -4,20 +4,22 @@
 #include <array>
 #include "Move.h"
 
-inline void updateHistory(std::array<std::array<int, 64>, 64> &history, Move bestMove, Stack<Move> movesToUpdate, int depth) {
+inline void updateHistory(std::array<std::array<int, 64>, 64> &history, Move bestMove, Stack<Move> movesToUpdate, int depth, std::array<std::array<int, 13>, 64> &contHist, int pc) {
     int from = extract<FROM>(bestMove);
     int to   = extract<TO  >(bestMove);
-    int bonus = std::max(depth * depth * 16, 1536);
-    int malus = -bonus;
 
-    history[from][to] += bonus - history[from][to] * abs(bonus) / 100000;
+    int bonus = std::min(depth * depth * 16, 1536);
+
+    history[from][to] += bonus;
+    contHist[pc][to] += bonus;
 
     while (movesToUpdate.getSize()) {
         Move move = movesToUpdate.pop();
         from = extract<FROM>(move);
         to   = extract<TO  >(move);
 
-        history[from][to] += malus - history[from][to] * abs(malus) / 100000;
+        history[from][to] -= bonus;
+        contHist[pc][to]  -= bonus;
     }
 }
 

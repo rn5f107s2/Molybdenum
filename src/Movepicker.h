@@ -13,6 +13,7 @@ struct Movepicker {
 
 static std::array<Move, 2> empty = {0, 0};
 static std::array<std::array<int, 64>, 64> empty2 = {{{0}}};
+static std::array<std::array<int, 13>, 64> empty3 = {{{0}}};
 
 const std::array<std::array<int, 13>, 13> MVVLVA =
          {{
@@ -32,7 +33,7 @@ const std::array<std::array<int, 13>, 13> MVVLVA =
          }};
 
 //This also returns the best move
-inline Move scoreMoves(Movepicker &mp, Move ttMove, Position &pos, const std::array<Move, 2> &killers, const std::array<std::array<int, 64>, 64> &history) {
+inline Move scoreMoves(Movepicker &mp, Move ttMove, Position &pos, const std::array<Move, 2> &killers, const std::array<std::array<int, 64>, 64> &history, const std::array<std::array<int, 13>, 64> &contHistory) {
     int bestScore = -1000000;
     int bestIndex = 0;
 
@@ -51,6 +52,7 @@ inline Move scoreMoves(Movepicker &mp, Move ttMove, Position &pos, const std::ar
 
         mp.ml.moves[i].score += MVVLVA[movingPiece][capturedPiece];
         mp.ml.moves[i].score += history[from][to];
+        mp.ml.moves[i].score += contHistory[pos.pieceLocations[from]][to];
 
         //if (capturedPiece != NO_PIECE && mp.ml.moves[i].move != ttMove && !see(pos, -100, mp.ml.moves[i].move))
         //    mp.ml.moves[i].score -= 1000000;
@@ -69,7 +71,7 @@ inline Move scoreMoves(Movepicker &mp, Move ttMove, Position &pos, const std::ar
 }
 
 template<bool qsearch> inline
-Move pickNextMove(Movepicker &mp, Move ttMove, Position &pos, u64 check = 0ULL, const std::array<Move, 2> &killers = empty, const std::array<std::array<int, 64>, 64> &history = empty2) {
+Move pickNextMove(Movepicker &mp, Move ttMove, Position &pos, u64 check = 0ULL, const std::array<Move, 2> &killers = empty, const std::array<std::array<int, 64>, 64> &history = empty2, const std::array<std::array<int, 13>, 64> &contHistory = empty3) {
     if (!mp.moveListInitialized)
         generateMoves<qsearch>(pos, mp.ml, check);
 
@@ -77,7 +79,7 @@ Move pickNextMove(Movepicker &mp, Move ttMove, Position &pos, u64 check = 0ULL, 
 
     if (!mp.scored) {
         mp.scored = true;
-        return scoreMoves(mp, ttMove, pos, killers, history);
+        return scoreMoves(mp, ttMove, pos, killers, history, contHistory);
     }
 
 

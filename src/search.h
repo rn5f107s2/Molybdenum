@@ -6,6 +6,7 @@
 #include "Movepicker.h"
 #include "PSQT.h"
 #include "Movegen.h"
+#include "searchUtil.h"
 #include <chrono>
 #include <cmath>
 
@@ -20,6 +21,7 @@ struct SearchStack {
     int plysInSearch = 0;
     int staticEval = INFINITE;
     Move currMove = 0;
+    std::array<std::array<int, 13>, 64> *contHist = nullptr;
 };
 
 int startSearch(Position &pos, searchTime &st);
