@@ -260,6 +260,9 @@ int qsearch(int alpha, int beta, Position &pos, SearchInfo &si) {
 
     Movepicker mp;
     while ((currentMove = pickNextMove<true>(mp, 0, pos, check)) != 0) {
+        if (pos.isCapture(currentMove) && staticEval + PieceValuesSEE[pos.pieceLocations[extract<TO>(currentMove)]] + 150 <= alpha)
+            continue;
+
         if (pos.isCapture(currentMove) && !see(pos, -101, currentMove))
             continue;
 
