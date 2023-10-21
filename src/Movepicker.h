@@ -50,9 +50,12 @@ inline Move scoreMoves(Movepicker &mp, Move ttMove, Position &pos, const std::ar
         int movingPiece   = pos.pieceLocations[from];
         int capturedPiece = pos.pieceLocations[to];
 
-        mp.ml.moves[i].score += MVVLVA[movingPiece][capturedPiece];
-        mp.ml.moves[i].score += history[from][to];
-        mp.ml.moves[i].score += contHistory[pos.pieceLocations[from]][to];
+        if (capturedPiece != NO_PIECE)
+            mp.ml.moves[i].score += MVVLVA[movingPiece][capturedPiece];
+        else {
+            mp.ml.moves[i].score += history[from][to];
+            mp.ml.moves[i].score += contHistory[pos.pieceLocations[from]][to];
+        }
 
         //if (capturedPiece != NO_PIECE && mp.ml.moves[i].move != ttMove && !see(pos, -100, mp.ml.moves[i].move))
         //    mp.ml.moves[i].score -= 1000000;

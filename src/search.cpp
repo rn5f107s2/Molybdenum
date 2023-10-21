@@ -237,7 +237,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
                     }
 
                     if (!pos.isCapture(bestMove))
-                        updateHistory(mainHistory[pos.sideToMove], bestMove, historyUpdates, depth, *(stack-2)->contHist, pos.pieceLocations[from]);
+                        updateHistory(mainHistory[pos.sideToMove], bestMove, historyUpdates, depth, *(stack-2)->contHist, pos);
 
                     TT.save(tte, key, bestScore, LOWER, bestMove, depth, stack->plysInSearch);
                     return bestScore;
