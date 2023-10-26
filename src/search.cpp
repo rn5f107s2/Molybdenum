@@ -93,7 +93,7 @@ int aspirationWindow(int prevScore, Position &pos, SearchInfo &si, int depth) {
 template<bool ROOT>
 int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, SearchStack *stack) {
     u64 ksq = pos.getPieces(pos.sideToMove, KING);
-    u64 checkers = attackersTo<false, false>(lsb(ksq),getOccupied<WHITE>(pos) | getOccupied<BLACK>(pos), pos.sideToMove ? BLACK_PAWN : WHITE_PAWN, pos);
+    u64 checkers = attackersTo<false, false>(lsb(ksq),pos.getOccupied(), pos.sideToMove ? BLACK_PAWN : WHITE_PAWN, pos);
     Move bestMove = 0, currentMove = 0;
     int bestScore = -INFINITE, score = -INFINITE, moveCount = 0;
     bool exact = false, check = checkers, pvNode = (beta - alpha) > 1, ttHit = false, improving;
@@ -155,7 +155,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
 
         int reduction = std::min(depth, (3 + (stack->staticEval >= beta + 250) + (depth > 6)));
         pos.makeNullMove();
-        stack->currMove = 65;
+        stack->currMove = NULL_MOVE;
         int nullScore = -search<false>(-beta, -alpha, pos, depth - reduction, si, stack+1);
         pos.unmakeNullMove();
 

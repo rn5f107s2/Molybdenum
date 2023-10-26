@@ -144,7 +144,7 @@ constexpr std::array<std::array<u64, 64>, 2> initPawnMasks() {
     return masks;
 }
 
-[[maybe_unused]] void printBB(u64 bitboard) {
+[[maybe_unused]] inline void printBB(u64 bitboard) {
     std::string bb;
     u64 relevantBit = 1L << 63;
 
