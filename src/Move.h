@@ -17,6 +17,9 @@ enum MoveFlag {
     NORMAL, PROMOTION, CASTLING, ENPASSANT
 };
 
+const Move NO_MOVE = 0;
+const Move NULL_MOVE = 65;
+
 // first 6 bits = from square, next 6 bits = to square, next 2 bits promotion piece rest is flags for the kind of move
 
 static const int fromMask      =           0b111111;

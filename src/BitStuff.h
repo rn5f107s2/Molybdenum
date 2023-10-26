@@ -55,8 +55,6 @@ inline bool multipleBits(u64 bb) {
     return bb & (bb - 1);
 }
 
-constexpr std::array<u64, 64> knightMask = {};
-
 constexpr std::array<u64, 64> initKnightMasks() {
     std::array<u64, 64> masks = {};
 
@@ -146,7 +144,7 @@ constexpr std::array<std::array<u64, 64>, 2> initPawnMasks() {
     return masks;
 }
 
-inline void printBB(u64 bitboard) {
+[[maybe_unused]] void printBB(u64 bitboard) {
     std::string bb;
     u64 relevantBit = 1L << 63;
 
