@@ -166,4 +166,8 @@ inline u64 movePawn(u64 squareL, bool white) {
     return white ? squareL << 8 : squareL >> 8;
 }
 
+inline Piece makePromoPiece(int pt, Color c) {
+    return Piece((pt + 1) + (!c * 6));
+}
+
 #endif //MOLYBDENUM_BITSTUFF_H
