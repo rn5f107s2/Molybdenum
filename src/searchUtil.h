@@ -38,7 +38,7 @@ inline bool see(Position &pos, int threshold, Move move) {
     std::array<u64, 2> attackers = {0, 0};
     std::array<u64, 2> prioAttackers = {0, 0};
     std::array<int, 2> prioStage = {0, 0};
-    u64 blockers = ((getOccupied<WHITE>(pos) | getOccupied<BLACK>(pos))) ^ (1ULL << from);
+    u64 blockers = (pos.getOccupied()) ^ (1ULL << from);
 
     trade = PieceValuesSEE[pos.pieceLocations[to]] - threshold;
     if (trade < 0)
