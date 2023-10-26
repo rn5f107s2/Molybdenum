@@ -122,8 +122,6 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
     if (depth <= 0)
         return qsearch(alpha, beta, pos, si);
 
-    MoveList ml;
-
     if (!(si.nodeCount & 1023) && (std::chrono::steady_clock::now() > (si.st.searchStart + si.st.thinkingTime)))
         si.stop = true;
 
@@ -150,18 +148,27 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             ttScore += stack->plysInSearch;
     }
 
-    if (!pvNode && ttHit && ttDepth >= depth && (ttBound == EXACT || (ttBound == LOWER && ttScore >= beta) || (ttBound == UPPER && ttScore <= alpha)))
+    if (   !pvNode
+        && ttHit
+        && ttDepth >= depth
+        && (ttBound == EXACT || (ttBound == LOWER && ttScore >= beta) || (ttBound == UPPER && ttScore <= alpha)))
         return ttScore;
 
-    if (!pvNode && !check && stack->staticEval - (140 - 80 * improving) * depth >= beta)
+    if (   !pvNode
+        && !check
+        && stack->staticEval - (140 - 80 * improving) * depth >= beta)
         return stack->staticEval;
 
-    if (!pvNode && !check && depth >= 2 && (stack-1)->currMove != 65 && stack->staticEval >= beta) {
-        pos.makeNullMove();
+    if (   !pvNode
+        && !check
+        && depth >= 2
+        && (stack-1)->currMove != 65
+        && stack->staticEval >= beta) {
+
         int reduction = std::min(depth, (3 + (stack->staticEval >= beta + 250) + (depth > 6)));
+        pos.makeNullMove();
         stack->currMove = 65;
         int nullScore = -search<false>(-beta, -alpha, pos, depth - reduction, si, stack+1);
-        stack->currMove = 0;
         pos.unmakeNullMove();
 
         if (nullScore >= beta)
@@ -176,10 +183,16 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         int reductions = lmrReduction(depth, moveCount);
         int expectedDepth = std::max(depth - reductions, 1);
 
-        if (!pos.isCapture(currentMove) && depth <= 5 && moveCount > 12 * depth)
+        if (   !pos.isCapture(currentMove)
+            && depth <= 5
+            && moveCount > 12 * depth)
             continue;
 
-        if (!pvNode && !pos.isCapture(currentMove) && bestScore > -MAXMATE && depth <= 5 && stack->staticEval + 175 + 200 * expectedDepth <= alpha)
+        if (   !pvNode
+            && !pos.isCapture(currentMove)
+            && bestScore > -MAXMATE
+            && depth <= 5
+            && stack->staticEval + 175 + 200 * expectedDepth <= alpha)
             continue;
 
         pos.makeMove(currentMove);
@@ -221,13 +234,14 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
                 exact = true;
 
                 if (score >= beta) {
-                    if (!pos.isCapture(bestMove) && bestMove != killers[stack->plysInSearch][0]) {
-                        killers[stack->plysInSearch][1] = killers[stack->plysInSearch][0];
-                        killers[stack->plysInSearch][0] = bestMove;
-                    }
-
-                    if (!pos.isCapture(bestMove))
+                    if (!pos.isCapture(bestMove)) {
                         updateHistory(mainHistory[pos.sideToMove], bestMove, historyUpdates, depth);
+
+                        if (bestMove != killers[stack->plysInSearch][0]) {
+                            killers[stack->plysInSearch][1] = killers[stack->plysInSearch][0];
+                            killers[stack->plysInSearch][0] = bestMove;
+                        }
+                    }
 
                     TT.save(tte, key, bestScore, LOWER, bestMove, depth, stack->plysInSearch);
                     return bestScore;
@@ -242,16 +256,14 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
     if (ROOT && exact)
         si.bestRootMove = bestMove;
 
-    if (bestScore == -INFINITE) {
+    if (bestScore == -INFINITE)
         return checkers ? (-MATE + stack->plysInSearch) : DRAW;
-    }
 
     TT.save(tte, key, bestScore, exact ? EXACT : UPPER, bestMove, depth, stack->plysInSearch);
     return bestScore;
 }
 
 int qsearch(int alpha, int beta, Position &pos, SearchInfo &si) {
-    Move bestMove = 0;
     Move currentMove;
     bool check;
     int staticEval;
@@ -280,7 +292,6 @@ int qsearch(int alpha, int beta, Position &pos, SearchInfo &si) {
 
             if (score > alpha) {
                 alpha = score;
-                bestMove = currentMove;
 
                 if (score >= beta)
                     return score;
