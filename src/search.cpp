@@ -23,12 +23,6 @@ void clearHistory() {
     memset(&mainHistory, 0, sizeof(mainHistory[0]) * mainHistory.size());
 }
 
-int searchRoot(Position &pos, SearchInfo &si, int depth, int alpha, int beta) {
-    std::array<SearchStack, MAXDEPTH + 2> stack;
-    int score = search<true>(alpha, beta, pos, depth, si, &stack[2]);
-    return score;
-}
-
 int iterativeDeepening(Position  &pos, searchTime &st) {
     int score;
     SearchInfo si;
@@ -125,7 +119,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
     }
 
     int ttScore, ttBound, ttDepth;
-    Move ttMove = 0;
+    Move ttMove = NO_MOVE;
     u64 key = pos.key();
     TTEntry* tte = TT.probe(key);
 
@@ -156,7 +150,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
     if (   !pvNode
         && !check
         && depth >= 2
-        && (stack-1)->currMove != 65
+        && (stack-1)->currMove != NULL_MOVE
         && stack->staticEval >= beta) {
 
         int reduction = std::min(depth, (3 + (stack->staticEval >= beta + 250) + (depth > 6)));
@@ -170,7 +164,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
     }
 
     Movepicker mp;
-    while ((currentMove = pickNextMove<false>(mp, ttMove, pos, checkers, killers[stack->plysInSearch], mainHistory[pos.sideToMove])) != 0) {
+    while ((currentMove = pickNextMove<false>(mp, ttMove, pos, checkers, killers[stack->plysInSearch], mainHistory[pos.sideToMove]))) {
         int from = extract<FROM>(currentMove);
         int to   = extract<TO>(currentMove);
 
@@ -214,7 +208,6 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         }
 
         pos.unmakeMove(currentMove);
-        stack->currMove = 0;
 
         if (si.stop && !(ROOT && depth == (1 + check)))
             return DRAW;
@@ -267,7 +260,7 @@ int qsearch(int alpha, int beta, Position &pos, SearchInfo &si) {
         return bestScore;
 
     Movepicker mp;
-    while ((currentMove = pickNextMove<true>(mp, 0, pos, check)) != 0) {
+    while ((currentMove = pickNextMove<true>(mp, NO_MOVE, pos, check)) != 0) {
         if (pos.isCapture(currentMove) && staticEval + PieceValuesSEE[pos.pieceOn(extract<TO>(currentMove))] + 150 <= alpha)
             continue;
 
