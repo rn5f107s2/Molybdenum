@@ -13,7 +13,7 @@ enum MoveOperation {
     FROM, TO, PROMOTIONTYPE, FLAG
 };
 
-enum MoveFlags {
+enum MoveFlag {
     NORMAL, PROMOTION, CASTLING, ENPASSANT
 };
 

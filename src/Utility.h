@@ -50,7 +50,7 @@ T Stack<T>::top() {
     return stack[size - 1];
 }
 
-inline int charIntToPiece(int charInt) {
+inline Piece charIntToPiece(int charInt) {
     char piece = char(charInt + '0');
     switch (piece) {
         case 'P':

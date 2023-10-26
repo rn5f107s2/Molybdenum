@@ -178,7 +178,7 @@ u64 getOccupied(Position &pos) {
     return occ;
 }
 
-template<bool ISKING, MoveFlags FLAG, bool CAPTURESONLY>
+template<bool ISKING, MoveFlag FLAG, bool CAPTURESONLY>
 inline void pushTargetsToMoveList(int fromSquare, u64 possibleTargets, MoveList &ml, MovegenVariables &mv, Position &pos) {
     [[maybe_unused]] u64 blockers = mv.occupied ^ (1ULL << fromSquare);
     while (possibleTargets) {
