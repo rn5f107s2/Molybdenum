@@ -26,12 +26,6 @@ void clearHistory() {
 int searchRoot(Position &pos, SearchInfo &si, int depth, int alpha, int beta) {
     std::array<SearchStack, MAXDEPTH + 2> stack;
     int score = search<true>(alpha, beta, pos, depth, si, &stack[2]);
-
-    for (int i = 0; i != 64; i++)
-        for (int j = 0; j != 64; j++)
-            for (int k = 0; k != 2; k++)
-                mainHistory[k][j][i] /= 2;
-
     return score;
 }
 
