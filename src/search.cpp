@@ -110,7 +110,8 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
     if (depth <= 0)
         return qsearch(alpha, beta, pos, si);
 
-    if (!(si.nodeCount & 1023) && (std::chrono::steady_clock::now() > (si.st.searchStart + si.st.thinkingTime)))
+    if (   !(si.nodeCount & 1023)
+        && (std::chrono::steady_clock::now() > (si.st.searchStart + si.st.thinkingTime)))
         si.stop = true;
 
     if constexpr (!ROOT) {
@@ -261,10 +262,12 @@ int qsearch(int alpha, int beta, Position &pos, SearchInfo &si) {
 
     Movepicker mp;
     while ((currentMove = pickNextMove<true>(mp, NO_MOVE, pos, check)) != 0) {
-        if (pos.isCapture(currentMove) && staticEval + PieceValuesSEE[pos.pieceOn(extract<TO>(currentMove))] + 150 <= alpha)
+        if (   pos.isCapture(currentMove)
+            && staticEval + PieceValuesSEE[pos.pieceOn(extract<TO>(currentMove))] + 150 <= alpha)
             continue;
 
-        if (pos.isCapture(currentMove) && !see(pos, -101, currentMove))
+        if (   pos.isCapture(currentMove)
+            && !see(pos, -101, currentMove))
             continue;
 
         pos.makeMove(currentMove);

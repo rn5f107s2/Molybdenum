@@ -33,6 +33,7 @@ class Position {
         bool isCapture(Move move);
         std::string fen();
         template<Color c> u64 getPieces(PieceType pt);
+        template<PieceType pt> u64 getPieces(Color c);
         inline u64 getPieces(Color c, PieceType pt);
         inline u64 getPieces(PieceType pt);
         inline Piece pieceOn(int sq);
@@ -48,6 +49,12 @@ class Position {
 
 template<Color c> inline
 u64 Position::getPieces(PieceType pt) {
+    int idx = pt + (6 * !c);
+    return bitBoards[idx];
+}
+
+template<PieceType pt> inline
+u64 Position::getPieces(Color c) {
     int idx = pt + (6 * !c);
     return bitBoards[idx];
 }
