@@ -34,6 +34,7 @@ inline bool see(Position &pos, int threshold, Move move) {
     int trade;
     Color us = pos.sideToMove;
     Color stm = us;
+    PieceType stage;
     std::array<int, 2> stages = {PAWN - 1, PAWN - 1};
     std::array<u64, 2> attackers = {0, 0};
     std::array<u64, 2> prioAttackers = {0, 0};
@@ -61,10 +62,8 @@ inline bool see(Position &pos, int threshold, Move move) {
             continue;
         }
 
-        auto stage = PieceType(stages[stm]);
-
         while (!attackers[stm] && stages[stm] < KING + 1) {
-            stages[stm]++;
+            stage = PieceType(++stages[stm]);
             attackers[stm] |= getAttacks(stages[stm], to, blockers, !stm) & pos.getPieces(stm, stage) & blockers;
         }
 
