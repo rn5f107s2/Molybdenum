@@ -4,20 +4,15 @@
 #include "Movegen.h"
 #include "searchUtil.h"
 
-using FromToHist = std::array<std::array<int, 64>, 64>;
-using Killers    = std::array<Move, 2>;
-
-static std::array<Move, 2> empty = {0, 0};
-static std::array<std::array<int, 64>, 64> empty2 = {{{0}}};
-
 struct Movepicker {
     MoveList ml;
     int moveIndex = 0;
     bool scored = false;
-    Move ttMove = NO_MOVE;
-    FromToHist mainHistory{};
-    Killers killers{};
+    bool moveListInitialized = false;
 };
+
+static std::array<Move, 2> empty = {0, 0};
+static std::array<std::array<int, 64>, 64> empty2 = {{{0}}};
 
 const std::array<std::array<int, 13>, 13> MVVLVA =
          {{
@@ -37,31 +32,31 @@ const std::array<std::array<int, 13>, 13> MVVLVA =
          }};
 
 //This also returns the best move
-inline Move scoreMoves(Movepicker &mp, Position &pos) {
+inline Move scoreMoves(Movepicker &mp, Move ttMove, Position &pos, const std::array<Move, 2> &killers, const std::array<std::array<int, 64>, 64> &history) {
     int bestScore = -1000000;
     int bestIndex = 0;
 
     for (int i = mp.moveIndex; i < mp.ml.length; i++) {
-        Move &move = mp.ml.moves[i].move;
-        int &score = mp.ml.moves[i].score;
+        if (mp.ml.moves[i].move == ttMove)
+            mp.ml.moves[i].score = 10000000;
+        else if (mp.ml.moves[i].move == killers[0])
+            mp.ml.moves[i].score = 900000;
+        else if (mp.ml.moves[i].move == killers[1])
+            mp.ml.moves[i].score = 800000;
 
-        if (move == mp.ttMove)
-            score = 10000000;
-        else if (move == mp.killers[0])
-            score = 900000;
-        else if (move == mp.killers[1])
-            score = 800000;
+        int from = extract<FROM>(mp.ml.moves[i].move);
+        int to   = extract<TO  >(mp.ml.moves[i].move);
+        int movingPiece   = pos.pieceLocations[from];
+        int capturedPiece = pos.pieceLocations[to];
 
-        int from = extract<FROM>(move);
-        int to   = extract<TO  >(move);
-        Piece movingPiece   = pos.pieceOn(from);
-        Piece capturedPiece = pos.pieceOn(to);
+        mp.ml.moves[i].score += MVVLVA[movingPiece][capturedPiece];
+        mp.ml.moves[i].score += history[from][to];
 
-        score += MVVLVA[movingPiece][capturedPiece];
-        score += mp.mainHistory[from][to];
+        //if (capturedPiece != NO_PIECE && mp.ml.moves[i].move != ttMove && !see(pos, -100, mp.ml.moves[i].move))
+        //    mp.ml.moves[i].score -= 1000000;
 
-        if (score > bestScore) {
-            bestScore = score;
+        if (mp.ml.moves[i].score > bestScore) {
+            bestScore = mp.ml.moves[i].score;
             bestIndex = i;
         }
     }
@@ -73,23 +68,16 @@ inline Move scoreMoves(Movepicker &mp, Position &pos) {
     return mp.ml.moves[mp.moveIndex++].move;
 }
 
-template<bool qsearch>
-inline void initMp(Movepicker &mp,
-                   Position &pos,
-                   Move ttMove,
-                   u64 checkers = 0ULL,
-                   const Killers &killers = empty,
-                   const FromToHist &history = empty2) {
-    mp.mainHistory = history;
-    mp.killers = killers;
-    mp.ttMove = ttMove;
-    generateMoves<qsearch>(pos, mp.ml, checkers);
-}
+template<bool qsearch> inline
+Move pickNextMove(Movepicker &mp, Move ttMove, Position &pos, u64 check = 0ULL, const std::array<Move, 2> &killers = empty, const std::array<std::array<int, 64>, 64> &history = empty2) {
+    if (!mp.moveListInitialized)
+        generateMoves<qsearch>(pos, mp.ml, check);
 
-Move pickNextMove(Movepicker &mp, Position &pos) {
+    mp.moveListInitialized = true;
+
     if (!mp.scored) {
         mp.scored = true;
-        return scoreMoves(mp, pos);
+        return scoreMoves(mp, ttMove, pos, killers, history);
     }
 
 
