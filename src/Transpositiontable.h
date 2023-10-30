@@ -55,7 +55,7 @@ inline void updateKey(int enPassantFile, u64 &key) {
     key ^= pseudoRandomNumbers[enPassantFileBaseIdx + enPassantFile];
 }
 
-inline void updateKey(int castlingRights, u64 &key, bool hello) {
+inline void updateKeyCastling(int castlingRights, u64 &key) {
     while (castlingRights)
         key ^= pseudoRandomNumbers[castlingRightsBaseIdx + popLSB(castlingRights)];
 }

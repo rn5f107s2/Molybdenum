@@ -41,11 +41,11 @@ inline bool see(Position &pos, int threshold, Move move) {
     std::array<int, 2> prioStage = {0, 0};
     u64 blockers = (pos.getOccupied()) ^ (1ULL << from);
 
-    trade = PieceValuesSEE[pos.pieceLocations[to]] - threshold;
+    trade = PieceValuesSEE[pos.pieceOn(to)] - threshold;
     if (trade < 0)
         return false;
 
-    trade -= PieceValuesSEE[pos.pieceLocations[from]];
+    trade -= PieceValuesSEE[pos.pieceOn(from)];
     if (trade >= 0)
         return true;
 
