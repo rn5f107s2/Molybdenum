@@ -145,7 +145,7 @@ void Position::makeMove(Move move) {
         plys50moveRule = 0;
     }
 
-    updateKey((castlingMask[from] | castlingMask[to]) & castlingRights, key, true);
+    updateKeyCastling((castlingMask[from] | castlingMask[to]) & castlingRights, key);
     castlingRights &= ~(castlingMask[from] | castlingMask[to]);
 
     if (capturedPiece != NO_PIECE) {
