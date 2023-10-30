@@ -16,7 +16,7 @@ u64 positionToKey(std::array<u64, 13> &bbs, int castlingrights, u64 epSquare, bo
         }
     }
 
-    updateKey(castlingrights, key, true);
+    updateKeyCastling(castlingrights, key);
 
     if (epSquare)
         updateKey(fileOf(lsb(epSquare)), key);

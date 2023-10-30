@@ -32,19 +32,20 @@ inline bool see(Position &pos, int threshold, Move move) {
         return threshold >= 0;
 
     int trade;
-    bool us = pos.sideToMove;
-    bool stm = us;
+    Color us = pos.sideToMove;
+    Color stm = us;
+    PieceType stage;
     std::array<int, 2> stages = {PAWN - 1, PAWN - 1};
     std::array<u64, 2> attackers = {0, 0};
     std::array<u64, 2> prioAttackers = {0, 0};
     std::array<int, 2> prioStage = {0, 0};
-    u64 blockers = ((getOccupied<WHITE>(pos) | getOccupied<BLACK>(pos))) ^ (1ULL << from);
+    u64 blockers = (pos.getOccupied()) ^ (1ULL << from);
 
-    trade = PieceValuesSEE[pos.pieceLocations[to]] - threshold;
+    trade = PieceValuesSEE[pos.pieceOn(to)] - threshold;
     if (trade < 0)
         return false;
 
-    trade -= PieceValuesSEE[pos.pieceLocations[from]];
+    trade -= PieceValuesSEE[pos.pieceOn(from)];
     if (trade >= 0)
         return true;
 
@@ -61,10 +62,9 @@ inline bool see(Position &pos, int threshold, Move move) {
             continue;
         }
 
-
         while (!attackers[stm] && stages[stm] < KING + 1) {
-            stages[stm]++;
-            attackers[stm] |= getAttacks(stages[stm], to, blockers, !stm) & pos.bitBoards[stages[stm] + 6 * !stm] & blockers;
+            stage = PieceType(++stages[stm]);
+            attackers[stm] |= getAttacks(stages[stm], to, blockers, !stm) & pos.getPieces(stm, stage) & blockers;
         }
 
         if (!attackers[stm])
@@ -81,17 +81,17 @@ inline bool see(Position &pos, int threshold, Move move) {
         }
 
         if (stages[stm] == QUEEN) {
-            prioAttackers[stm] |= getAttacks<ROOK  >(to, blockers) & blockers & pos.bitBoards[ROOK   + 6 * !stm];
+            prioAttackers[stm] |= getAttacks<ROOK  >(to, blockers) & blockers & pos.getPieces<ROOK>(stm);
             if (prioAttackers[stm])
                 prioStage[stm] = ROOK;
 
-            prioAttackers[stm] |= getAttacks<BISHOP>(to, blockers) & blockers & pos.bitBoards[BISHOP + 6 * !stm];
+            prioAttackers[stm] |= getAttacks<BISHOP>(to, blockers) & blockers & pos.getPieces<BISHOP>(stm);
             if (prioAttackers[stm])
                 prioStage[stm] = BISHOP;
         }
 
         if (stages[stm] == ROOK || stages[stm] == BISHOP || stages[stm] == QUEEN)
-            attackers[stm] |= getAttacks(stages[stm], to, blockers) & blockers & pos.bitBoards[stages[stm] + 6 * !stm];
+            attackers[stm] |= getAttacks(stages[stm], to, blockers) & blockers & pos.getPieces(stm, stage);
     }
 
     return stm != us;

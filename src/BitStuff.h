@@ -55,8 +55,6 @@ inline bool multipleBits(u64 bb) {
     return bb & (bb - 1);
 }
 
-constexpr std::array<u64, 64> knightMask = {};
-
 constexpr std::array<u64, 64> initKnightMasks() {
     std::array<u64, 64> masks = {};
 
@@ -146,7 +144,7 @@ constexpr std::array<std::array<u64, 64>, 2> initPawnMasks() {
     return masks;
 }
 
-inline void printBB(u64 bitboard) {
+[[maybe_unused]] inline void printBB(u64 bitboard) {
     std::string bb;
     u64 relevantBit = 1L << 63;
 
@@ -164,6 +162,10 @@ inline void printBB(u64 bitboard) {
 
 inline u64 movePawn(u64 squareL, bool white) {
     return white ? squareL << 8 : squareL >> 8;
+}
+
+inline Piece makePromoPiece(int pt, Color c) {
+    return Piece((pt + 1) + (!c * 6));
 }
 
 #endif //MOLYBDENUM_BITSTUFF_H

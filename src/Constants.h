@@ -5,33 +5,25 @@
 #include <cstdint>
 
 using u64 = uint64_t;
+using Color = bool;
 
 //Position Stuff
-constexpr bool WHITE = true;
-constexpr bool BLACK = false;
-
-constexpr int WHITE_PAWN   = 0;
-constexpr int WHITE_KNIGHT = 1;
-constexpr int WHITE_BISHOP = 2;
-constexpr int WHITE_ROOK   = 3;
-constexpr int WHITE_QUEEN  = 4;
-constexpr int WHITE_KING   = 5;
-constexpr int BLACK_PAWN   = 6;
-constexpr int BLACK_KNIGHT = 7;
-constexpr int BLACK_BISHOP = 8;
-constexpr int BLACK_ROOK   = 9;
-constexpr int BLACK_QUEEN  = 10;
-constexpr int BLACK_KING   = 11;
-constexpr int NO_PIECE     = 12;
+constexpr Color WHITE = true;
+constexpr Color BLACK = false;
 
 enum PieceType {
     PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING
 };
 
-constexpr int PROMO_KNIGHT = 0;
-constexpr int PROMO_BISHOP = 1;
-constexpr int PROMO_ROOK   = 2;
-constexpr int PROMO_QUEEN  = 3;
+enum Piece {
+    WHITE_PAWN, WHITE_KNIGHT, WHITE_BISHOP, WHITE_ROOK, WHITE_QUEEN, WHITE_KING,
+    BLACK_PAWN, BLACK_KNIGHT, BLACK_BISHOP, BLACK_ROOK, BLACK_QUEEN, BLACK_KING,
+    NO_PIECE
+};
+
+enum PromotionType {
+    PROMO_KNIGHT, PROMO_BISHOP, PROMO_ROOK, PROMO_QUEEN
+};
 
 constexpr u64 RANK1 = 256 - 1;
 constexpr u64 RANK2 = RANK1 << 8;

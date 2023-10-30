@@ -11,8 +11,8 @@
 
 struct SearchInfo {
     int nodeCount = 0;
-    Move bestRootMove = 0;
     bool stop = false;
+    Move bestRootMove = 0;
     searchTime st;
 };
 
@@ -38,14 +38,14 @@ inline std::array<double, 256> initReductions() {
 
 static std::array<double, 256> Log = initReductions();
 
+inline int lmrReduction(int depth, int movecount) {
+    return int(1 + Log[depth] * Log[movecount] / 2);
+}
+
 inline int mateInPlies(int score) {
     bool mating = score > MAXMATE;
     int  plies  = (mating ? MATE - score : MATE + score) / 2 + (score < 0 ? 0 : 1);
-    return plies;
-}
-
-inline int lmrReduction(int depth, int movecount) {
-    return int(1 + Log[depth] * Log[movecount] / 2);
+    return plies * (mating ? 1 : -1);
 }
 
 #endif //MOLYBDENUM_SEARCH_H

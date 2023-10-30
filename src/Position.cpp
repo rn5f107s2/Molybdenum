@@ -53,7 +53,7 @@ void Position::setBoard(std::string fen) {
             continue;
         }
 
-        int piece = charIntToPiece(charAsInt);
+        Piece piece = charIntToPiece(charAsInt);
         psqtMG += PSQT[0][piece][lsb(bitToSet)];
         psqtEG += PSQT[1][piece][lsb(bitToSet)];
         phase += gamePhaseValues[typeOf(piece)];
@@ -86,8 +86,8 @@ void Position::makeMove(Move move) {
     int from = extract<FROM>(move);
     int to   = extract<TO>(move);
     int flag = extract<FLAG>(move);
-    int movedPiece    = pieceLocations[from];
-    int capturedPiece = pieceLocations[to];
+    Piece movedPiece    = pieceLocations[from];
+    Piece capturedPiece = pieceLocations[to];
     u64 key           = keyHistory.top();
 
     plys50mrHistory.push(plys50moveRule);
@@ -106,7 +106,7 @@ void Position::makeMove(Move move) {
     psqtEG -= PSQT[1][movedPiece][from];
 
     if (flag == PROMOTION) {
-        movedPiece = extract<PROMOTIONTYPE>(move) + 1 + 6 * !sideToMove;
+        movedPiece = makePromoPiece(extract<PROMOTIONTYPE>(move), sideToMove);
         phase += gamePhaseValues[typeOf(movedPiece)];
         plys50moveRule = 0;
     }
@@ -123,7 +123,7 @@ void Position::makeMove(Move move) {
     if (flag == CASTLING) {
         int rookFrom = from > to ? to - 1 : to + 2;
         int rookTo   = from > to ? to + 1 : to - 1;
-        int rook     = pieceLocations[rookFrom];
+        Piece rook     = pieceLocations[rookFrom];
 
         pieceLocations[rookFrom] = NO_PIECE;
         pieceLocations[rookTo  ] = rook;
@@ -145,7 +145,7 @@ void Position::makeMove(Move move) {
         plys50moveRule = 0;
     }
 
-    updateKey((castlingMask[from] | castlingMask[to]) & castlingRights, key, true);
+    updateKeyCastling((castlingMask[from] | castlingMask[to]) & castlingRights, key);
     castlingRights &= ~(castlingMask[from] | castlingMask[to]);
 
     if (capturedPiece != NO_PIECE) {
@@ -168,11 +168,11 @@ void Position::makeMove(Move move) {
 }
 
 void Position::unmakeMove(Move move) {
-    int from = extract<FROM>(move);
-    int to   = extract<TO  >(move);
+    int from   = extract<FROM>(move);
+    int to     = extract<TO  >(move);
     int flag = extract<FLAG>(move);
-    int movingPiece = pieceLocations[to];
-    int capturedPiece = capturedHistory.pop();
+    Piece movingPiece = pieceLocations[to];
+    Piece capturedPiece = capturedHistory.pop();
 
     plys50moveRule = plys50mrHistory.pop();
     castlingRights = castlingHistory.pop();
@@ -203,7 +203,7 @@ void Position::unmakeMove(Move move) {
     if (flag == CASTLING) {
         int rookFrom = from > to ? to - 1 : to + 2;
         int rookTo   = from > to ? to + 1 : to - 1;
-        int rook     = pieceLocations[rookTo];
+        Piece rook     = pieceLocations[rookTo];
 
         pieceLocations[rookTo  ] = NO_PIECE;
         pieceLocations[rookFrom] = rook;
@@ -213,7 +213,7 @@ void Position::unmakeMove(Move move) {
     }
 
     if (flag == ENPASSANT) {
-        int capturedPawn  = movingPiece == WHITE_PAWN ? BLACK_PAWN : WHITE_PAWN;
+        Piece capturedPawn = movingPiece == WHITE_PAWN ? BLACK_PAWN : WHITE_PAWN;
         u64 captureSquare = movePawn(enPassantSquare, sideToMove);
         bitBoards[capturedPawn] ^= captureSquare;
         pieceLocations[lsb(captureSquare)] = capturedPawn;
@@ -300,7 +300,8 @@ bool Position::hasRepeated(int plysInSearch) {
 }
 
 bool Position::isCapture(Move move) {
-    return pieceLocations[extract<TO>(move)] != NO_PIECE;
+    int to = extract<TO>(move);
+    return pieceLocations[to] != NO_PIECE;
 }
 
 void Position::makeNullMove() {

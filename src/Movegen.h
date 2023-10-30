@@ -168,17 +168,7 @@ inline void pushBack(MoveList &ml, Move move) {
     ml.currentIdx++;
 }
 
-template<bool WHITE> inline
-u64 getOccupied(Position &pos) {
-    u64 occ = 0;
-    int start = 0 + (!WHITE * 6);
-    for (int i = start; i != start + 6; i++)
-        occ |= pos.bitBoards[i];
-
-    return occ;
-}
-
-template<bool ISKING, MoveFlags FLAG, bool CAPTURESONLY>
+template<bool ISKING, MoveFlag FLAG, bool CAPTURESONLY>
 inline void pushTargetsToMoveList(int fromSquare, u64 possibleTargets, MoveList &ml, MovegenVariables &mv, Position &pos) {
     [[maybe_unused]] u64 blockers = mv.occupied ^ (1ULL << fromSquare);
     while (possibleTargets) {
@@ -289,8 +279,8 @@ template<bool CAPTURESONLY>
 inline bool generateMoves(Position &pos, MoveList &ml, u64 checkingPieces = 0ULL) {
     MovegenVariables mv = {};
 
-    mv.white = getOccupied<WHITE>(pos);
-    mv.black = getOccupied<BLACK>(pos);
+    mv.white = pos.getOccupied<WHITE>();
+    mv.black = pos.getOccupied<BLACK>();
     mv.occupied = mv.white | mv.black;
     mv.empty = ~mv.occupied;
     mv.stm = pos.sideToMove ? mv.white : mv.black;

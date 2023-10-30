@@ -9,8 +9,6 @@
 #include "eval.h"
 #include "timemanagement.h"
 #include "searchUtil.h"
-#include "Tuner/tuner.h"
-#include "Datagen/datagen.h"
 
 void uciCommunication() {
     Position internalBoard = Position();
