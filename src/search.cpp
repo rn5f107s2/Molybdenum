@@ -119,6 +119,10 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             return 0;
     }
 
+    if (   alpha > MAXMATE
+        && MATE - stack->plysInSearch <= alpha)
+        return alpha;
+
     int ttScore, ttBound, ttDepth;
     Move ttMove = NO_MOVE;
     u64 key = pos.key();
@@ -173,6 +177,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         int expectedDepth = std::max(depth - reductions, 1);
 
         if (   !pos.isCapture(currentMove)
+            && bestScore > -MAXMATE
             && depth <= 5
             && moveCount > 12 * depth)
             continue;
