@@ -34,7 +34,7 @@ inline bool see(Position &pos, int threshold, Move move) {
     int trade;
     Color us = pos.sideToMove;
     Color stm = us;
-    PieceType stage;
+    PieceType stage = PAWN;
     std::array<int, 2> stages = {PAWN - 1, PAWN - 1};
     std::array<u64, 2> attackers = {0, 0};
     std::array<u64, 2> prioAttackers = {0, 0};

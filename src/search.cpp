@@ -24,7 +24,7 @@ void clearHistory() {
 }
 
 int iterativeDeepening(Position  &pos, searchTime &st) {
-    int score;
+    int score = 0;
     SearchInfo si;
     si.st = st;
 
@@ -115,7 +115,9 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         si.stop = true;
 
     if constexpr (!ROOT) {
-        if (pos.hasRepeated(stack->plysInSearch) || pos.plys50moveRule > 99 || (pos.phase <= 3 && !(pos.getPieces(PAWN))))
+        if (   pos.hasRepeated(stack->plysInSearch)
+            || pos.plys50moveRule > 99
+            || (pos.phase <= 3 && !(pos.getPieces(PAWN))))
             return 0;
     }
 
@@ -144,7 +146,9 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
     if (   !pvNode
         && ttHit
         && ttDepth >= depth
-        && (ttBound == EXACT || (ttBound == LOWER && ttScore >= beta) || (ttBound == UPPER && ttScore <= alpha)))
+        && (    ttBound == EXACT
+            || (ttBound == LOWER && ttScore >= beta)
+            || (ttBound == UPPER && ttScore <= alpha)))
         return ttScore;
 
     if (   !pvNode
@@ -170,9 +174,6 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
 
     Movepicker mp;
     while ((currentMove = pickNextMove<false>(mp, ttMove, pos, checkers, killers[stack->plysInSearch], mainHistory[pos.sideToMove]))) {
-        int from = extract<FROM>(currentMove);
-        int to   = extract<TO>(currentMove);
-
         int reductions = lmrReduction(depth, moveCount);
         int expectedDepth = std::max(depth - reductions, 1);
 
