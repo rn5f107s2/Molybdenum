@@ -20,11 +20,11 @@ struct SearchStack {
     int plysInSearch = 0;
     int staticEval = INFINITE;
     Move currMove = 0;
+    PieceToHist *contHist = nullptr;
 };
 
 int startSearch(Position &pos, searchTime &st);
 int iterativeDeepening(Position  &pos, searchTime &st);
-int searchRoot(Position &pos, SearchInfo &si, int depth, int alpha = -INFINITE, int beta = INFINITE);
 int aspirationWindow(int prevScore, Position &pos, SearchInfo &si, int depth);
 void clearHistory();
 
