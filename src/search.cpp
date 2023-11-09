@@ -9,7 +9,8 @@
 #include <algorithm>
 
 std::array<std::array<Move, 2>, 100> killers;
-std::array<std::array<std::array<int, 64>, 64>, 2> mainHistory;
+SideFromToHist mainHistory;
+ContHist continuationHistory;
 
 template<bool ROOT>
 int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, SearchStack *stack);
@@ -24,7 +25,7 @@ void clearHistory() {
 }
 
 int iterativeDeepening(Position  &pos, searchTime &st) {
-    int score;
+    int score = 0;
     SearchInfo si;
     si.st = st;
 
@@ -73,6 +74,8 @@ int aspirationWindow(int prevScore, Position &pos, SearchInfo &si, int depth) {
     }
 
     std::array<SearchStack, MAXDEPTH + 3> stack;
+    stack[0].contHist = &continuationHistory[NO_PIECE][0];
+    stack[1].contHist = &continuationHistory[NO_PIECE][0];
 
     int score = search<true>(alpha, beta, pos, depth, si, &stack[2]);
 
@@ -115,7 +118,9 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         si.stop = true;
 
     if constexpr (!ROOT) {
-        if (pos.hasRepeated(stack->plysInSearch) || pos.plys50moveRule > 99 || (pos.phase <= 3 && !(pos.getPieces(PAWN))))
+        if (   pos.hasRepeated(stack->plysInSearch)
+            || pos.plys50moveRule > 99
+            || (pos.phase <= 3 && !(pos.getPieces(PAWN))))
             return 0;
     }
 
@@ -144,7 +149,9 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
     if (   !pvNode
         && ttHit
         && ttDepth >= depth
-        && (ttBound == EXACT || (ttBound == LOWER && ttScore >= beta) || (ttBound == UPPER && ttScore <= alpha)))
+        && (    ttBound == EXACT
+            || (ttBound == LOWER && ttScore >= beta)
+            || (ttBound == UPPER && ttScore <= alpha)))
         return ttScore;
 
     if (   !pvNode
@@ -161,6 +168,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         int reduction = std::min(depth, (3 + (stack->staticEval >= beta + 250) + (depth > 6)));
         pos.makeNullMove();
         stack->currMove = NULL_MOVE;
+        stack->contHist = &continuationHistory[NO_PIECE][key & 63];
         int nullScore = -search<false>(-beta, -alpha, pos, depth - reduction, si, stack+1);
         pos.unmakeNullMove();
 
@@ -169,9 +177,10 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
     }
 
     Movepicker mp;
-    while ((currentMove = pickNextMove<false>(mp, ttMove, pos, checkers, killers[stack->plysInSearch], mainHistory[pos.sideToMove]))) {
+    while ((currentMove = pickNextMove<false>(mp, ttMove, pos, checkers, killers[stack->plysInSearch], mainHistory[pos.sideToMove], *(stack-1)->contHist))) {
         int from = extract<FROM>(currentMove);
         int to   = extract<TO>(currentMove);
+        Piece pc = pos.pieceOn(from);
 
         int reductions = lmrReduction(depth, moveCount);
         int expectedDepth = std::max(depth - reductions, 1);
@@ -191,6 +200,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
 
         pos.makeMove(currentMove);
         stack->currMove = currentMove;
+        stack->contHist = &continuationHistory[pc][to];
         si.nodeCount++;
         moveCount++;
 
@@ -228,7 +238,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
 
                 if (score >= beta) {
                     if (!pos.isCapture(bestMove)) {
-                        updateHistory(mainHistory[pos.sideToMove], bestMove, historyUpdates, depth);
+                        updateHistory(mainHistory[pos.sideToMove], *(stack-1)->contHist, bestMove, historyUpdates, depth, pos, (stack-1)->currMove && (stack-1)->currMove != NULL_MOVE);
 
                         if (bestMove != killers[stack->plysInSearch][0]) {
                             killers[stack->plysInSearch][1] = killers[stack->plysInSearch][0];
