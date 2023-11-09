@@ -168,7 +168,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         int reduction = std::min(depth, (3 + (stack->staticEval >= beta + 250) + (depth > 6)));
         pos.makeNullMove();
         stack->currMove = NULL_MOVE;
-        stack->contHist = &continuationHistory[NO_PIECE][key & 63];
+        stack->contHist = &continuationHistory[NO_PIECE][0];
         int nullScore = -search<false>(-beta, -alpha, pos, depth - reduction, si, stack+1);
         pos.unmakeNullMove();
 
