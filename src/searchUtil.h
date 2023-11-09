@@ -9,7 +9,7 @@ using PieceToHist = std::array<std::array<int, 64>, 13>;
 using SideFromToHist = std::array<FromToHist, 2>;
 using ContHist = std::array<std::array<PieceToHist, 64>, 13>;
 
-inline void updateHistory(FromToHist &history, PieceToHist &contHist, Move bestMove, Stack<Move> movesToUpdate, int depth, Position &pos, const bool updateCont) {
+inline void updateHistory(FromToHist &history, PieceToHist &contHist, Move bestMove, Stack<Move> &movesToUpdate, int depth, Position &pos, const bool updateCont) {
     int from = extract<FROM>(bestMove);
     int to   = extract<TO  >(bestMove);
     int pc   = pos.pieceOn(from);
