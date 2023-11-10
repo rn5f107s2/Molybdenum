@@ -9,7 +9,7 @@ using PieceToHist = std::array<std::array<int, 64>, 13>;
 using SideFromToHist = std::array<FromToHist, 2>;
 using ContHist = std::array<std::array<PieceToHist, 64>, 13>;
 
-inline void updateHistory(FromToHist &history, PieceToHist &contHist, Move bestMove, Stack<Move> &movesToUpdate, int depth, Position &pos, const bool updateCont) {
+inline void updateHistory(FromToHist &history, PieceToHist &contHist, PieceToHist  &contHist2, Move bestMove, Stack<Move> &movesToUpdate, int depth, Position &pos, const bool updateCont, const bool updateCont2) {
     int from = extract<FROM>(bestMove);
     int to   = extract<TO  >(bestMove);
     int pc   = pos.pieceOn(from);
@@ -19,6 +19,8 @@ inline void updateHistory(FromToHist &history, PieceToHist &contHist, Move bestM
     history[from][to] += bonus - history [from][to] * abs(bonus) / 100000;
     if (updateCont)
         contHist[pc][to]  += bonus - contHist[pc][to] * abs(bonus) / 100000;
+    if (updateCont2)
+        contHist2[pc][to]  += bonus - contHist2[pc][to] * abs(bonus) / 100000;
 
     while (movesToUpdate.getSize()) {
         Move move = movesToUpdate.pop();
@@ -28,7 +30,9 @@ inline void updateHistory(FromToHist &history, PieceToHist &contHist, Move bestM
 
         history[from][to] += malus - history [from][to] * abs(malus) / 100000;
         if (updateCont)
-            contHist[pc][to] += malus - contHist[pc][to] * abs(bonus) / 100000;
+            contHist[pc][to] += malus - contHist[pc][to] * abs(malus) / 100000;
+        if (updateCont2)
+            contHist2[pc][to] += malus - contHist2[pc][to] * abs(malus) / 100000;
     }
 }
 

@@ -178,7 +178,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
     }
 
     Movepicker mp;
-    while ((currentMove = pickNextMove<false>(mp, ttMove, pos, checkers, killers[stack->plysInSearch], mainHistory[pos.sideToMove], *(stack-1)->contHist))) {
+    while ((currentMove = pickNextMove<false>(mp, ttMove, pos, checkers, killers[stack->plysInSearch], mainHistory[pos.sideToMove], *(stack-1)->contHist, *(stack-2)->contHist))) {
         int from = extract<FROM>(currentMove);
         int to   = extract<TO>(currentMove);
         Piece pc = pos.pieceOn(from);
@@ -247,7 +247,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
 
                 if (score >= beta) {
                     if (!pos.isCapture(bestMove)) {
-                        updateHistory(mainHistory[pos.sideToMove], *(stack-1)->contHist, bestMove, historyUpdates, depth, pos, (stack-1)->currMove && (stack-1)->currMove != NULL_MOVE);
+                        updateHistory(mainHistory[pos.sideToMove], *(stack-1)->contHist, *(stack-2)->contHist, bestMove, historyUpdates, depth, pos, (stack-1)->currMove && (stack-1)->currMove != NULL_MOVE, (stack-2)->currMove && (stack-2)->currMove != NULL_MOVE);
 
                         if (bestMove != killers[stack->plysInSearch][0]) {
                             killers[stack->plysInSearch][1] = killers[stack->plysInSearch][0];
