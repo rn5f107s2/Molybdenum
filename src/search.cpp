@@ -22,6 +22,7 @@ int startSearch(Position &pos, searchTime &st) {
 
 void clearHistory() {
     memset(&mainHistory, 0, sizeof(mainHistory[0]) * mainHistory.size());
+    memset(&continuationHistory, 0, sizeof(continuationHistory[0]) * continuationHistory.size());
 }
 
 int iterativeDeepening(Position  &pos, searchTime &st) {
