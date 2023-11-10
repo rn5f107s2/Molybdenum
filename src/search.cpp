@@ -184,6 +184,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
 
         int reductions = lmrReduction(depth, moveCount);
         int expectedDepth = std::max(depth - reductions, 1);
+        int history = (*(stack-1)->contHist)[pc][to] + mainHistory[pos.sideToMove][from][to];
 
         if (   !pos.isCapture(currentMove)
             && bestScore > -MAXMATE
@@ -196,6 +197,13 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             && bestScore > -MAXMATE
             && depth <= 5
             && stack->staticEval + 175 + 200 * expectedDepth <= alpha)
+            continue;
+
+        if (   !pvNode
+            && bestScore > -MAXMATE
+            && !pos.isCapture(currentMove)
+            && depth <= 5
+            && history < -4500 * expectedDepth)
             continue;
 
         pos.makeMove(currentMove);
