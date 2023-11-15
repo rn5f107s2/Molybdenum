@@ -9,8 +9,10 @@
 #include <chrono>
 #include <cmath>
 
+#define DATAGEN
+
 struct SearchInfo {
-    int nodeCount = 0;
+    u64 nodeCount = 0;
     bool stop = false;
     Move bestRootMove = 0;
     searchTime st;
@@ -23,8 +25,10 @@ struct SearchStack {
     PieceToHist *contHist = nullptr;
 };
 
-int startSearch(Position &pos, searchTime &st);
-int iterativeDeepening(Position  &pos, searchTime &st);
+static Move emptyMove = 0;
+
+int startSearch(Position &pos, searchTime &st, Move &bm = emptyMove);
+int iterativeDeepening(Position  &pos, searchTime &st, Move &bm = emptyMove);
 int aspirationWindow(int prevScore, Position &pos, SearchInfo &si, int depth);
 void clearHistory();
 
@@ -46,6 +50,11 @@ inline int mateInPlies(int score) {
     bool mating = score > MAXMATE;
     int  plies  = (mating ? MATE - score : MATE + score) / 2 + (score < 0 ? 0 : 1);
     return plies * (mating ? 1 : -1);
+}
+
+inline bool stop(searchTime &st, SearchInfo &si) {
+    return    (std::chrono::steady_clock::now() > (si.st.searchStart + si.st.thinkingTime) && st.limit == Time)
+           || (st.limit == Nodes && si.nodeCount >= st.nodeLimit);
 }
 
 #endif //MOLYBDENUM_SEARCH_H
