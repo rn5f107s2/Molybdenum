@@ -16,8 +16,8 @@ template<bool ROOT>
 int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, SearchStack *stack);
 int qsearch(int alpha, int beta, Position &pos, SearchInfo &si);
 
-int startSearch(Position &pos, searchTime &st) {
-    return iterativeDeepening(pos, st);
+int startSearch(Position &pos, searchTime &st, Move &bm) {
+    return iterativeDeepening(pos, st, bm);
 }
 
 void clearHistory() {
@@ -25,17 +25,20 @@ void clearHistory() {
     memset(&continuationHistory, 0, sizeof(continuationHistory[0]) * continuationHistory.size());
 }
 
-int iterativeDeepening(Position  &pos, searchTime &st) {
+int iterativeDeepening(Position  &pos, searchTime &st, Move &bm) {
     int score = 0;
+    int prevScore = 0;
     SearchInfo si;
     si.st = st;
 
     for (int depth = 1; depth != MAXDEPTH; depth++) {
+        prevScore = score;
         score = aspirationWindow(score, pos, si, depth);
 
-        if (std::chrono::steady_clock::now() > (si.st.searchStart + si.st.thinkingTime))
+        if (stop(st, si))
             break;
 
+#ifndef DATAGEN
         std::string uciOutput;
         auto searchTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - si.st.searchStart).count();
         uciOutput += "info depth ";
@@ -58,10 +61,15 @@ int iterativeDeepening(Position  &pos, searchTime &st) {
         uciOutput += std::to_string((si.nodeCount / std::max(int(searchTime), 1)) * 1000);
 
         std::cout << uciOutput << "\n";
+#endif
     }
 
-    std::cout << "bestmove " << moveToString(si.bestRootMove) << "\n";
-    return score;
+#ifdef DATAGEN
+    bm = si.bestRootMove;
+#else
+    std::cout << "bestmove " << moveToString(bm = si.bestRootMove) << "\n";
+#endif
+    return prevScore;
 }
 
 int aspirationWindow(int prevScore, Position &pos, SearchInfo &si, int depth) {
@@ -80,7 +88,7 @@ int aspirationWindow(int prevScore, Position &pos, SearchInfo &si, int depth) {
 
     int score = search<true>(alpha, beta, pos, depth, si, &stack[2]);
 
-    while ((score >= beta || score <= alpha) && (std::chrono::steady_clock::now() < (si.st.searchStart + si.st.thinkingTime))) {
+    while ((score >= beta || score <= alpha) && (!stop(si.st, si))) {
         delta += delta / 3;
 
         if (score >= beta)
@@ -115,7 +123,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         return qsearch(alpha, beta, pos, si);
 
     if (   !(si.nodeCount & 1023)
-        && (std::chrono::steady_clock::now() > (si.st.searchStart + si.st.thinkingTime)))
+        && stop(si.st, si))
         si.stop = true;
 
     if constexpr (!ROOT) {

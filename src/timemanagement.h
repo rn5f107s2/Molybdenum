@@ -5,9 +5,15 @@
 
 const int moveOverHead = 10;
 
+enum SearchLimit {
+    Time, Nodes
+};
+
 struct searchTime{
-    std::chrono::milliseconds thinkingTime;
+    std::chrono::milliseconds thinkingTime = std::chrono::milliseconds::max();
     std::chrono::time_point<std::chrono::steady_clock> searchStart = std::chrono::steady_clock::now();
+    uint64_t nodeLimit = 18446744073709551615ull;
+    SearchLimit limit = Time;
 };
 
 searchTime calcThinkingTime(int timeLeft, int increment);
