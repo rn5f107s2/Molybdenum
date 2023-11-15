@@ -77,23 +77,20 @@ void playGame(Position &pos, const std::string& filename, u64 &fenCount) {
 
         int score = startSearch(pos, st, bestMove);
 
-        if (abs(score) >= MAXMATE)
-            break;
-
         if (abs(score) >= 400)
             adjCounter[WIN_ADJ]++;
         else
             adjCounter[WIN_ADJ] = 0;
 
-        if (abs(score) <= 10)
-            adjCounter[DRAW_ADJ]++;
-        else
-            adjCounter[DRAW_ADJ] = 0;
-
-        if (adjCounter[WIN_ADJ] > 5) {
+        if (adjCounter[WIN_ADJ] > 5 || abs(score) >= MAXMATE) {
             result = (score > 0 == pos.sideToMove) ? "1.0" : "0.0";
             break;
         }
+
+        if (abs(score) <= 10 || pos.plys50moveRule >= 100)
+            adjCounter[DRAW_ADJ]++;
+        else
+            adjCounter[DRAW_ADJ] = 0;
 
         if (adjCounter[DRAW_ADJ] > 7) {
             result = "0.5";
