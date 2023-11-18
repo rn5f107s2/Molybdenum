@@ -33,7 +33,7 @@ const std::array<std::array<int, 13>, 13> MVVLVA =
          }};
 
 //This also returns the best move
-inline Move scoreMoves(Movepicker &mp, Move ttMove, Position &pos, const std::array<Move, 2> &killers, const FromToHist &history, const PieceToHist &contHist) {
+inline Move scoreMoves(Movepicker &mp, Move ttMove, Position &pos, const std::array<Move, 2> &killers, const FromToHist &history, const PieceToHist &contHist, const PieceToHist &contHist2) {
     int bestScore = -1000000;
     int bestIndex = 0;
 
@@ -54,6 +54,8 @@ inline Move scoreMoves(Movepicker &mp, Move ttMove, Position &pos, const std::ar
         mp.ml.moves[i].score += MVVLVA[movingPiece][capturedPiece];
         mp.ml.moves[i].score += history[from][to];
         mp.ml.moves[i].score += contHist[pc][to];
+        mp.ml.moves[i].score += contHist2[pc][to];
+
 
         if (mp.ml.moves[i].score > bestScore) {
             bestScore = mp.ml.moves[i].score;
@@ -69,7 +71,7 @@ inline Move scoreMoves(Movepicker &mp, Move ttMove, Position &pos, const std::ar
 }
 
 template<bool qsearch> inline
-Move pickNextMove(Movepicker &mp, Move ttMove, Position &pos, u64 check = 0ULL, const std::array<Move, 2> &killers = empty, const FromToHist &history = empty2, const PieceToHist &contHist = empty3) {
+Move pickNextMove(Movepicker &mp, Move ttMove, Position &pos, u64 check = 0ULL, const std::array<Move, 2> &killers = empty, const FromToHist &history = empty2, const PieceToHist &contHist = empty3, const PieceToHist &contHist2 = empty3) {
     if (!mp.moveListInitialized)
         generateMoves<qsearch>(pos, mp.ml, check);
 
@@ -77,7 +79,7 @@ Move pickNextMove(Movepicker &mp, Move ttMove, Position &pos, u64 check = 0ULL, 
 
     if (!mp.scored) {
         mp.scored = true;
-        return scoreMoves(mp, ttMove, pos, killers, history, contHist);
+        return scoreMoves(mp, ttMove, pos, killers, history, contHist, contHist2);
     }
 
 
