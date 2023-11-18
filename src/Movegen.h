@@ -124,7 +124,7 @@ inline std::array<std::array<u64, 64>, 64> initExtendedMaskBB() {
 
 inline u64 generatePinnedPieces(Position &pos, MovegenVariables &mv) {
     u64 pinnedPieces = 0ULL;
-    u64 pinnedPiece  = 0ULL;
+    u64 pinnedPiece;
     u64 pieces = mv.occupied & ~(pos.bitBoards[mv.pawnIdx + KING]);
     u64 possiblePinners  = getAttacks<BISHOP>(mv.kingSquare) & (pos.bitBoards[mv.oppPawnIdx + BISHOP] | pos.bitBoards[mv.oppPawnIdx + QUEEN]);
     possiblePinners     |= getAttacks<ROOK  >(mv.kingSquare) & (pos.bitBoards[mv.oppPawnIdx + ROOK] | pos.bitBoards[mv.oppPawnIdx + QUEEN]);
