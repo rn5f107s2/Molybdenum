@@ -1,3 +1,4 @@
+#ifdef DATAGEN
 #include <fstream>
 #include <iostream>
 #include "Datagen.h"
@@ -127,3 +128,4 @@ void playGame(Position &pos, const std::string& filename, u64 &fenCount) {
     output << "//gameend\n";
     output.close();
 }
+#endif //DATAGEN
