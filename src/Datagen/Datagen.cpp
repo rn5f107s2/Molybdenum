@@ -69,6 +69,8 @@ void playGame(Position &pos, const std::string& filename, u64 &fenCount) {
     std::ofstream output;
     output.open(filename, std::ios::app);
 
+    clearHistory();
+
     while (true) {
         Move bestMove;
         searchTime st;
