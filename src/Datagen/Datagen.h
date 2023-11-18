@@ -1,3 +1,4 @@
+#ifdef DATAGEN
 #ifndef MOLYBDENUM_DATAGEN_H
 #define MOLYBDENUM_DATAGEN_H
 
@@ -25,3 +26,4 @@ const int DRAW_ADJ = 0;
 const int WIN_ADJ  = 1;
 
 #endif //MOLYBDENUM_DATAGEN_H
+#endif //DATAGEN

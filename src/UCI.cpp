@@ -13,11 +13,13 @@
 
 void uciCommunication() {
     Position internalBoard = Position();
+
 #ifdef DATAGEN
     std::string filename;
     std::cin >> filename;
     start(internalBoard, filename);
 #endif
+
     std::string input;
 
     while (true) {
