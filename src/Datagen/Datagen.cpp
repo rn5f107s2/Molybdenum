@@ -87,12 +87,12 @@ void playGame(Position &pos, const std::string& filename, u64 &fenCount) {
             break;
         }
 
-        if (abs(score) <= 10 || pos.plys50moveRule >= 100)
+        if (abs(score) <= 10)
             adjCounter[DRAW_ADJ]++;
         else
             adjCounter[DRAW_ADJ] = 0;
 
-        if (adjCounter[DRAW_ADJ] > 7) {
+        if (adjCounter[DRAW_ADJ] > 7 || pos.plys50moveRule >= 100) {
             result = "0.5";
             break;
         }
