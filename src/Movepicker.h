@@ -86,6 +86,9 @@ Move pickNextMove(Movepicker &mp, Move ttMove, Position &pos, u64 check = 0ULL, 
     int bestScore = -1000000;
     int bestIndex = 0;
 
+    if (mp.moveIndex == mp.ml.length)
+        return NO_MOVE;
+
     for (int i = mp.moveIndex; i < mp.ml.length; i++) {
         if (mp.ml.moves[i].score > bestScore) {
             bestScore = mp.ml.moves[i].score;
