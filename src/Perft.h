@@ -4,7 +4,6 @@
 #include "Position.h"
 #include "Movegen.h"
 
-
 template <bool BULK, bool ROOT>
 u64 perft(int depth, Position &pos) {
     if constexpr (!BULK) {

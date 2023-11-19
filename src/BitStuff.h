@@ -24,7 +24,7 @@ inline int popLSB(u64 &bitboard) {
 inline int popLSB(int &bitboard) {
     int bit = lsb(bitboard);
     bitboard &= bitboard - 1;
-    return  bit;
+    return bit;
 }
 
 inline constexpr int fileOf(int square) {

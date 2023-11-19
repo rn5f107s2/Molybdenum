@@ -17,7 +17,8 @@ const std::string name = "Molybdenum";
 const std::string version = "1.0";
 
 void uciCommunication() {
-    Position internalBoard = Position();
+    Position internalBoard;
+    internalBoard.setBoard("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     std::string input;
     options.init();
 
