@@ -8,11 +8,15 @@
 #include <chrono>
 #include "eval.h"
 #include "timemanagement.h"
+#include "UCIOptions.h"
 #include "searchUtil.h"
+
+UCIOptions options;
 
 void uciCommunication() {
     Position internalBoard = Position();
     std::string input;
+    options.init();
 #ifdef datagen
     int gamesToPlay = 0;
     int timeControl = 1;
@@ -40,10 +44,16 @@ void uciCommunication() {
         if (contains(input, "quit"))
             return;
 
-        if (contains(input, "ucinewgame"))
+        if (contains(input, "ucinewgame")) {
             clearHistory();
-        else if (contains(input, "uci"))
+            continue;
+        }
+
+        if (contains(input, "uci")) {
             std::cout << "id name Molybdenum\nid author rn5f107s2\nuciok\n";
+            options.printOptions();
+            continue;
+        }
 
         if (contains(input, "isready"))
             std::cout << "readyok\n";
@@ -153,6 +163,14 @@ void uciCommunication() {
 
         if (contains(input, "eval")) {
             std::cout << evaluate(internalBoard) << "\n";
+        }
+
+        if (contains(input, "setoption")) {
+            std::string optionName = input.substr(input.find("name ") + 5);
+            int nameEnd = int(optionName.find("value "));
+            int value = std::stoi(optionName.substr(nameEnd + 6));
+            optionName = optionName.substr(0, optionName.size() - optionName.substr(nameEnd).size() - 1);
+            options.setOption(optionName, value);
         }
     }
 #endif

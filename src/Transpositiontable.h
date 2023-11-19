@@ -23,12 +23,16 @@ public:
     TTEntry *probe(u64 key);
     static void save(TTEntry *tte, u64 key, int score, TTBound flag, Move move, int depth, int plys);
     void setSize(int sizeInMb);
+    void resize(int sizeInMb);
+    void clear();
 private:
     TTEntry *tt;
     u64 amountOfEntries;
 };
 
 extern TranspositionTable TT;
+
+void resizeTT(int sizeInMb);
 
 constexpr std::array<u64, 781> genPRNs() {
     u64 initialSeed = 0x5F10752;

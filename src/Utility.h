@@ -2,6 +2,7 @@
 #define MOLYBDENUM_UTILITY_H
 
 #include <array>
+#include "Constants.h"
 
 constexpr int MAX_STACK_SIZE = 6000; //Longer then the longest possible chess game
 
@@ -10,7 +11,7 @@ class Stack {
     public:
         T top();
         T pop();
-        T at(int idx);
+        T& at(int idx);
         void push(T t);
         void clear();
         int getSize();
@@ -36,7 +37,7 @@ void Stack<T>::push(T t) {
 }
 
 template<typename T>
-T Stack<T>::at(int idx) {
+T& Stack<T>::at(int idx) {
     return stack[idx];
 }
 
