@@ -9,7 +9,10 @@ void UCIOptions::setOption(const std::string& name, int value) {
         return;
     }
 
-    option->setter(value);
+    if (value <= option->max && value >= option->min)
+        option->setter(value);
+    else
+        std::cout << "Value " << value << " is not within bounds of option " << name << "\n";
 }
 
 void UCIOptions::init() {

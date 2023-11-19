@@ -13,31 +13,14 @@
 
 UCIOptions options;
 
+const std::string name = "Molybdenum";
+const std::string version = "1.0";
+
 void uciCommunication() {
     Position internalBoard = Position();
     std::string input;
     options.init();
-#ifdef datagen
-    int gamesToPlay = 0;
-    int timeControl = 1;
-    int exitDepth   = 8;
-    std::string filename;
-    std::cout << "Enter amount of games to play\n";
-    std::cin >> gamesToPlay;
-    std::cout << "Enter the timecontrol to be played at\n";
-    std::cin >> timeControl;
-    std::cout << "Enter the depth of the book exits\n";
-    std::cin >> exitDepth;
-    std::cout << "Enter the output filename\n";
-    std::cin >> filename;
-    datagenLoop(internalBoard, gamesToPlay, timeControl, filename, exitDepth, 1);
-#endif
-#ifdef tuneDef
-    tune(internalBoard, "lichess-big3-resolved.book");
-    //calcK(internalBoard, "lichess-big3-resolved.book");
-#endif
-#ifndef datagen
-#ifndef tuneDef
+
     while (true) {
         std::getline(std::cin, input);
 
@@ -50,8 +33,10 @@ void uciCommunication() {
         }
 
         if (contains(input, "uci")) {
-            std::cout << "id name Molybdenum\nid author rn5f107s2\nuciok\n";
+            std::cout << "id name " << name << " " << version << "\n";
+            std::cout << "id author rn5f107s2\n";
             options.printOptions();
+            std::cout << "uciok\n";
             continue;
         }
 
@@ -173,6 +158,4 @@ void uciCommunication() {
             options.setOption(optionName, value);
         }
     }
-#endif
-#endif
 }
