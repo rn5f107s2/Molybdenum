@@ -8,7 +8,7 @@
 void Position::setBoard(std::string fen) {
     clearBoard();
 
-    u64 bitToSet = 1L << 63;
+    u64 bitToSet = 1ULL << 63;
     std::string plys50mr;
     std::string epSquare;
     int spaceCount = 0;
@@ -138,7 +138,7 @@ void Position::makeMove(Move move) {
 
     if (typeOf(movedPiece) == PAWN) {
         if ((from ^ to) == 16) {
-            enPassantSquare = 1L << (to - (from > to ? -8 : 8));
+            enPassantSquare = 1ULL << (to - (from > to ? -8 : 8));
             updateKey(fileOf(from), key);
         }
 
@@ -158,7 +158,7 @@ void Position::makeMove(Move move) {
     }
 
     pieceLocations[to] = movedPiece;
-    bitBoards[movedPiece] ^= 1L << to;
+    bitBoards[movedPiece] ^= 1ULL << to;
     updateKey(movedPiece, to, key);
     psqtMG += PSQT[0][movedPiece][to];
     psqtEG += PSQT[1][movedPiece][to];
@@ -228,7 +228,7 @@ void Position::clearBoard() {
     for (int i = 0; i != 64; i++)
         pieceLocations[i] = NO_PIECE;
 
-    memset(&bitBoards, 0ULL, bitBoards.size() * sizeof(typeof(bitBoards[0])));
+    memset(&bitBoards, 0ULL, bitBoards.size() * sizeof(decltype(bitBoards)::value_type));
 
     psqtMG = psqtEG = phase = 0;
     enPassantHistory.clear();
@@ -248,7 +248,7 @@ void Position::printBoard() {
 
     for (int square = 63; square != -1; square--) {
         for (int piece = 0; piece != 12; piece++) {
-            if (bitBoards[piece] & (1L << square)) {
+            if (bitBoards[piece] & (1ULL << square)) {
                 board += (pieceToChar(piece));
                 break;
             }
@@ -291,7 +291,7 @@ bool Position::hasRepeated(int plysInSearch) {
         if(keyHistory.at(idx) == currentKey) {
             repetitions++;
 
-            if (repetitions > ((currentIdx - idx) > plysInSearch))
+            if (repetitions > static_cast<int>((currentIdx - idx) > plysInSearch))
                 return true;
         }
     }
