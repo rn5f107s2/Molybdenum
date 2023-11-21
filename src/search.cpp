@@ -16,8 +16,8 @@ template<bool ROOT>
 int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, SearchStack *stack);
 int qsearch(int alpha, int beta, Position &pos, SearchInfo &si);
 
-int startSearch(Position &pos, searchTime &st, Move &bestMove) {
-    return iterativeDeepening(pos, st, bestMove);
+int startSearch(Position &pos, searchTime &st, int maxDepth, Move &bestMove) {
+    return iterativeDeepening(pos, st, maxDepth,bestMove);
 }
 
 void clearHistory() {
@@ -26,12 +26,12 @@ void clearHistory() {
     memset(&continuationHistory, 0, sizeof(continuationHistory[0]) * continuationHistory.size());
 }
 
-int iterativeDeepening(Position  &pos, searchTime &st, Move &bestMove) {
+int iterativeDeepening(Position  &pos, searchTime &st, int maxDepth, [[maybe_unused]] Move &bestMove) {
     int score = 0;
     SearchInfo si;
     si.st = st;
 
-    for (int depth = 1; depth != MAXDEPTH; depth++) {
+    for (int depth = 1; depth != maxDepth; depth++) {
         score = aspirationWindow(score, pos, si, depth);
 
         if (stop(st, si))

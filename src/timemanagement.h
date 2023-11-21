@@ -6,7 +6,7 @@
 const int moveOverHead = 10;
 
 enum SearchLimit {
-    Time, Nodes
+    Time, Nodes, Depth
 };
 
 struct searchTime{

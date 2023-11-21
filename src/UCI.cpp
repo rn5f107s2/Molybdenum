@@ -121,6 +121,7 @@ void uciCommunication() {
             int btime = 0;
             int winc = 0;
             int binc = 0;
+            int depth = MAXDEPTH;
 
             if (contains(input, "wtime")) {
                 int start = int(input.find("wtime")) + 6;
@@ -151,7 +152,19 @@ void uciCommunication() {
 
             searchTime st = calcThinkingTime(timeLeft, increment);
 
-            startSearch(internalBoard, st);
+            if (contains(input, "nodes ")) {
+                int nodes = std::stoi(input.substr(input.find("nodes ") + 6));
+                st.nodeLimit = nodes;
+                st.limit = Nodes;
+            }
+
+            if (contains(input, "depth "))
+                depth = std::stoi(input.substr(input.find("depth ") + 6)) + 1;
+
+            if (contains(input, "depth") || contains(input, "infinite"))
+                st.limit = Depth;
+
+            startSearch(internalBoard, st, depth);
             continue;
         }
 

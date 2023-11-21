@@ -27,8 +27,8 @@ struct SearchStack {
 
 static Move emptyMove = 0;
 
-int startSearch(Position &pos, searchTime &st, Move &bm = emptyMove);
-int iterativeDeepening(Position  &pos, searchTime &st, Move &bm = emptyMove);
+int startSearch(Position &pos, searchTime &st, int maxDepth = MAXDEPTH, Move &bm = emptyMove);
+int iterativeDeepening(Position  &pos, searchTime &st, int maxDepth = MAXDEPTH, Move &bm = emptyMove);
 int aspirationWindow(int prevScore, Position &pos, SearchInfo &si, int depth);
 void clearHistory();
 
