@@ -3,16 +3,29 @@
 
 #include <cstdint>
 #include <iostream>
+#include <bit>
 #include "Constants.h"
+
+#ifdef _MSC_VER
+#include <intrin.h>
+#endif
 
 using u64 = uint64_t;
 
-inline int lsb(u64 &bitboard) {
+inline int lsb(const u64& bitboard) {
+#ifdef __GNUC__
     return __builtin_ctzll(bitboard);
+#elif defined(_MSC_VER)
+    return std::countr_zero(bitboard);
+#endif
 }
 
-inline int lsb(int &bitboard) {
+inline int lsb(const int &bitboard) {
+#ifdef __GNUC__
     return __builtin_ctz(bitboard);
+#elif defined(_MSC_VER)
+    return _lzcnt_u32(bitboard);
+#endif
 }
 
 inline int popLSB(u64 &bitboard) {
@@ -146,7 +159,7 @@ constexpr std::array<std::array<u64, 64>, 2> initPawnMasks() {
 
 [[maybe_unused]] inline void printBB(u64 bitboard) {
     std::string bb;
-    u64 relevantBit = 1L << 63;
+    u64 relevantBit = 1ULL << 63;
 
     while (relevantBit) {
         std::cout << ((relevantBit & bitboard) >> (lsb(relevantBit))) << " ";

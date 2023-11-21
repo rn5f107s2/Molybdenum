@@ -278,7 +278,6 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
 
 int qsearch(int alpha, int beta, Position &pos, SearchInfo &si) {
     Move currentMove;
-    bool check;
     int staticEval;
     int bestScore = staticEval = evaluate(pos);
 
@@ -286,7 +285,7 @@ int qsearch(int alpha, int beta, Position &pos, SearchInfo &si) {
         return bestScore;
 
     Movepicker mp;
-    while ((currentMove = pickNextMove<true>(mp, NO_MOVE, pos, check)) != 0) {
+    while ((currentMove = pickNextMove<true>(mp, NO_MOVE, pos)) != 0) {
         if (   pos.isCapture(currentMove)
             && staticEval + PieceValuesSEE[pos.pieceOn(extract<TO>(currentMove))] + 150 <= alpha)
             continue;

@@ -5,6 +5,7 @@
 #include "MagicBitboards.h"
 #include "Move.h"
 #include "Position.h"
+#include <limits>
 
 std::array<std::array<u64, 64>, 64> initMaskBB();
 inline std::array<std::array<u64, 64>, 64> initExtendedMaskBB();
@@ -302,7 +303,7 @@ inline bool generateMoves(Position &pos, MoveList &ml, u64 checkingPieces = 0ULL
     else
         checkers = checkingPieces;
 
-    mv.checkMask = checkers ? masksBBs[mv.kingSquare][lsb(checkers)] : -1ULL;
+    mv.checkMask = checkers ? masksBBs[mv.kingSquare][lsb(checkers)] : std::numeric_limits<u64>::max();
     doubleCheck = checkers && multipleBits(checkers);
 
     if (!doubleCheck) {

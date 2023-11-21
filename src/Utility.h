@@ -2,6 +2,7 @@
 #define MOLYBDENUM_UTILITY_H
 
 #include <array>
+#include <string>
 #include "Constants.h"
 
 constexpr int MAX_STACK_SIZE = 6000; //Longer then the longest possible chess game
