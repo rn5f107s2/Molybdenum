@@ -122,6 +122,7 @@ void uciCommunication() {
             int winc = 0;
             int binc = 0;
             int depth = MAXDEPTH;
+            int movesToGo = 6000;
 
             if (contains(input, "wtime")) {
                 int start = int(input.find("wtime")) + 6;
@@ -145,12 +146,19 @@ void uciCommunication() {
 
                     binc = std::stoi(input.substr(start, end));
                 }
+
+                if (contains(input, "movestogo")) {
+                    start = int(input.find("movestogo") + 9);
+                    end   = int(input.find(' ', start));
+
+                    movesToGo = std::stoi(input.substr(start, end));
+                }
             }
 
             int timeLeft  = internalBoard.sideToMove ? wtime : btime;
             int increment = internalBoard.sideToMove ? winc  : binc;
 
-            searchTime st = calcThinkingTime(timeLeft, increment);
+            searchTime st = calcThinkingTime(timeLeft, increment, movesToGo);
 
             if (contains(input, "nodes ")) {
                 int nodes = std::stoi(input.substr(input.find("nodes ") + 6));
@@ -161,8 +169,15 @@ void uciCommunication() {
             if (contains(input, "depth "))
                 depth = std::stoi(input.substr(input.find("depth ") + 6)) + 1;
 
-            if (contains(input, "depth") || contains(input, "infinite"))
+            if (contains(input, "depth ") || contains(input, "infinite"))
                 st.limit = Depth;
+
+            if (contains(input, "movetime")) {
+                int start = int(input.find("movetime")) + 8;
+                int end   = int(input.find(' ', start));
+
+                st.thinkingTime = std::chrono::milliseconds(std::stoi(input.substr(start, end)) - moveOverHead);
+            }
 
             startSearch(internalBoard, st, depth);
             continue;

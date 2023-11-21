@@ -16,6 +16,6 @@ struct searchTime{
     SearchLimit limit = Time;
 };
 
-searchTime calcThinkingTime(int timeLeft, int increment);
+searchTime calcThinkingTime(int timeLeft, int increment, int movesToGo = 6000);
 
 #endif //MOLYBDENUM_TIMEMANAGEMENT_H
