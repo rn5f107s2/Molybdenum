@@ -10,6 +10,7 @@
 #include "timemanagement.h"
 #include "UCIOptions.h"
 #include "searchUtil.h"
+#include "Datagen/Datagen.h"
 
 UCIOptions options;
 
@@ -18,6 +19,13 @@ const std::string version = "1.0";
 
 void uciCommunication() {
     Position internalBoard;
+
+#ifdef DATAGEN
+    std::string filename;
+    std::cin >> filename;
+    start(internalBoard, filename);
+#endif
+
     internalBoard.setBoard("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     std::string input;
     options.init();

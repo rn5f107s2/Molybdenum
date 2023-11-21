@@ -21,4 +21,6 @@ add_executable(Molybdenum
         src/searchUtil.h
         src/UCIOptions.cpp
         src/UCIOptions.h
+        src/Datagen/Datagen.cpp
+        src/Datagen/Datagen.h
 )

@@ -11,6 +11,7 @@ void Position::setBoard(std::string fen) {
     u64 bitToSet = 1ULL << 63;
     std::string plys50mr;
     std::string epSquare;
+    std::string moveCount;
     int spaceCount = 0;
     int fenLength = (int) fen.length();
 
@@ -48,10 +49,18 @@ void Position::setBoard(std::string fen) {
             continue;
         }
 
+        if (spaceCount == 5) {
+            moveCount += currentChar;
+            continue;
+        }
+
         if (charAsInt < 10) {
             bitToSet = bitToSet >> charAsInt;
             continue;
         }
+
+        if (spaceCount)
+            continue;
 
         Piece piece = charIntToPiece(charAsInt);
         psqtMG += PSQT[0][piece][lsb(bitToSet)];
@@ -62,8 +71,9 @@ void Position::setBoard(std::string fen) {
         bitToSet = bitToSet >> 1;
     }
 
-    enPassantSquare = !epSquare.empty() ? stringToSquare(epSquare) : 0ULL;
-    plys50moveRule  = !plys50mr.empty() ? stringRoRule50(plys50mr) : 0;
+    enPassantSquare = !epSquare.empty()  ? stringToSquare(epSquare)         : 0ULL;
+    plys50moveRule  = !plys50mr.empty()  ? stringRoRule50(plys50mr)  : 0;
+    movecount       = !moveCount.empty() ? stringRoRule50(moveCount) : 0;
     keyHistory.push(positionToKey(bitBoards, castlingRights, enPassantSquare, sideToMove));
 }
 
@@ -79,6 +89,7 @@ Move Position::fromToToMove(int from, int to, int promotionPiece, int flag) {
     if (typeOf(movingPiece) == KING && std::abs(fileOf(from) - fileOf(to)) == 2 && !flag)
         flag = CASTLING;
 
+    movecount++;
     return createMove(from, to, promotionPiece, flag);
 }
 
@@ -239,6 +250,7 @@ void Position::clearBoard() {
     castlingRights = 0;
     plys50moveRule = 0;
     enPassantSquare = 0;
+    movecount = 0;
     sideToMove = WHITE;
 }
 
@@ -375,7 +387,7 @@ std::string Position::fen() {
 
     fen += std::to_string(plys50moveRule);
     fen += " ";
-    fen += std::to_string(plys50moveRule);
+    fen += std::to_string(movecount);
 
     return fen;
 }
