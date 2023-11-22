@@ -11,6 +11,7 @@
 std::array<std::array<Move, 2>, 100> killers;
 SideFromToHist mainHistory;
 ContHist continuationHistory;
+u64 benchNodes = 0;
 
 template<bool ROOT>
 int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, SearchStack *stack);
@@ -62,6 +63,7 @@ int iterativeDeepening(Position  &pos, searchTime &st, int maxDepth, [[maybe_unu
         std::cout << uciOutput << "\n";
     }
 
+    benchNodes += si.nodeCount;
     std::cout << "bestmove " << moveToString(si.bestRootMove) << "\n";
 #else
     }

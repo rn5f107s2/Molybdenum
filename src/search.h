@@ -25,6 +25,7 @@ struct SearchStack {
     PieceToHist *contHist = nullptr;
 };
 
+extern u64 benchNodes;
 static Move emptyMove = 0;
 
 int startSearch(Position &pos, searchTime &st, int maxDepth = MAXDEPTH, Move &bm = emptyMove);

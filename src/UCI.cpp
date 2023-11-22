@@ -9,7 +9,7 @@
 #include "eval.h"
 #include "timemanagement.h"
 #include "UCIOptions.h"
-#include "searchUtil.h"
+#include "bench.h"
 #include "Datagen/Datagen.h"
 
 UCIOptions options;
@@ -193,6 +193,26 @@ void uciCommunication() {
             int value = std::stoi(optionName.substr(nameEnd + 6));
             optionName = optionName.substr(0, optionName.size() - optionName.substr(nameEnd).size() - 1);
             options.setOption(optionName, value);
+        }
+
+        if (contains(input, "bench")) {
+            searchTime st;
+            st.limit = Depth;
+            benchNodes = 0;
+
+            for (int i = 0; i != BENCH_SIZE; i++) {
+                internalBoard.setBoard(positions[i]);
+                startSearch(internalBoard, st, BENCH_DEPTH + 1);
+                std::cout << "\n";
+            }
+
+            auto milliseconds = int(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - st.searchStart).count());
+            auto nps = (benchNodes * 1000) / std::max(milliseconds, 1);
+
+            std::cout << "_______________________" << "\n";
+            std::cout << "Nodes searched: " << benchNodes << "\n";
+            std::cout << "Took: " << milliseconds << " milliseconds\n";
+            std::cout << "Speed: " << nps << " nps\n";
         }
     }
 }
