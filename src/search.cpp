@@ -11,6 +11,9 @@
 std::array<std::array<Move, 2>, 100> killers;
 SideFromToHist mainHistory;
 ContHist continuationHistory;
+std::array<std::array<Move, MAXDEPTH>, MAXDEPTH> pvMoves;
+std::array<int, MAXDEPTH> pvLength;
+
 u64 benchNodes = 0;
 
 template<bool ROOT>
@@ -25,6 +28,8 @@ void clearHistory() {
     TT.clear();
     memset(&mainHistory, 0, sizeof(mainHistory[0]) * mainHistory.size());
     memset(&continuationHistory, 0, sizeof(continuationHistory[0]) * continuationHistory.size());
+    memset(&pvMoves, 0, sizeof(pvMoves[0]) * pvMoves.size());
+    memset(&pvLength, 0, sizeof(pvLength[0]) * pvLength.size());
 }
 
 int iterativeDeepening(Position  &pos, searchTime &st, int maxDepth, [[maybe_unused]] Move &bestMove) {
@@ -59,6 +64,10 @@ int iterativeDeepening(Position  &pos, searchTime &st, int maxDepth, [[maybe_unu
 
         uciOutput += " nps ";
         uciOutput += std::to_string((si.nodeCount / std::max(int(searchTime), 1)) * 1000);
+
+        uciOutput += " pv ";
+        for (int i = 0; i < pvLength[0]; i++)
+            uciOutput += moveToString(pvMoves[0][i]) + " ";
 
         std::cout << uciOutput << "\n";
     }
@@ -110,9 +119,11 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
     int bestScore = -INFINITE, score = -INFINITE, moveCount = 0;
     bool exact = false, check = checkers, pvNode = (beta - alpha) > 1, ttHit = false, improving;
     Stack<Move> historyUpdates;
+
     stack->staticEval = evaluate(pos);
     stack->plysInSearch = ROOT ? 0 : (stack-1)->plysInSearch + 1;
     improving = stack->staticEval > (stack-2)->staticEval;
+    pvLength[stack->plysInSearch] = stack->plysInSearch;
 
     depth += check;
 
@@ -266,6 +277,13 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
                     TT.save(tte, key, bestScore, LOWER, bestMove, depth, stack->plysInSearch);
                     return bestScore;
                 }
+
+                pvMoves[stack->plysInSearch][stack->plysInSearch] = bestMove;
+
+                for (int nextPly = stack->plysInSearch + 1; nextPly < pvLength[stack->plysInSearch + 1]; nextPly++)
+                    pvMoves[stack->plysInSearch][nextPly] = pvMoves[stack->plysInSearch + 1][nextPly];
+
+                pvLength[stack->plysInSearch] = pvLength[stack->plysInSearch + 1];
             }
         }
 

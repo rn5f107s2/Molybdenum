@@ -203,6 +203,7 @@ void uciCommunication() {
             for (int i = 0; i != BENCH_SIZE; i++) {
                 internalBoard.setBoard(positions[i]);
                 startSearch(internalBoard, st, BENCH_DEPTH + 1);
+                clearHistory();
                 std::cout << "\n";
             }
 
