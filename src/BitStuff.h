@@ -16,7 +16,7 @@ inline int lsb(const u64& bitboard) {
 #ifdef __GNUC__
     return __builtin_ctzll(bitboard);
 #elif defined(_MSC_VER)
-    return std::countr_zero(bitboard);
+    return _tzcnt_u64(bitboard);
 #endif
 }
 
@@ -24,7 +24,7 @@ inline int lsb(const int &bitboard) {
 #ifdef __GNUC__
     return __builtin_ctz(bitboard);
 #elif defined(_MSC_VER)
-    return _lzcnt_u32(bitboard);
+    return _tzcnt_u32(bitboard);
 #endif
 }
 
