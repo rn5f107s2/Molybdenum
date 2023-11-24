@@ -25,7 +25,7 @@ class Position {
         int psqtMG{};
         int psqtEG{};
         int phase{};
-        int movecount;
+        int movecount{};
         bool sideToMove{};
         u64 key();
         void makeNullMove();

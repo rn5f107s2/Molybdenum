@@ -3,7 +3,7 @@
 
 #include <chrono>
 
-const int moveOverHead = 10;
+static int moveOverHead = 10;
 
 enum SearchLimit {
     Time, Nodes, Depth
@@ -17,5 +17,9 @@ struct searchTime{
 };
 
 searchTime calcThinkingTime(int timeLeft, int increment, int movesToGo = 6000);
+
+inline void setOverhead(int value) {
+    moveOverHead = value;
+}
 
 #endif //MOLYBDENUM_TIMEMANAGEMENT_H

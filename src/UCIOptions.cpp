@@ -1,5 +1,6 @@
 #include "UCIOptions.h"
 #include "Transpositiontable.h"
+#include "timemanagement.h"
 
 void UCIOptions::setOption(const std::string& name, int value) {
     UCIOptionSpin *option = findOptionSpin(name);
@@ -17,6 +18,7 @@ void UCIOptions::setOption(const std::string& name, int value) {
 
 void UCIOptions::init() {
     spinOptions.push(UCIOptionSpin("Hash", 1, 1024, 16, &resizeTT));
+    spinOptions.push(UCIOptionSpin("Move Overhead", 0, 1000, 10, &setOverhead));
 }
 
 UCIOptionSpin *UCIOptions::findOptionSpin(const std::string& name) {
