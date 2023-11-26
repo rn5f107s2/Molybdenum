@@ -10,7 +10,10 @@
 #include "timemanagement.h"
 #include "UCIOptions.h"
 #include "bench.h"
-#include "Datagen/Datagen.h"
+
+#ifdef DATAGEN
+#  include "Datagen/Datagen.h"
+#endif
 
 UCIOptions options;
 
