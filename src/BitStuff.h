@@ -181,4 +181,12 @@ inline Piece makePromoPiece(int pt, Color c) {
     return Piece((pt + 1) + (!c * 6));
 }
 
+inline Piece makePiece(int pt, int c) {
+    return Piece(pt + 6 * !c);
+}
+
+inline Color colorOf(int pc) {
+    return pc < BLACK_PAWN;
+}
+
 #endif //MOLYBDENUM_BITSTUFF_H
