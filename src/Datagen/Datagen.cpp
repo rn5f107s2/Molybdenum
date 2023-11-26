@@ -1,9 +1,10 @@
+#include "../search.h"
+
 #ifdef DATAGEN
 #include <fstream>
 #include <iostream>
 #include "Datagen.h"
 #include "../Position.h"
-#include "../search.h"
 
 [[noreturn]] void start(Position &pos, const std::string& filename) {
     init();
@@ -70,33 +71,32 @@ void playGame(Position &pos, const std::string& filename, u64 &fenCount) {
     std::ofstream output;
     output.open(filename, std::ios::app);
 
+    clearHistory();
+
     while (true) {
         Move bestMove;
         searchTime st;
-        st.nodeLimit = 20000;
+        st.nodeLimit = 100000;
         st.limit = Nodes;
 
         int score = startSearch(pos, st, bestMove);
-
-        if (abs(score) >= MAXMATE)
-            break;
 
         if (abs(score) >= 400)
             adjCounter[WIN_ADJ]++;
         else
             adjCounter[WIN_ADJ] = 0;
 
+        if (adjCounter[WIN_ADJ] > 5 || abs(score) >= MAXMATE) {
+            result = (score > 0 == pos.sideToMove) ? "1.0" : "0.0";
+            break;
+        }
+
         if (abs(score) <= 10)
             adjCounter[DRAW_ADJ]++;
         else
             adjCounter[DRAW_ADJ] = 0;
 
-        if (adjCounter[WIN_ADJ] > 5) {
-            result = (score > 0 == pos.sideToMove) ? "1.0" : "0.0";
-            break;
-        }
-
-        if (adjCounter[DRAW_ADJ] > 7) {
+        if (adjCounter[DRAW_ADJ] > 7 || pos.plys50moveRule >= 100) {
             result = "0.5";
             break;
         }
