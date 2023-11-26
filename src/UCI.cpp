@@ -10,10 +10,8 @@
 #include "timemanagement.h"
 #include "UCIOptions.h"
 #include "bench.h"
-
-#ifdef DATAGEN
-#  include "Datagen/Datagen.h"
-#endif
+#include "nnue.h"
+#include "Datagen/Datagen.h"
 
 UCIOptions options;
 
@@ -29,6 +27,7 @@ void uciCommunication() {
     start(internalBoard, filename);
 #endif
 
+    readNetwork("clarity_net002.nnue");
     internalBoard.setBoard("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     std::string input;
     options.init();

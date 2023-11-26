@@ -3,6 +3,7 @@
 #include "Position.h"
 #include "Transpositiontable.h"
 #include "PSQT.h"
+#include "nnue.h"
 #include "Movegen.h"
 
 void Position::setBoard(std::string fen) {
@@ -75,6 +76,7 @@ void Position::setBoard(std::string fen) {
     plys50moveRule  = !plys50mr.empty()  ? stringRoRule50(plys50mr)  : 0;
     movecount       = !moveCount.empty() ? stringRoRule50(moveCount) : 0;
     keyHistory.push(positionToKey(bitBoards, castlingRights, enPassantSquare, sideToMove));
+    initAccumulator(bitBoards);
 }
 
 Move Position::fromToToMove(int from, int to, int promotionPiece, int flag) {
