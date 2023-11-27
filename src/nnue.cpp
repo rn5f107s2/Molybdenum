@@ -5,18 +5,20 @@
 #include <cstring>
 #include <fstream>
 
+Net net;
+
 void readNetwork(const std::string &filename) {
     std::ifstream stream{filename, std::ios::binary};
 
-    stream.read(reinterpret_cast<char *>(&weights0), sizeof(weights0[0]) * weights0.size());
-    stream.read(reinterpret_cast<char *>(&bias0), sizeof(bias0[0]) * bias0.size());
-    stream.read(reinterpret_cast<char *>(&weights1), sizeof(weights1[0]) * weights1.size());
-    stream.read(reinterpret_cast<char *>(&bias1), sizeof(bias1[0]) * bias1.size());
+    stream.read(reinterpret_cast<char *>(&net.weights0), sizeof(net.weights0[0]) * net.weights0.size());
+    stream.read(reinterpret_cast<char *>(&net.bias0), sizeof(net.bias0[0]) * net.bias0.size());
+    stream.read(reinterpret_cast<char *>(&net.weights1), sizeof(net.weights1[0]) * net.weights1.size());
+    stream.read(reinterpret_cast<char *>(&net.bias1), sizeof(net.bias1[0]) * net.bias1.size());
 }
 
 void initAccumulator(std::array<u64, 13> &bitboards) {
-    memcpy(&accumulator[WHITE], &bias0[0], sizeof(int16_t) * L1_SIZE);
-    memcpy(&accumulator[BLACK], &bias0[0], sizeof(int16_t) * L1_SIZE);
+    memcpy(&net.accumulator[WHITE], &net.bias0[0], sizeof(int16_t) * L1_SIZE);
+    memcpy(&net.accumulator[BLACK], &net.bias0[0], sizeof(int16_t) * L1_SIZE);
 
     for (int pc = WHITE_PAWN; pc != NO_PIECE; pc++) {
         u64 pieceBB = bitboards[pc];
@@ -27,17 +29,15 @@ void initAccumulator(std::array<u64, 13> &bitboards) {
             toggleFeature<On>(pc, square);
         }
     }
-
-    std::cout << (calculate(WHITE)) * 400 / 16320 << "\n";
 }
 
 int calculate(Color c) {
     int output = 0;
 
     for (int n = 0; n != L1_SIZE; n++) {
-         output += relu(accumulator[ c][n]) * weights1[n          ];
-         output += relu(accumulator[!c][n]) * weights1[n + L1_SIZE];
+         output += relu(net.accumulator[ c][n]) * net.weights1[n          ];
+         output += relu(net.accumulator[!c][n]) * net.weights1[n + L1_SIZE];
     }
 
-    return output + bias1[0];
+    return (output + net.bias1[0]) * 400 / 16320;
 }
