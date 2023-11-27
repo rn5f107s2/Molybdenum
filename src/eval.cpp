@@ -1,10 +1,12 @@
 #include "Position.h"
 #include "eval.h"
 #include "PSQT.h"
+#include "nnue.h"
 
 int evaluate(Position &pos) {
-    int gamePhase = std::min(pos.phase, maxPhase);
-    return evalPSQT(pos, gamePhase) * (pos.sideToMove ? 1 : -1);
+    //int gamePhase = std::min(pos.phase, maxPhase);
+    //return evalPSQT(pos, gamePhase) * (pos.sideToMove ? 1 : -1);
+    return calculate(pos.sideToMove);
 }
 
 int evalPSQT(Position &pos, int gamePhase) {
