@@ -6,7 +6,7 @@
 int evaluate(Position &pos) {
     //int gamePhase = std::min(pos.phase, maxPhase);
     //return evalPSQT(pos, gamePhase) * (pos.sideToMove ? 1 : -1);
-    return calculate(pos.sideToMove);
+    return calculate(pos.sideToMove) / 2;
 }
 
 int evalPSQT(Position &pos, int gamePhase) {

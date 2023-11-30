@@ -27,7 +27,7 @@ void uciCommunication() {
     start(internalBoard, filename);
 #endif
 
-    readNetwork("clarity_net002.nnue");
+    readNetwork("netBulletTest3-epoch40.bin");
     internalBoard.setBoard("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     std::string input;
     options.init();
