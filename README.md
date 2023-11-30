@@ -32,7 +32,7 @@ and after running out of the given search limit:
 ```
     bestmove [the move deemed to be the best one]
 ```
-Something to note is that every move given as output will be in the from of
+Something to note is that every move given as output will be in the form of
 ```
     [from square of the move][to square of the move]
 ```
@@ -64,12 +64,13 @@ During my journey creating this there were a lot of people / ressources that hel
     mainly through the fishtest framework where I tested some ideas, greatly helping my understanding of chess engines and
     the people on the [Discord Server](https://discord.gg/KSmxy3eKED), helping with explaining why and how some things work.
 * ### [The Enigne Programming Discord Server](https://discord.gg/PMeBDB8N)
-    This discord server is great server to lurk in, where I learnd a lot of things, 
-    through either reading people explain things, or the ressources listed in this Server.
+    This discord server is great server to lurk in, where I learned a lot of things, 
+    through either reading people explain things, or the resources listed in this Server.
 * ### Other Open-source Engines 
   Notable ones being
   * [Mess](https://github.com/raklaptudirm/mess), even though mess is not too strong of an engine the well sorted release notes helped me orient myself on what features I could try implementing.
    Some Implementations are also inspired by mess, for example the Late Move-/ Move Count Pruning implementation.
   
   * [Stormphrax](https://github.com/Ciekce/Stormphrax) was never an engine I really read the source code of, however I would like to mention it as the author [Ciekce](https://github.com/Ciekce)
-    is great at explaining things to people which I profited a lot from.
+    is great at explaining things to people which is something I learned a lot from.
+* ### Everyone who contributed to Molybdenum
