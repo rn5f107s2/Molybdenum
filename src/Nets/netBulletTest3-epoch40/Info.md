@@ -10,7 +10,7 @@ This net was trained on 29.005.529 fens generated through self play with the bui
 Some parts of the data used an older version of the Datagen Module, so Adjudication settings may not always be consistent.
 From these generated fens the ones that have a capture as a reported best move were filtered out resulting in this collection of fens. 
 For shuffling the data the [CoreTrainer](https://github.com/SzilBalazs/CoreTrainer) by [SzilBalazs](https://github.com/SzilBalazs) was used. 
-All fens used for Training can be found in [Marlinformat](https://github.com/jnlt3/marlinflow#legacy-text-format) here: Data.
+All fens used for Training can be found in [Marlinformat](https://github.com/jnlt3/marlinflow#legacy-text-format) here: [Data](https://drive.google.com/file/d/16OkUqBoVu6dW4956hmqDzwr8DI6Gm0dP/view?usp=sharing).
 
 ## Trainer 
 This net was trained using the [bullet trainer](https://github.com/jw1912/bullet) by [jw1912](https://github.com/jw1912).  
