@@ -73,4 +73,3 @@ During my journey creating this there were a lot of people / ressources that hel
   
   * [Stormphrax](https://github.com/Ciekce/Stormphrax) was never an engine I really read the source code of, however I would like to mention it as the author [Ciekce](https://github.com/Ciekce)
     is great at explaining things to people which is something I learned a lot from.
-* ### Everyone who contributed to Molybdenum
