@@ -55,3 +55,21 @@ this prints the current evaluation from the perspective of the side to move.
 The currently used evaluation function is Piece-Square-Tables (PSQTs) with Tempo.
 The eval function was tuned with the [lichess-big3-resolved Dataset](https://cdn.discordapp.com/attachments/936829036104142848/1014793028042510346/lichess-big3-resolved.7z)
 using a slightly modified version of this [Texel-Tuner implementation](https://github.com/GediminasMasaitis/texel-tuner).
+
+## Credits
+
+During my journey creating this there were a lot of people / ressources that helped me along the way, notably
+* ### [The Stockfish Project](https://github.com/rn5f107s2/Stockfish)
+    I learned a lot through the Stockfish project, 
+    mainly through the fishtest framework where I tested some ideas, greatly helping my understanding of chess engines and
+    the people on the [Discord Server](https://discord.gg/KSmxy3eKED), helping with explaining why and how some things work.
+* ### [The Enigne Programming Discord Server](https://discord.gg/PMeBDB8N)
+    This discord server is great server to lurk in, where I learnd a lot of things, 
+    through either reading people explain things, or the ressources listed in this Server.
+* ### Other Open-source Engines 
+  Notable ones being
+  * [Mess](https://github.com/raklaptudirm/mess), even though mess is not too strong of an engine the well sorted release notes helped me orient myself on what features I could try implementing.
+   Some Implementations are also inspired by mess, for example the Late Move-/ Move Count Pruning implementation.
+  
+  * [Stormphrax](https://github.com/Ciekce/Stormphrax) was never an engine I really read the source code of, however I would like to mention it as the author [Ciekce](https://github.com/Ciekce)
+    is great at explaining things to people which I profited a lot from.
