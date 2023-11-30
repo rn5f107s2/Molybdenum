@@ -5,7 +5,7 @@
 ## Usage
 Molybdenum supports the [UCI-Protocol](https://wbec-ridderkerk.nl/html/UCIProtocol.html), 
 the easiest way to use Molybdenum is to use a UCI compliant GUI such as [cutechess](https://github.com/cutechess/cutechess). 
-However, if you wish you can use Molybdenum by directly communicating with it through the command line. Please incorrect inputs may lead to crashes or undefined behaviour,
+However, if you wish you can use Molybdenum by directly communicating with it through the command line. Please note that incorrect inputs may lead to crashes or undefined behaviour,
 therefore it's **not** recommended to do communicate via the commandline without prior knowledge of the UCI Protocol, but some important commands to know are:
 ```
     Position fen [FEN]
