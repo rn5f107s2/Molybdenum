@@ -76,7 +76,7 @@ void playGame(Position &pos, const std::string& filename, u64 &fenCount) {
     while (true) {
         Move bestMove;
         searchTime st;
-        st.nodeLimit = 100000;
+        st.nodeLimit = 10000;
         st.limit = Nodes;
 
         int score = startSearch(pos, st, MAXDEPTH, bestMove);
@@ -96,9 +96,11 @@ void playGame(Position &pos, const std::string& filename, u64 &fenCount) {
             break;
         }
 
-        fens.push(pos.fen());
-        scores.push(score);
-        bestMoves.push(bestMove);
+        if (!pos.isCapture(bestMove)) {
+            fens.push(pos.fen());
+            scores.push(score);
+            bestMoves.push(bestMove);
+        }
         pos.makeMove(bestMove);
         pos.movecount++;
     }
@@ -110,12 +112,10 @@ void playGame(Position &pos, const std::string& filename, u64 &fenCount) {
         std::string score = std::to_string(scores.pop());
         std::string bestMove = moveToString(bestMoves.pop());
 
-        fen += " [";
-        fen += result;
-        fen += "] | ";
+        fen += " | ";
         fen += score;
         fen += " | ";
-        fen += bestMove;
+        fen += result;
         fen += "\n";
         output << fen;
         fenCount++;
