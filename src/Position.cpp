@@ -3,6 +3,7 @@
 #include "Position.h"
 #include "Transpositiontable.h"
 #include "PSQT.h"
+#include "nnue.h"
 #include "Movegen.h"
 
 void Position::setBoard(std::string fen) {
@@ -75,6 +76,7 @@ void Position::setBoard(std::string fen) {
     plys50moveRule  = !plys50mr.empty()  ? stringRoRule50(plys50mr)  : 0;
     movecount       = !moveCount.empty() ? stringRoRule50(moveCount) : 0;
     keyHistory.push(positionToKey(bitBoards, castlingRights, enPassantSquare, sideToMove));
+    initAccumulator(bitBoards);
 }
 
 Move Position::fromToToMove(int from, int to, int promotionPiece, int flag) {
@@ -115,6 +117,7 @@ void Position::makeMove(Move move) {
     updateKey(movedPiece,  from, key);
     psqtMG -= PSQT[0][movedPiece][from];
     psqtEG -= PSQT[1][movedPiece][from];
+    toggleFeature<Off>(movedPiece, from);
 
     if (flag == PROMOTION) {
         movedPiece = makePromoPiece(extract<PROMOTIONTYPE>(move), sideToMove);
@@ -129,6 +132,7 @@ void Position::makeMove(Move move) {
         pieceLocations[lsb(captureSquare)] = NO_PIECE;
         psqtMG -= PSQT[0][capturedPawn][lsb(captureSquare)];
         psqtEG -= PSQT[1][capturedPawn][lsb(captureSquare)];
+        toggleFeature<Off>(capturedPawn, lsb(captureSquare));
     }
 
     if (flag == CASTLING) {
@@ -143,6 +147,7 @@ void Position::makeMove(Move move) {
         updateKey(rook, rookTo, key);
         psqtMG += (PSQT[0][rook][rookTo] - PSQT[0][rook][rookFrom]);
         psqtEG += (PSQT[1][rook][rookTo] - PSQT[1][rook][rookFrom]);
+        moveFeature(rook, rookFrom, rookTo);
     }
 
     enPassantSquare = 0ULL;
@@ -164,11 +169,13 @@ void Position::makeMove(Move move) {
         psqtMG -= PSQT[0][capturedPiece][to];
         psqtEG -= PSQT[1][capturedPiece][to];
         phase -= gamePhaseValues[typeOf(capturedPiece)];
+        toggleFeature<Off>(capturedPiece, to);
         updateKey(capturedPiece, to, key);
         plys50moveRule = 0;
     }
 
     pieceLocations[to] = movedPiece;
+    toggleFeature<On>(movedPiece, to);
     bitBoards[movedPiece] ^= 1ULL << to;
     updateKey(movedPiece, to, key);
     psqtMG += PSQT[0][movedPiece][to];
@@ -194,12 +201,15 @@ void Position::unmakeMove(Move move) {
     bitBoards[movingPiece] ^= 1ULL << to;
     psqtMG -= PSQT[0][movingPiece][to];
     psqtEG -= PSQT[1][movingPiece][to];
+    toggleFeature<Off>(movingPiece, to);
     bitBoards[capturedPiece] ^= 1ULL << to;
     psqtMG += PSQT[0][capturedPiece][to];
     psqtEG += PSQT[1][capturedPiece][to];
 
-    if (capturedPiece != NO_PIECE)
+    if (capturedPiece != NO_PIECE) {
         phase += gamePhaseValues[typeOf(capturedPiece)];
+        toggleFeature<On>(capturedPiece, to);
+    }
 
     if (flag == PROMOTION) {
         phase -= gamePhaseValues[typeOf(movingPiece)];
@@ -210,6 +220,7 @@ void Position::unmakeMove(Move move) {
     bitBoards[movingPiece] ^= 1ULL << from;
     psqtMG += PSQT[0][movingPiece][from];
     psqtEG += PSQT[1][movingPiece][from];
+    toggleFeature<On>(movingPiece, from);
 
     if (flag == CASTLING) {
         int rookFrom = from > to ? to - 1 : to + 2;
@@ -221,6 +232,7 @@ void Position::unmakeMove(Move move) {
         bitBoards[rook] ^= (1ULL << rookFrom) | (1ULL << rookTo);
         psqtMG += (PSQT[0][rook][rookFrom] - PSQT[0][rook][rookTo]);
         psqtEG += (PSQT[1][rook][rookFrom] - PSQT[1][rook][rookTo]);
+        moveFeature(rook, rookTo, rookFrom);
     }
 
     if (flag == ENPASSANT) {
@@ -230,6 +242,7 @@ void Position::unmakeMove(Move move) {
         pieceLocations[lsb(captureSquare)] = capturedPawn;
         psqtMG += PSQT[0][capturedPawn][lsb(captureSquare)];
         psqtEG += PSQT[1][capturedPawn][lsb(captureSquare)];
+        toggleFeature<On>(capturedPawn, lsb(captureSquare));
     }
 
     sideToMove = !sideToMove;

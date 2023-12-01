@@ -24,4 +24,6 @@ add_executable(Molybdenum
         src/Datagen/Datagen.cpp
         src/Datagen/Datagen.h
         src/bench.h
+        src/nnue.cpp
+        src/nnue.h
 )
