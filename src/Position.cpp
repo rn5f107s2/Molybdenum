@@ -64,8 +64,6 @@ void Position::setBoard(std::string fen) {
             continue;
 
         Piece piece = charIntToPiece(charAsInt);
-        psqtMG += PSQT[0][piece][lsb(bitToSet)];
-        psqtEG += PSQT[1][piece][lsb(bitToSet)];
         phase += gamePhaseValues[typeOf(piece)];
         bitBoards[piece] ^= bitToSet;
         pieceLocations[lsb(bitToSet)] = piece;
@@ -115,8 +113,6 @@ void Position::makeMove(Move move) {
     pieceLocations[from] = NO_PIECE;
     bitBoards[movedPiece] ^= 1ULL << from;
     updateKey(movedPiece,  from, key);
-    psqtMG -= PSQT[0][movedPiece][from];
-    psqtEG -= PSQT[1][movedPiece][from];
     toggleFeature<Off>(movedPiece, from);
 
     if (flag == PROMOTION) {
@@ -130,8 +126,6 @@ void Position::makeMove(Move move) {
         u64 captureSquare = movePawn(enPassantSquare, !sideToMove);
         bitBoards[capturedPawn] ^= captureSquare;
         pieceLocations[lsb(captureSquare)] = NO_PIECE;
-        psqtMG -= PSQT[0][capturedPawn][lsb(captureSquare)];
-        psqtEG -= PSQT[1][capturedPawn][lsb(captureSquare)];
         toggleFeature<Off>(capturedPawn, lsb(captureSquare));
     }
 
@@ -145,8 +139,6 @@ void Position::makeMove(Move move) {
         bitBoards[rook] ^= (1ULL << rookFrom) | (1ULL << rookTo);
         updateKey(rook, rookFrom, key);
         updateKey(rook, rookTo, key);
-        psqtMG += (PSQT[0][rook][rookTo] - PSQT[0][rook][rookFrom]);
-        psqtEG += (PSQT[1][rook][rookTo] - PSQT[1][rook][rookFrom]);
         moveFeature(rook, rookFrom, rookTo);
     }
 
@@ -166,8 +158,6 @@ void Position::makeMove(Move move) {
 
     if (capturedPiece != NO_PIECE) {
         bitBoards[capturedPiece] ^= 1ULL << to;
-        psqtMG -= PSQT[0][capturedPiece][to];
-        psqtEG -= PSQT[1][capturedPiece][to];
         phase -= gamePhaseValues[typeOf(capturedPiece)];
         toggleFeature<Off>(capturedPiece, to);
         updateKey(capturedPiece, to, key);
@@ -178,8 +168,6 @@ void Position::makeMove(Move move) {
     toggleFeature<On>(movedPiece, to);
     bitBoards[movedPiece] ^= 1ULL << to;
     updateKey(movedPiece, to, key);
-    psqtMG += PSQT[0][movedPiece][to];
-    psqtEG += PSQT[1][movedPiece][to];
     updateKey(key);
     keyHistory.push(key);
     sideToMove = !sideToMove;
@@ -199,12 +187,8 @@ void Position::unmakeMove(Move move) {
 
     pieceLocations[to] = capturedPiece;
     bitBoards[movingPiece] ^= 1ULL << to;
-    psqtMG -= PSQT[0][movingPiece][to];
-    psqtEG -= PSQT[1][movingPiece][to];
     toggleFeature<Off>(movingPiece, to);
     bitBoards[capturedPiece] ^= 1ULL << to;
-    psqtMG += PSQT[0][capturedPiece][to];
-    psqtEG += PSQT[1][capturedPiece][to];
 
     if (capturedPiece != NO_PIECE) {
         phase += gamePhaseValues[typeOf(capturedPiece)];
@@ -218,8 +202,6 @@ void Position::unmakeMove(Move move) {
 
     pieceLocations[from] = movingPiece;
     bitBoards[movingPiece] ^= 1ULL << from;
-    psqtMG += PSQT[0][movingPiece][from];
-    psqtEG += PSQT[1][movingPiece][from];
     toggleFeature<On>(movingPiece, from);
 
     if (flag == CASTLING) {
@@ -230,8 +212,6 @@ void Position::unmakeMove(Move move) {
         pieceLocations[rookTo  ] = NO_PIECE;
         pieceLocations[rookFrom] = rook;
         bitBoards[rook] ^= (1ULL << rookFrom) | (1ULL << rookTo);
-        psqtMG += (PSQT[0][rook][rookFrom] - PSQT[0][rook][rookTo]);
-        psqtEG += (PSQT[1][rook][rookFrom] - PSQT[1][rook][rookTo]);
         moveFeature(rook, rookTo, rookFrom);
     }
 
@@ -240,8 +220,6 @@ void Position::unmakeMove(Move move) {
         u64 captureSquare = movePawn(enPassantSquare, sideToMove);
         bitBoards[capturedPawn] ^= captureSquare;
         pieceLocations[lsb(captureSquare)] = capturedPawn;
-        psqtMG += PSQT[0][capturedPawn][lsb(captureSquare)];
-        psqtEG += PSQT[1][capturedPawn][lsb(captureSquare)];
         toggleFeature<On>(capturedPawn, lsb(captureSquare));
     }
 
@@ -254,7 +232,7 @@ void Position::clearBoard() {
 
     memset(&bitBoards, 0ULL, bitBoards.size() * sizeof(decltype(bitBoards)::value_type));
 
-    psqtMG = psqtEG = phase = 0;
+    phase = 0;
     enPassantHistory.clear();
     castlingHistory.clear();
     capturedHistory.clear();
