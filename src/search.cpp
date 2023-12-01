@@ -34,6 +34,7 @@ void clearHistory() {
 
 int iterativeDeepening(Position  &pos, searchTime &st, int maxDepth, [[maybe_unused]] Move &bestMove) {
     int score = 0;
+    int prevScore = 0;
     SearchInfo si;
     si.st = st;
 
@@ -74,11 +75,13 @@ int iterativeDeepening(Position  &pos, searchTime &st, int maxDepth, [[maybe_unu
 
     benchNodes += si.nodeCount;
     std::cout << "bestmove " << moveToString(si.bestRootMove) << "\n";
+    prevScore = score;
 #else
+    prevScore = score;
     }
     bestMove = si.bestRootMove;
 #endif
-    return score;
+    return prevScore;
 }
 
 int aspirationWindow(int prevScore, Position &pos, SearchInfo &si, int depth) {

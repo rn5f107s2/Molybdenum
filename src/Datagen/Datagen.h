@@ -1,3 +1,5 @@
+#include "search.h"
+
 #ifdef DATAGEN
 #ifndef MOLYBDENUM_DATAGEN_H
 #define MOLYBDENUM_DATAGEN_H
@@ -21,9 +23,6 @@ void createExit(Position &pos);
 void playGame(Position &pos, const std::string& filename, u64 &fenCount);
 
 [[noreturn]] void start(Position &pos, const std::string& filename);
-
-const int DRAW_ADJ = 0;
-const int WIN_ADJ  = 1;
 
 #endif //MOLYBDENUM_DATAGEN_H
 #endif

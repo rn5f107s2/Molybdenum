@@ -57,13 +57,13 @@ void createExit(Position &pos) {
 
 bool verifyExit(Position &pos) {
     searchTime st;
-    st.limit = Nodes; st.nodeLimit = 25000;
+    st.limit = Nodes; st.nodeLimit = 10000;
 
-    return abs(startSearch(pos, st)) < 250;
+    return abs(startSearch(pos, st)) < 150;
 }
 
 void playGame(Position &pos, const std::string& filename, u64 &fenCount) {
-    int adjCounter[2];
+    int adjCounter = 0;
     std::string result;
     Stack<int> scores;
     Stack<std::string> fens;
@@ -79,24 +79,19 @@ void playGame(Position &pos, const std::string& filename, u64 &fenCount) {
         st.nodeLimit = 100000;
         st.limit = Nodes;
 
-        int score = startSearch(pos, st, bestMove);
+        int score = startSearch(pos, st, MAXDEPTH, bestMove);
 
-        if (abs(score) >= 400)
-            adjCounter[WIN_ADJ]++;
-        else
-            adjCounter[WIN_ADJ] = 0;
-
-        if (adjCounter[WIN_ADJ] > 5 || abs(score) >= MAXMATE) {
+        if (abs(score) >= MAXMATE) {
             result = (score > 0 == pos.sideToMove) ? "1.0" : "0.0";
             break;
         }
 
-        if (abs(score) <= 10)
-            adjCounter[DRAW_ADJ]++;
+        if (abs(score) <= 5)
+            adjCounter++;
         else
-            adjCounter[DRAW_ADJ] = 0;
+            adjCounter = 0;
 
-        if (adjCounter[DRAW_ADJ] > 7 || pos.plys50moveRule >= 100) {
+        if (adjCounter > 7 || pos.plys50moveRule >= 100 || bestMove == NO_MOVE) {
             result = "0.5";
             break;
         }

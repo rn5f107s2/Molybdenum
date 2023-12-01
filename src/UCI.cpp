@@ -22,6 +22,7 @@ void uciCommunication() {
     Position internalBoard;
 
 #ifdef DATAGEN
+    readNetwork("netBulletTest3-epoch40.bin");
     std::string filename;
     std::cin >> filename;
     start(internalBoard, filename);
@@ -186,7 +187,11 @@ void uciCommunication() {
         }
 
         if (contains(input, "eval")) {
-            std::cout << evaluate(internalBoard) << "\n";
+            //std::cout << evaluate(internalBoard) << "\n";
+            searchTime st;
+            st.limit = Nodes; st.nodeLimit = 1;
+            bool a = abs(startSearch(internalBoard, st)) < 250;
+            std::cout << a << "\n";
         }
 
         if (contains(input, "setoption")) {
