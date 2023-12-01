@@ -187,11 +187,7 @@ void uciCommunication() {
         }
 
         if (contains(input, "eval")) {
-            //std::cout << evaluate(internalBoard) << "\n";
-            searchTime st;
-            st.limit = Nodes; st.nodeLimit = 1;
-            bool a = abs(startSearch(internalBoard, st)) < 250;
-            std::cout << a << "\n";
+            std::cout << evaluate(internalBoard) << "\n";
         }
 
         if (contains(input, "setoption")) {
