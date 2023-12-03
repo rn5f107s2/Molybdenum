@@ -28,7 +28,7 @@ void uciCommunication() {
     start(internalBoard, filename);
 #endif
 
-    readNetwork("../src/Nets/netBulletTest3-epoch40/netBulletTest3-epoch40.bin");
+    readNetwork("Ar3d64s2-epoch50.bin");
     internalBoard.setBoard("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     std::string input;
     options.init();

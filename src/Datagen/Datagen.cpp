@@ -86,7 +86,7 @@ void playGame(Position &pos, const std::string& filename, u64 &fenCount) {
             break;
         }
 
-        if (abs(score) <= 5)
+        if (abs(score) <= 0)
             adjCounter++;
         else
             adjCounter = 0;
