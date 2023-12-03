@@ -22,7 +22,7 @@ void uciCommunication() {
     Position internalBoard;
 
 #ifdef DATAGEN
-    readNetwork("netBulletTest3-epoch40.bin");
+    readNetwork("ar3d64s2.nnue");
     std::string filename;
     std::cin >> filename;
     start(internalBoard, filename);
