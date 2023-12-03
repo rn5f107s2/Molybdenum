@@ -28,7 +28,7 @@ void uciCommunication() {
     start(internalBoard, filename);
 #endif
 
-    readNetwork("Ar3d64s2-epoch50.bin");
+    readNetwork("ar3d64s2.nnue");
     internalBoard.setBoard("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     std::string input;
     options.init();
