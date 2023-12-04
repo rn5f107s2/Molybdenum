@@ -5,8 +5,8 @@
 #include "MagicBitboards.h"
 #include "Movegen.h"
 
-int main() {
+int main(int argc, char** argv) {
     TT.setSize(16);
-    uciCommunication();
+    uciCommunication(argc > 1 ? argv[1] : "");
     return 0;
 }

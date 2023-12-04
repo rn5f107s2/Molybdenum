@@ -18,14 +18,17 @@ UCIOptions options;
 const std::string name = "Molybdenum";
 const std::string version = "1.0";
 
-void uciCommunication() {
+void uciCommunication(const std::string& in) {
     Position internalBoard;
 
 #ifdef DATAGEN
-    readNetwork("ar3d64s2.nnue");
-    std::string filename;
-    std::cin >> filename;
-    start(internalBoard, filename);
+    if (in.empty()) {
+        std::cerr << "No Outputfile provided\n";
+        return;
+    } else {
+        readNetwork("ar3d64s2.nnue");
+        start(internalBoard, in);
+    }
 #endif
 
     readNetwork("ar3d64s2.nnue");

@@ -9,7 +9,7 @@
 #include <chrono>
 #include <cmath>
 
-//#define DATAGEN
+#define DATAGEN
 
 struct SearchInfo {
     u64 nodeCount = 0;

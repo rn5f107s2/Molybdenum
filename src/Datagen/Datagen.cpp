@@ -105,8 +105,6 @@ void playGame(Position &pos, const std::string& filename, u64 &fenCount) {
         pos.movecount++;
     }
 
-    output << "//newgame\n";
-
     while (fens.getSize()) {
         std::string fen = fens.pop();
         std::string score = std::to_string(scores.pop());
@@ -121,7 +119,6 @@ void playGame(Position &pos, const std::string& filename, u64 &fenCount) {
         fenCount++;
     }
 
-    output << "//gameend\n";
     output.close();
 }
 #endif
