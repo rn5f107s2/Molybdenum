@@ -4,5 +4,5 @@
 #include "nnue.h"
 
 int evaluate(Position &pos) {
-    return calculate(pos.sideToMove) / 2;
+    return calculate(pos.sideToMove) / 3;
 }

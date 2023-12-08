@@ -64,6 +64,7 @@ bool verifyExit(Position &pos) {
 
 void playGame(Position &pos, const std::string& filename, u64 &fenCount) {
     int adjCounter = 0;
+    int wadjCounter = 0;
     std::string result;
     Stack<int> scores;
     Stack<std::string> fens;
@@ -81,7 +82,12 @@ void playGame(Position &pos, const std::string& filename, u64 &fenCount) {
 
         int score = startSearch(pos, st, MAXDEPTH, bestMove);
 
-        if (abs(score) >= MAXMATE) {
+        if (abs(score) > 300)
+            wadjCounter++;
+        else
+            wadjCounter = 0;
+
+        if (abs(score) >= MAXMATE || wadjCounter > 5) {
             result = (score > 0 == pos.sideToMove) ? "1.0" : "0.0";
             break;
         }
@@ -96,7 +102,7 @@ void playGame(Position &pos, const std::string& filename, u64 &fenCount) {
             break;
         }
 
-        if (!pos.isCapture(bestMove)) {
+        if (!pos.isCapture(bestMove) && extract<FLAG>(bestMove) != PROMOTION) {
             fens.push(pos.fen());
             scores.push(score);
             bestMoves.push(bestMove);
