@@ -13,8 +13,15 @@ therefore it's **not** recommended to do communicate via the commandline without
 to set the current position to a give fen and
 ```
     go movetime [time for this move]
+```
+```
     go depth [depth]
+```
+```
     go nodes [nodes]
+```
+or
+```
     go infinite
 ```
 to search a position with the respective limits.
@@ -52,9 +59,9 @@ this prints the current board state as well as a few additional informations and
 this prints the current evaluation from the perspective of the side to move.
 
 ## Evaluation
-The currently used evaluation function is Piece-Square-Tables (PSQTs) with Tempo.
-The eval function was tuned with the [lichess-big3-resolved Dataset](https://cdn.discordapp.com/attachments/936829036104142848/1014793028042510346/lichess-big3-resolved.7z)
-using a slightly modified version of this [Texel-Tuner implementation](https://github.com/GediminasMasaitis/texel-tuner).
+The currently used evaluation function is a Neural Network of the Architecture 768->(32x2)->1 trained using exclusively own Selfplay Data.
+All nets were trained using the [bullet Trainer](https://github.com/jw1912/bullet), however due to the Board representation some features are flipped horizontally when training the nets, 
+therefore when using on of those nets in another engine they probably need to be flipped again.
 
 ## Credits
 
