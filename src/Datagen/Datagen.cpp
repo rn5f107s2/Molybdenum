@@ -65,6 +65,7 @@ bool verifyExit(Position &pos) {
 void playGame(Position &pos, const std::string& filename, u64 &fenCount) {
     int adjCounter = 0;
     int wadjCounter = 0;
+    int wadjReq = int(seedDataGen % 10) + 5;
     std::string result;
     Stack<int> scores;
     Stack<std::string> fens;
@@ -87,7 +88,7 @@ void playGame(Position &pos, const std::string& filename, u64 &fenCount) {
         else
             wadjCounter = 0;
 
-        if (abs(score) >= MAXMATE || wadjCounter > 5) {
+        if (abs(score) >= MAXMATE || wadjCounter > wadjReq) {
             result = (score > 0 == pos.sideToMove) ? "1.0" : "0.0";
             break;
         }
