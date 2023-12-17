@@ -26,12 +26,12 @@ void uciCommunication(const std::string& in) {
         std::cerr << "No Outputfile provided\n";
         return;
     } else {
-        readNetwork("xe4f145d106s1.nnue");
+        readNetwork("kr4d105s1.nnue");
         start(internalBoard, in);
     }
 #endif
 
-    readNetwork("xe4f145d106s1.nnue");
+    readNetwork("kr4d105s1.nnue");
     internalBoard.setBoard("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     std::string input;
     options.init();
