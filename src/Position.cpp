@@ -171,6 +171,7 @@ void Position::makeMove(Move move) {
     updateKey(key);
     keyHistory.push(key);
     sideToMove = !sideToMove;
+    pushAccToStack();
 }
 
 void Position::unmakeMove(Move move) {
@@ -187,13 +188,10 @@ void Position::unmakeMove(Move move) {
 
     pieceLocations[to] = capturedPiece;
     bitBoards[movingPiece] ^= 1ULL << to;
-    toggleFeature<Off>(movingPiece, to);
     bitBoards[capturedPiece] ^= 1ULL << to;
 
-    if (capturedPiece != NO_PIECE) {
+    if (capturedPiece != NO_PIECE)
         phase += gamePhaseValues[typeOf(capturedPiece)];
-        toggleFeature<On>(capturedPiece, to);
-    }
 
     if (flag == PROMOTION) {
         phase -= gamePhaseValues[typeOf(movingPiece)];
@@ -202,7 +200,6 @@ void Position::unmakeMove(Move move) {
 
     pieceLocations[from] = movingPiece;
     bitBoards[movingPiece] ^= 1ULL << from;
-    toggleFeature<On>(movingPiece, from);
 
     if (flag == CASTLING) {
         int rookFrom = from > to ? to - 1 : to + 2;
@@ -220,10 +217,10 @@ void Position::unmakeMove(Move move) {
         u64 captureSquare = movePawn(enPassantSquare, sideToMove);
         bitBoards[capturedPawn] ^= captureSquare;
         pieceLocations[lsb(captureSquare)] = capturedPawn;
-        toggleFeature<On>(capturedPawn, lsb(captureSquare));
     }
 
     sideToMove = !sideToMove;
+    popAccStack();
 }
 
 void Position::clearBoard() {
