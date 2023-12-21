@@ -2,7 +2,10 @@
 #define MOLYBDENUM_EVAL_H
 
 #include "Position.h"
+#include "nnue.h"
 
-int evaluate(Position &pos);
+inline int evaluate(Position &pos) {
+    return calculate(pos.sideToMove) / 3;
+}
 
 #endif //MOLYBDENUM_EVAL_H

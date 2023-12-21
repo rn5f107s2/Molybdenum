@@ -14,7 +14,6 @@ add_executable(Molybdenum
         src/Position.cpp
         src/UCI.cpp
         src/search.cpp
-        src/eval.cpp
         src/timemanagment.cpp
         src/Transpositiontable.cpp
         src/Movepicker.h

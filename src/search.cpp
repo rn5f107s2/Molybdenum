@@ -178,7 +178,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
 
     if (   !pvNode
         && !check
-        && depth < 9
+        //&& depth < 9
         && stack->staticEval - (140 - 80 * improving) * depth >= beta)
         return stack->staticEval;
 
@@ -187,7 +187,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         && depth >= 2
         && (stack-1)->currMove != NULL_MOVE
         && stack->staticEval >= beta
-        && beta > -MAXMATE) {
+        /*&& beta > -MAXMATE*/) {
 
         int reduction = std::min(depth, (3 + (stack->staticEval >= beta + 250) + (depth > 6)));
         pos.makeNullMove();
@@ -196,7 +196,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         int nullScore = -search<false>(-beta, -alpha, pos, depth - reduction, si, stack+1);
         pos.unmakeNullMove();
 
-        if (nullScore >= beta && nullScore < MAXMATE)
+        if (nullScore >= beta/* && nullScore < MAXMATE*/)
             return nullScore;
     }
 
@@ -229,6 +229,16 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             && depth <= 5
             && history < -4500 * expectedDepth)
             continue;
+
+        u64 prefetchKey = key;
+        updateKey(pos.pieceOn(from), from, prefetchKey);
+        updateKey(pos.pieceOn(from), to, prefetchKey);
+        updateKey(prefetchKey);
+
+        if (pos.isCapture(currentMove))
+            updateKey(pos.pieceOn(to), to, prefetchKey);
+
+        __builtin_prefetch(TT.probe(prefetchKey));
 
         pos.makeMove(currentMove);
         stack->currMove = currentMove;
