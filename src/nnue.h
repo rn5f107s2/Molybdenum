@@ -6,8 +6,9 @@
 #include <string>
 #include <algorithm>
 #include "BitStuff.h"
+#include "Utility.h"
 
-enum Toggle{
+enum Toggle {
     Off, On
 };
 
@@ -18,11 +19,12 @@ static const int NET_SIZE = 3;
 static const std::array<int, NET_SIZE> LAYER_SIZE = {INPUT_SIZE, L1_SIZE, OUTPUT_SIZE};
 
 struct Net {
-    std::array<int16_t , L1_SIZE * INPUT_SIZE> weights0;
-    std::array<int16_t, L1_SIZE * OUTPUT_SIZE * 2> weights1;
-    std::array<int16_t, L1_SIZE> bias0;
-    std::array<int16_t, OUTPUT_SIZE> bias1;
-    std::array<std::array<int16_t, L1_SIZE>, 2> accumulator;
+    std::array<int16_t , L1_SIZE * INPUT_SIZE> weights0{};
+    std::array<int16_t, L1_SIZE * OUTPUT_SIZE * 2> weights1{};
+    std::array<int16_t, L1_SIZE> bias0{};
+    std::array<int16_t, OUTPUT_SIZE> bias1{};
+    std::array<std::array<int16_t, L1_SIZE>, 2> accumulator{};
+    Stack<std::array<std::array<int16_t, L1_SIZE>, 2>> accumulatorStack;
 };
 
 extern Net net;
@@ -57,6 +59,15 @@ void toggleFeature(int piece, int square) {
 inline void moveFeature(int piece, int from, int to) {
     toggleFeature<Off>(piece, from);
     toggleFeature<On >(piece, to);
+}
+
+inline void pushAccToStack() {
+    net.accumulatorStack.push(net.accumulator);
+}
+
+inline void popAccStack() {
+    net.accumulatorStack.pop();
+    net.accumulator = net.accumulatorStack.top();
 }
 
 

@@ -17,6 +17,8 @@ void readNetwork(const std::string &filename) {
 }
 
 void initAccumulator(std::array<u64, 13> &bitboards) {
+    net.accumulatorStack.clear();
+
     memcpy(&net.accumulator[WHITE], &net.bias0[0], sizeof(int16_t) * L1_SIZE);
     memcpy(&net.accumulator[BLACK], &net.bias0[0], sizeof(int16_t) * L1_SIZE);
 
@@ -29,6 +31,8 @@ void initAccumulator(std::array<u64, 13> &bitboards) {
             toggleFeature<On>(pc, square);
         }
     }
+
+    pushAccToStack();
 }
 
 int calculate(Color c) {
