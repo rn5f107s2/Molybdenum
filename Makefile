@@ -4,7 +4,7 @@ SRC=src
 OBJ=build
 CXX=g++
 
-CXXFLAGS = --std=c++17 
+CXXFLAGS = --std=c++17 -march=native -mtune=native
 CXXFLAGS += -Ofast -static-libstdc++ -static -static-libgcc
 CXXFLAGS += -Wall -Wextra -pedantic
 
