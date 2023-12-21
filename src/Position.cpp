@@ -99,7 +99,7 @@ void Position::makeMove(Move move) {
     int flag = extract<FLAG>(move);
     Piece movedPiece    = pieceLocations[from];
     Piece capturedPiece = pieceLocations[to];
-    u64 key           = keyHistory.top();
+    u64 key             = keyHistory.top();
 
     plys50mrHistory.push(plys50moveRule);
     castlingHistory.push(castlingRights);
@@ -297,11 +297,6 @@ bool Position::hasRepeated(int plysInSearch) {
     }
 
     return false;
-}
-
-bool Position::isCapture(Move move) {
-    int to = extract<TO>(move);
-    return pieceLocations[to] != NO_PIECE;
 }
 
 void Position::makeNullMove() {

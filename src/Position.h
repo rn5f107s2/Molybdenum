@@ -85,5 +85,10 @@ inline u64 Position::getOccupied() {
     return getOccupied<WHITE>() | getOccupied<BLACK>();
 }
 
+inline bool Position::isCapture(Move move) {
+    int to = extract<TO>(move);
+    return pieceLocations[to] != NO_PIECE;
+}
+
 
 #endif //MOLYBDENUM_POSITION_H
