@@ -16,7 +16,11 @@ std::array<int, MAXDEPTH> pvLength;
 
 u64 benchNodes = 0;
 
-template<bool ROOT>
+enum NodeType {
+    Root, PVNode, NonPvNode
+};
+
+template<NodeType NT>
 int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, SearchStack *stack);
 int qsearch(int alpha, int beta, Position &pos, SearchInfo &si);
 
@@ -97,7 +101,7 @@ int aspirationWindow(int prevScore, Position &pos, SearchInfo &si, int depth) {
     stack[0].contHist = &continuationHistory[NO_PIECE][0];
     stack[1].contHist = &continuationHistory[NO_PIECE][0];
 
-    int score = search<true>(alpha, beta, pos, depth, si, &stack[2]);
+    int score = search<Root>(alpha, beta, pos, depth, si, &stack[2]);
 
     while ((score >= beta || score <= alpha) && !stop(si.st, si)) {
         delta += delta / 3;
@@ -107,19 +111,22 @@ int aspirationWindow(int prevScore, Position &pos, SearchInfo &si, int depth) {
         else
             alpha = std::max(score - delta, -INFINITE);
 
-        score = search<true>(alpha, beta, pos, depth, si, &stack[2]);
+        score = search<Root>(alpha, beta, pos, depth, si, &stack[2]);
     }
 
     return score;
 }
 
-template<bool ROOT>
+template<NodeType nt>
 int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, SearchStack *stack) {
+    constexpr bool ROOT = nt == Root;
+    constexpr bool PvNode = nt == PVNode || ROOT;
+
     u64 ksq = pos.getPieces(pos.sideToMove, KING);
     u64 checkers = attackersTo<false, false>(lsb(ksq),pos.getOccupied(), pos.sideToMove ? BLACK_PAWN : WHITE_PAWN, pos);
     Move bestMove = 0, currentMove = 0;
     int bestScore = -INFINITE, score = -INFINITE, moveCount = 0;
-    bool exact = false, check = checkers, pvNode = (beta - alpha) > 1, ttHit = false, improving;
+    bool exact = false, check = checkers, ttHit = false, improving;
     Stack<Move> historyUpdates;
 
     stack->staticEval = evaluate(pos);
@@ -168,7 +175,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             ttScore += stack->plysInSearch;
     }
 
-    if (   !pvNode
+    if (   !PvNode
         && ttHit
         && ttDepth >= depth
         && (    ttBound == EXACT
@@ -176,13 +183,13 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             || (ttBound == UPPER && ttScore <= alpha)))
         return ttScore;
 
-    if (   !pvNode
+    if (   !PvNode
         && !check
         //&& depth < 9
         && stack->staticEval - (140 - 80 * improving) * depth >= beta)
         return stack->staticEval;
 
-    if (   !pvNode
+    if (   !PvNode
         && !check
         && depth >= 2
         && (stack-1)->currMove != NULL_MOVE
@@ -193,7 +200,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         pos.makeNullMove();
         stack->currMove = NULL_MOVE;
         stack->contHist = &continuationHistory[NO_PIECE][0];
-        int nullScore = -search<false>(-beta, -alpha, pos, depth - reduction, si, stack+1);
+        int nullScore = -search<NonPvNode>(-beta, -alpha, pos, depth - reduction, si, stack+1);
         pos.unmakeNullMove();
 
         if (nullScore >= beta/* && nullScore < MAXMATE*/)
@@ -202,40 +209,41 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
 
     Movepicker mp;
     while ((currentMove = pickNextMove<false>(mp, ttMove, pos, checkers, killers[stack->plysInSearch], mainHistory[pos.sideToMove], *(stack-1)->contHist, *(stack-2)->contHist))) {
-        int from = extract<FROM>(currentMove);
-        int to   = extract<TO>(currentMove);
+        int  from    = extract<FROM>(currentMove);
+        int  to      = extract<TO>(currentMove);
+        bool capture = pos.isCapture(currentMove);
         Piece pc = pos.pieceOn(from);
 
         int reductions = lmrReduction(depth, moveCount);
         int expectedDepth = std::max(depth - reductions, 1);
         int history = (*(stack-1)->contHist)[pc][to] + mainHistory[pos.sideToMove][from][to];
 
-        if (   !pos.isCapture(currentMove)
+        if (   !capture
             && bestScore > -MAXMATE
             && depth <= 5
             && moveCount > 12 * depth)
             continue;
 
-        if (   !pvNode
-            && !pos.isCapture(currentMove)
+        if (   !PvNode
+            && !capture
             && bestScore > -MAXMATE
             && depth <= 5
             && stack->staticEval + 175 + 200 * expectedDepth <= alpha)
             continue;
 
-        if (   !pvNode
+        if (   !PvNode
             && bestScore > -MAXMATE
-            && !pos.isCapture(currentMove)
+            && !capture
             && depth <= 5
             && history < -4500 * expectedDepth)
             continue;
 
         u64 prefetchKey = key;
-        updateKey(pos.pieceOn(from), from, prefetchKey);
-        updateKey(pos.pieceOn(from), to, prefetchKey);
+        updateKey(pc, from, prefetchKey);
+        updateKey(pc, to, prefetchKey);
         updateKey(prefetchKey);
 
-        if (pos.isCapture(currentMove))
+        if (capture)
             updateKey(pos.pieceOn(to), to, prefetchKey);
 
         __builtin_prefetch(TT.probe(prefetchKey));
@@ -246,23 +254,23 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         si.nodeCount++;
         moveCount++;
 
-        reductions -= pvNode;
+        reductions -= PvNode;
         reductions = std::max(reductions, 1);
 
         if (depth > 2 && moveCount > 2) {
-            score = -search<false>(-alpha - 1, -alpha, pos, depth - reductions, si, stack+1);
+            score = -search<NonPvNode>(-alpha - 1, -alpha, pos, depth - reductions, si, stack+1);
 
-            if (!pvNode && score > alpha && reductions > 1)
-                score = -search<false>(-alpha - 1, -alpha, pos, depth - 1, si, stack+1);
+            if (!PvNode && score > alpha && reductions > 1)
+                score = -search<NonPvNode>(-alpha - 1, -alpha, pos, depth - 1, si, stack+1);
 
-            if (pvNode && score > alpha && score < beta)
-                score = -search<false>(-beta, -alpha, pos, depth - 1, si, stack+1);
+            if (PvNode && score > alpha && score < beta)
+                score = -search<PVNode>(-beta, -alpha, pos, depth - 1, si, stack+1);
         }else {
-            if (!pvNode || moveCount > 1)
-                score = -search<false>(-alpha - 1, -alpha, pos, depth - 1, si, stack+1);
+            if (!PvNode || moveCount > 1)
+                score = -search<NonPvNode>(-alpha - 1, -alpha, pos, depth - 1, si, stack+1);
 
-            if (pvNode && ((score > alpha && score < beta) || moveCount == 1))
-                score = -search<false>(-beta, -alpha, pos, depth - 1, si, stack+1);
+            if (PvNode && ((score > alpha && score < beta) || moveCount == 1))
+                score = -search<PVNode>(-beta, -alpha, pos, depth - 1, si, stack+1);
         }
 
         pos.unmakeMove(currentMove);
