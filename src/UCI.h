@@ -2,8 +2,10 @@
 #define MOLYBDENUM_UCI_H
 
 #include "Move.h"
+#include "Position.h"
 
 void uciCommunication(const std::string& in);
+void uciLoop(const std::string& input, Position &internalBoard);
 
 inline bool contains(const std::string& input, const std::string& searchedTerm) {
     return input.find(searchedTerm) != std::string::npos;
