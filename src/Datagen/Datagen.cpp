@@ -65,7 +65,7 @@ bool verifyExit(Position &pos) {
 void playGame(Position &pos, const std::string& filename, u64 &fenCount) {
     int adjCounter = 0;
     int wadjCounter = 0;
-    int wadjReq = int(seedDataGen % 10) + 5;
+    int wadjReq = int(seedDataGen % 20) + 5;
     std::string result;
     Stack<int> scores;
     Stack<std::string> fens;
