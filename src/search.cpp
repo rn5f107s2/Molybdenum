@@ -185,7 +185,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
 
     if (   !PvNode
         && !check
-        //&& depth < 9
+        && depth < 9
         && stack->staticEval - (140 - 80 * improving) * depth >= beta)
         return stack->staticEval;
 
