@@ -13,7 +13,7 @@ inline void updateHistory(FromToHist &history, PieceToHist &contHist, PieceToHis
     int from = extract<FROM>(bestMove);
     int to   = extract<TO  >(bestMove);
     int pc   = pos.pieceOn(from);
-    int bonus = std::max(depth * depth * 16, 1536);
+    int bonus = std::min(depth * depth * 16, 1536);
     int malus = -bonus;
 
     history[from][to] += bonus - history [from][to] * abs(bonus) / 100000;
