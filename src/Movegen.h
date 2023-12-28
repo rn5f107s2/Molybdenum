@@ -192,7 +192,7 @@ inline void pushTargetsToMoveList(int fromSquare, u64 possibleTargets, MoveList 
         pushBack(ml, move);
 
         if constexpr (FLAG == PROMOTION && !CAPTURESONLY)
-            for(int promoPiece = PROMO_BISHOP; promoPiece != PROMO_QUEEN + 1; promoPiece++) {
+            for(int promoPiece = PROMO_KNIGHT; promoPiece != PROMO_QUEEN; promoPiece++) {
                 move = createMove(fromSquare, toSquare, promoPiece, FLAG);
                 pushBack(ml, move);
             }
