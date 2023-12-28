@@ -57,7 +57,7 @@ void createExit(Position &pos) {
 
 bool verifyExit(Position &pos) {
     searchTime st;
-    st.limit = Nodes; st.nodeLimit = 10000;
+    st.limit = Nodes; st.nodeLimit = 2500;
 
     return abs(startSearch(pos, st)) < 150;
 }
@@ -78,7 +78,7 @@ void playGame(Position &pos, const std::string& filename, u64 &fenCount) {
     while (true) {
         Move bestMove;
         searchTime st;
-        st.nodeLimit = 30000;
+        st.nodeLimit = 5000;
         st.limit = Nodes;
 
         int score = startSearch(pos, st, MAXDEPTH, bestMove);
