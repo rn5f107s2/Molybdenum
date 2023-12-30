@@ -7,12 +7,12 @@ DEFAULT_EXE = $(OBJ_DIR)/Molybdenum
 
 all: $(DEFAULT_EXE)
 
-CXXFLAGS = --std=c++17 -march=native -mtune=native
-CXXFLAGS += -Ofast -static-libstdc++ -static -static-libgcc
+CXXFLAGS = -static-libstdc++ -static -static-libgcc -Ofast
 CXXFLAGS += -Wall -Wextra -pedantic
+CXXFLAGS += -march=native
 CXXFLAGS += -Dmakefile
 
-LDFLAGS += -static-libstdc++ -static -static-libgcc
+LDFLAGS += -static-libstdc++ -static -static-libgcc -Ofast -march=native
 
 SOURCES := $(wildcard $(SRC_DIR)/*.cpp)
 OBJECTS := $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SOURCES))
@@ -28,7 +28,7 @@ $(OBJ_DIR):
 EXE ?= $(DEFAULT_EXE)
 
 $(DEFAULT_EXE): $(OBJECTS)
-	$(CXX) $(LDFLAGS) -o $(DEFAULT_EXE) $(OBJECTS)
+	/usr/bin/c++  -static-libstdc++ -static -static-libgcc -Ofast -Wall -Wextra -pedantic -march=native build/main.o build/Position.o build/UCI.o build/search.o build/timemanagment.o build/Transpositiontable.o build/UCIOptions.o build/nnue.o -o $(DEFAULT_EXE)
 	@if [ $(EXE) != $(DEFAULT_EXE) ]; then cp $(DEFAULT_EXE) $(EXE); fi
 
 .PHONY: clean

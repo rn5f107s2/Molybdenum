@@ -2,18 +2,18 @@
 #include "Transpositiontable.h"
 #include "timemanagement.h"
 
-void UCIOptions::setOption(const std::string& name, int value) {
+bool UCIOptions::setOption(const std::string& name, int value) {
     UCIOptionSpin *option = findOptionSpin(name);
 
-    if (!option) {
-        std::cout << "No such option: " << name << "\n";
-        return;
-    }
+    if (!option)
+        return false;
 
     if (value <= option->max && value >= option->min)
         option->setter(value);
     else
         std::cout << "Value " << value << " is not within bounds of option " << name << "\n";
+
+    return true;
 }
 
 void foo([[maybe_unused]] int bar){}

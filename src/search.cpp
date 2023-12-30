@@ -16,6 +16,11 @@ std::array<int, MAXDEPTH> pvLength;
 
 u64 benchNodes = 0;
 
+#ifdef TUNE
+#include "tune.h"
+Tune tune;
+#endif
+
 enum NodeType {
     Root, PVNode, NonPvNode
 };
@@ -328,6 +333,11 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
 }
 
 int qsearch(int alpha, int beta, Position &pos, SearchInfo &si) {
+
+#ifdef TUNE
+    std::array<int, 13> PieceValuesSEE = {tune.SEEPawn, tune.SEEKnight, tune.SEEBishop, tune.SEERook, tune.SEEQueen, 0, tune.SEEPawn, tune.SEEKnight, tune.SEEBishop, tune.SEERook, tune.SEEQueen, 0, 0};
+#endif
+
     Move currentMove;
     int staticEval;
     int bestScore = staticEval = evaluate(pos);

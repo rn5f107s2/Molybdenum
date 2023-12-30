@@ -36,6 +36,11 @@ void uciCommunication(const std::string& in) {
     std::string input;
     options.init();
 
+#ifdef TUNE
+    tuneOptions.init();
+    tuneOptions.printSPSAConfig();
+#endif
+
     if (!in.empty()) {
         uciLoop(in, internalBoard);
         return;
@@ -61,6 +66,12 @@ void uciLoop(const std::string& input, Position &internalBoard) {
         std::cout << "id name " << name << " " << version << "\n";
         std::cout << "id author rn5f107s2\n";
         options.printOptions();
+
+#ifdef TUNE
+        tuneOptions.printOptions();
+        tuneOptions.init();
+#endif
+
         std::cout << "uciok\n";
         return;
     }
@@ -208,13 +219,24 @@ void uciLoop(const std::string& input, Position &internalBoard) {
         int nameEnd = int(optionName.find("value "));
         int value = std::stoi(optionName.substr(nameEnd + 6));
         optionName = optionName.substr(0, optionName.size() - optionName.substr(nameEnd).size() - 1);
-        options.setOption(optionName, value);
+
+        bool found = options.setOption(optionName, value);
+
+#ifdef TUNE
+        found |= tuneOptions.setOption(optionName, value);
+        tuneOptions.init();
+#endif
+
+        if (!found)
+            std::cout << "No such option: " << optionName << "\n";
     }
 
     if (contains(input, "bench")) {
         searchTime st;
         st.limit = Depth;
         benchNodes = 0;
+
+        clearHistory();
 
         for (int i = 0; i != BENCH_SIZE; i++) {
             internalBoard.setBoard(positions[i]);
