@@ -43,8 +43,8 @@ inline std::array<double, 256> initReductions() {
 
 static std::array<double, 256> Log = initReductions();
 
-inline int lmrReduction(int depth, int movecount) {
-    return int(1 + Log[depth] * Log[movecount] / 2);
+inline int lmrReduction(int depth, int movecount, bool improving) {
+    return int(1 + !improving * 0.5 + Log[depth] * Log[movecount] / 2);
 }
 
 inline int mateInPlies(int score) {

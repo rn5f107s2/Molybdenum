@@ -186,7 +186,8 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
     if (   !PvNode
         && !check
         && depth < 9
-        && stack->staticEval - (140 - 80 * improving) * depth >= beta)
+        && stack->staticEval - (140 * depth - 200 * improving) >= beta
+        && stack->staticEval >= beta)
         return stack->staticEval;
 
     if (   !PvNode
@@ -214,7 +215,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         bool capture = pos.isCapture(currentMove);
         Piece pc = pos.pieceOn(from);
 
-        int reductions = lmrReduction(depth, moveCount);
+        int reductions = lmrReduction(depth, moveCount, improving);
         int expectedDepth = std::max(depth - reductions, 1);
         int history = (*(stack-1)->contHist)[pc][to] + mainHistory[pos.sideToMove][from][to];
 
