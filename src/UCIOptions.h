@@ -25,10 +25,11 @@ class UCIOptionSpin {
 
 class UCIOptions {
     public:
-        void init();
-        void setOption(const std::string& name, int value);
+        virtual void init();
+        virtual bool setOption(const std::string& name, int value);
         void printOptions();
-    private:
+
+    protected:
         Stack<UCIOptionSpin> spinOptions;
         UCIOptionSpin* findOptionSpin(const std::string& name);
 };

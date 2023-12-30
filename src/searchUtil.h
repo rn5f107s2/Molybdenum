@@ -4,10 +4,18 @@
 #include <array>
 #include "Move.h"
 
+#ifdef TUNE
+#include "tune.h"
+
+extern Tune tune;
+#endif
+
 using FromToHist = std::array<std::array<int, 64>, 64>;
 using PieceToHist = std::array<std::array<int, 64>, 13>;
 using SideFromToHist = std::array<FromToHist, 2>;
 using ContHist = std::array<std::array<PieceToHist, 64>, 13>;
+
+const int histLimits = 2 << 15;
 
 inline void updateHistory(FromToHist &history, PieceToHist &contHist, PieceToHist  &contHist2, Move bestMove, Stack<Move> &movesToUpdate, int depth, Position &pos, const bool updateCont, const bool updateCont2) {
     int from = extract<FROM>(bestMove);
@@ -16,11 +24,11 @@ inline void updateHistory(FromToHist &history, PieceToHist &contHist, PieceToHis
     int bonus = std::min(depth * depth * 16, 1638);
     int malus = -bonus;
 
-    history[from][to] += bonus - history [from][to] * abs(bonus) / 65536;
+    history[from][to] += bonus - history [from][to] * abs(bonus) / histLimits;
     if (updateCont)
-        contHist[pc][to]  += bonus - contHist[pc][to] * abs(bonus) / 65536;
+        contHist[pc][to]  += bonus - contHist[pc][to] * abs(bonus) / histLimits;
     if (updateCont2)
-        contHist2[pc][to]  += bonus - contHist2[pc][to] * abs(bonus) / 65536;
+        contHist2[pc][to]  += bonus - contHist2[pc][to] * abs(bonus) / histLimits;
 
     while (movesToUpdate.getSize()) {
         Move move = movesToUpdate.pop();
@@ -36,9 +44,16 @@ inline void updateHistory(FromToHist &history, PieceToHist &contHist, PieceToHis
     }
 }
 
-static const std::array<int, 13> PieceValuesSEE = {100, 299, 281, 538, 972, 0, 100, 299, 281, 538, 972, 0, 0};
+#ifndef TUNE
+    static const std::array<int, 13> PieceValuesSEE = {100, 299, 281, 538, 972, 0, 100, 299, 281, 538, 972, 0, 0};
+#endif
 
 inline bool see(Position &pos, int threshold, Move move) {
+
+#ifdef TUNE
+    std::array<int, 13> PieceValuesSEE = {tune.SEEPawn, tune.SEEKnight, tune.SEEBishop, tune.SEERook, tune.SEEQueen, 0, tune.SEEPawn, tune.SEEKnight, tune.SEEBishop, tune.SEERook, tune.SEEQueen, 0, 0};
+#endif
+
     int flag = extract<FLAG>(move);
     int to   = extract<TO  >(move);
     int from = extract<FROM>(move);

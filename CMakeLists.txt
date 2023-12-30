@@ -26,4 +26,6 @@ add_executable(Molybdenum
         src/nnue.cpp
         src/nnue.h
         src/incbin/incbin.h
+        src/tune.h
+        src/incbin/incbin.h
 )
