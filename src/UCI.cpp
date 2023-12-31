@@ -226,9 +226,8 @@ void uciLoop(const std::string& input, Position &internalBoard) {
         auto milliseconds = int(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - st.searchStart).count());
         auto nps = (benchNodes * 1000) / std::max(milliseconds, 1);
 
-        std::cout << "_______________________" << "\n";
-        std::cout << "Nodes searched: " << benchNodes << "\n";
-        std::cout << "Took: " << milliseconds << " milliseconds\n";
-        std::cout << "Speed: " << nps << " nps\n";
+        std::cout << "_____________" << "\n";
+        std::cout << benchNodes << " Nodes" << "\n";
+        std::cout << nps << " nps\n";
     }
 }
