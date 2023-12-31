@@ -7,6 +7,7 @@ CXX=g++
 CXXFLAGS = --std=c++17 -march=native -mtune=native
 CXXFLAGS += -Ofast -static-libstdc++ -static -static-libgcc
 CXXFLAGS += -Wall -Wextra -pedantic
+CXXFLAGS += -Dmakefile
 
 LDFLAGS += -static-libstdc++ -static -static-libgcc
 

@@ -31,7 +31,7 @@ void uciCommunication(const std::string& in) {
     }
 #endif
 
-    readNetwork("ne3s23p6.nnue");
+    loadDefaultNet();
     internalBoard.setBoard("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     std::string input;
     options.init();

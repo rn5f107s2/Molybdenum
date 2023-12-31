@@ -2,10 +2,25 @@
 #include "Constants.h"
 #include "BitStuff.h"
 #include "Utility.h"
+#include "incbin/incbin.h"
 #include <cstring>
 #include <fstream>
 
+#ifdef makefile
+#define defaultNetPath "src/Nets/ne3s23p6.nnue"
+#else
+#define defaultNetPath "../src/Nets/ne3s23p6.nnue"
+#endif
+
+
+INCBIN(network, defaultNetPath);
+const Net defaultNet = *reinterpret_cast<const Net*>(gnetworkData);
+
 Net net;
+
+void loadDefaultNet() {
+    net = defaultNet;
+}
 
 void readNetwork(const std::string &filename) {
     std::ifstream stream{filename, std::ios::binary};

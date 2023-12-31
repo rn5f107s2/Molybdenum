@@ -20,8 +20,8 @@ static const std::array<int, NET_SIZE> LAYER_SIZE = {INPUT_SIZE, L1_SIZE, OUTPUT
 
 struct Net {
     std::array<int16_t , L1_SIZE * INPUT_SIZE> weights0{};
-    std::array<int16_t, L1_SIZE * OUTPUT_SIZE * 2> weights1{};
     std::array<int16_t, L1_SIZE> bias0{};
+    std::array<int16_t, L1_SIZE * OUTPUT_SIZE * 2> weights1{};
     std::array<int16_t, OUTPUT_SIZE> bias1{};
     std::array<std::array<int16_t, L1_SIZE>, 2> accumulator{};
     Stack<std::array<std::array<int16_t, L1_SIZE>, 2>> accumulatorStack;
@@ -32,6 +32,7 @@ extern Net net;
 void readNetwork(const std::string &filename);
 void initAccumulator(std::array<u64, 13> &bitboards);
 int calculate(Color c);
+void loadDefaultNet();
 
 inline int16_t relu(int16_t input) {
     return std::clamp(input, int16_t(0), int16_t(255));
