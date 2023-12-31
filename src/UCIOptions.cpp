@@ -16,8 +16,11 @@ void UCIOptions::setOption(const std::string& name, int value) {
         std::cout << "Value " << value << " is not within bounds of option " << name << "\n";
 }
 
+void foo([[maybe_unused]] int bar){}
+
 void UCIOptions::init() {
     spinOptions.push(UCIOptionSpin("Hash", 1, 1024, 16, &resizeTT));
+    spinOptions.push(UCIOptionSpin("Threads", 1, 1, 1, &foo));
     spinOptions.push(UCIOptionSpin("Move Overhead", 0, 1000, 10, &setOverhead));
 }
 
