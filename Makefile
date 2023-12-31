@@ -1,7 +1,7 @@
 all: Molybdenum
 
-SRC=src
-OBJ=build
+SRC_DIR=src
+OBJ_DIR=build
 CXX=g++
 
 CXXFLAGS = --std=c++17 -march=native -mtune=native
@@ -11,11 +11,16 @@ CXXFLAGS += -Dmakefile
 
 LDFLAGS += -static-libstdc++ -static -static-libgcc
 
-SOURCES := $(wildcard $(SRC)/*.cpp)
-OBJECTS := $(patsubst $(SRC)/%.cpp, $(OBJ)/%.o, $(SOURCES))
+SOURCES := $(wildcard $(SRC_DIR)/*.cpp)
+OBJECTS := $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SOURCES))
 
-$(OBJ)/%.o: $(SRC)/%.cpp
-	$(CXX) -I$(SRC) $(CXXFLAGS) -c $< -o $@
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
+	$(CXX) -I$(SRC_DIR) $(CXXFLAGS) -c $< -o $@
+
+$(OBJECTS): | $(OBJ_DIR)
+
+$(OBJ_DIR):
+	mkdir -p $(OBJ_DIR)
 
 Molybdenum: $(OBJECTS)
 	$(CXX) $(LDFLAGS) -o Molybdenum $(OBJECTS)
