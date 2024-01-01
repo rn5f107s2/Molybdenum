@@ -44,7 +44,7 @@ inline std::array<double, 256> initReductions() {
 static std::array<double, 256> Log = initReductions();
 
 inline int lmrReduction(int depth, int movecount, bool improving) {
-    return int(1 + !improving * 0.5 + Log[depth] * Log[movecount] / 2);
+    return int(0.75 + !improving * 0.55 + Log[depth] * Log[movecount] / 2.19);
 }
 
 inline int mateInPlies(int score) {
