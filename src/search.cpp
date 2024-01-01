@@ -88,7 +88,7 @@ int iterativeDeepening(Position  &pos, searchTime &st, int maxDepth, [[maybe_unu
 }
 
 int aspirationWindow(int prevScore, Position &pos, SearchInfo &si, int depth) {
-    int delta = std::clamp(80 - depth * depth, 25, 50);
+    int delta = std::clamp(83 - depth * depth, 24, 49);
     int alpha = -INFINITE;
     int beta  =  INFINITE;
 
@@ -186,7 +186,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
     if (   !PvNode
         && !check
         && depth < 9
-        && stack->staticEval - (140 * depth - 200 * improving) >= beta
+        && stack->staticEval - (115 * depth - 203 * improving) >= beta
         && stack->staticEval >= beta)
         return stack->staticEval;
 
@@ -197,7 +197,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         && stack->staticEval >= beta
         && beta > -MAXMATE) {
 
-        int reduction = std::min(depth, (3 + (stack->staticEval >= beta + 250) + (depth > 6)));
+        int reduction = std::min(depth, (3 + (stack->staticEval >= beta + 274) + (depth > 6)));
         pos.makeNullMove();
         stack->currMove = NULL_MOVE;
         stack->contHist = &continuationHistory[NO_PIECE][0];
@@ -221,22 +221,22 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
 
         if (   !capture
             && bestScore > -MAXMATE
-            && depth <= 5
+            && depth <= 4
             && moveCount > 12 * depth)
             continue;
 
         if (   !PvNode
             && !capture
             && bestScore > -MAXMATE
-            && depth <= 5
-            && stack->staticEval + 175 + 200 * expectedDepth <= alpha)
+            && depth <= 7
+            && stack->staticEval + 179 + 209 * expectedDepth <= alpha)
             continue;
 
         if (   !PvNode
             && bestScore > -MAXMATE
             && !capture
             && depth <= 5
-            && history < -4500 * expectedDepth)
+            && history < -5460 * expectedDepth)
             continue;
 
         u64 prefetchKey = key;
@@ -335,11 +335,11 @@ int qsearch(int alpha, int beta, Position &pos, SearchInfo &si) {
     Movepicker mp;
     while ((currentMove = pickNextMove<true>(mp, NO_MOVE, pos)) != 0) {
         if (   pos.isCapture(currentMove)
-            && staticEval + PieceValuesSEE[pos.pieceOn(extract<TO>(currentMove))] + 150 <= alpha)
+            && staticEval + PieceValuesSEE[pos.pieceOn(extract<TO>(currentMove))] + 159 <= alpha)
             continue;
 
         if (   pos.isCapture(currentMove)
-            && !see(pos, -101, currentMove))
+            && !see(pos, -94, currentMove))
             continue;
 
         pos.makeMove(currentMove);
