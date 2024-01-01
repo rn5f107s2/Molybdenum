@@ -13,14 +13,14 @@ inline void updateHistory(FromToHist &history, PieceToHist &contHist, PieceToHis
     int from = extract<FROM>(bestMove);
     int to   = extract<TO  >(bestMove);
     int pc   = pos.pieceOn(from);
-    int bonus = std::min(depth * depth * 16, 1638);
+    int bonus = std::min(depth * depth * 16, 1536);
     int malus = -bonus;
 
-    history[from][to] += bonus - history [from][to] * abs(bonus) / 65536;
+    history[from][to] += bonus - history [from][to] * abs(bonus) / 100000;
     if (updateCont)
-        contHist[pc][to]  += bonus - contHist[pc][to] * abs(bonus) / 65536;
+        contHist[pc][to]  += bonus - contHist[pc][to] * abs(bonus) / 100000;
     if (updateCont2)
-        contHist2[pc][to]  += bonus - contHist2[pc][to] * abs(bonus) / 65536;
+        contHist2[pc][to]  += bonus - contHist2[pc][to] * abs(bonus) / 100000;
 
     while (movesToUpdate.getSize()) {
         Move move = movesToUpdate.pop();
@@ -28,15 +28,15 @@ inline void updateHistory(FromToHist &history, PieceToHist &contHist, PieceToHis
         to   = extract<TO  >(move);
         pc   = pos.pieceOn(from);
 
-        history[from][to] += malus - history [from][to] * abs(malus) / 65536;
+        history[from][to] += malus - history [from][to] * abs(malus) / 100000;
         if (updateCont)
-            contHist[pc][to] += malus - contHist[pc][to] * abs(malus) / 65536;
+            contHist[pc][to] += malus - contHist[pc][to] * abs(malus) / 100000;
         if (updateCont2)
-            contHist2[pc][to] += malus - contHist2[pc][to] * abs(malus) / 65536;
+            contHist2[pc][to] += malus - contHist2[pc][to] * abs(malus) / 100000;
     }
 }
 
-static const std::array<int, 13> PieceValuesSEE = {100, 299, 281, 538, 972, 0, 100, 299, 281, 538, 972, 0, 0};
+static const std::array<int, 13> PieceValuesSEE = {100, 300, 300, 500, 900, 0, 100, 300, 300, 500, 900, 0, 0};
 
 inline bool see(Position &pos, int threshold, Move move) {
     int flag = extract<FLAG>(move);
