@@ -192,7 +192,7 @@ void uciLoop(const std::string& input, Position &internalBoard) {
             int start = int(input.find("movetime")) + 8;
             int end   = int(input.find(' ', start));
 
-            st.thinkingTime = std::chrono::milliseconds(std::stoi(input.substr(start, end)) - moveOverHead);
+            st.thinkingTime[Hard] = st.thinkingTime[Soft] = std::chrono::milliseconds(std::stoi(input.substr(start, end)) - moveOverHead);
         }
 
         startSearch(internalBoard, st, depth);

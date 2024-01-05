@@ -2,6 +2,7 @@
 #define MOLYBDENUM_TIMEMANAGEMENT_H
 
 #include <chrono>
+#include <array>
 
 static int moveOverHead = 10;
 
@@ -9,8 +10,12 @@ enum SearchLimit {
     Time, Nodes, Depth
 };
 
+enum LimitType {
+    Hard, Soft
+};
+
 struct searchTime{
-    std::chrono::milliseconds thinkingTime = std::chrono::milliseconds::max();
+    std::array<std::chrono::milliseconds, 2> thinkingTime = {std::chrono::milliseconds::max(), std::chrono::milliseconds::max()};
     std::chrono::time_point<std::chrono::steady_clock> searchStart = std::chrono::steady_clock::now();
     uint64_t nodeLimit = 18446744073709551615ull;
     SearchLimit limit = Time;

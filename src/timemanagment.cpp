@@ -3,8 +3,11 @@
 
 searchTime calcThinkingTime(int timeLeft, int increment, int movesToGo) {
     searchTime st;
-    int normalTime = std::min((timeLeft / 20) + (increment / 2), timeLeft / 3);
+    int normalHardTime = std::min((timeLeft / 5) + (increment / 2), timeLeft / 3);
+    int normalSoftTime = std::min((timeLeft / 20) + (increment / 2), timeLeft / 3);
     int mtgTime = (timeLeft / movesToGo);
-    st.thinkingTime = std::chrono::milliseconds(std::max(normalTime, mtgTime) - moveOverHead);
+    int hardTime = std::max(normalHardTime, mtgTime);
+    st.thinkingTime[Hard] = std::chrono::milliseconds(hardTime - moveOverHead);
+    st.thinkingTime[Soft] = std::chrono::milliseconds(normalSoftTime - moveOverHead);
     return st;
 }
