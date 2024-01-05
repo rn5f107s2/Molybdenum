@@ -45,7 +45,7 @@ int iterativeDeepening(Position  &pos, searchTime &st, int maxDepth, [[maybe_unu
     for (int depth = 1; depth != maxDepth; depth++) {
         score = aspirationWindow(score, pos, si, depth);
 
-        if (stop<Soft>(st, si))
+        if (stop<Hard>(si.st, si))
             break;
 
 #ifndef DATAGEN
@@ -75,6 +75,9 @@ int iterativeDeepening(Position  &pos, searchTime &st, int maxDepth, [[maybe_unu
             uciOutput += moveToString(pvMoves[0][i]) + " ";
 
         std::cout << uciOutput << "\n";
+
+        if (stop<Soft>(st, si))
+            break;
     }
 
     benchNodes += si.nodeCount;
