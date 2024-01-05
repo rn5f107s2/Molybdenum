@@ -9,6 +9,5 @@ searchTime calcThinkingTime(int timeLeft, int increment, int movesToGo) {
     int mtgTime = (timeLeft / movesToGo);
     st.thinkingTime[Hard] = std::chrono::milliseconds(std::max(normalHardTime, mtgTime) - moveOverHead);
     st.thinkingTime[Soft] = std::chrono::milliseconds(std::max(normalSoftTime, mtgTime) - moveOverHead);
-    std::cout << std::max(normalHardTime, mtgTime) - moveOverHead << " " << std::max(normalSoftTime, mtgTime) - moveOverHead << "\n";
     return st;
 }
