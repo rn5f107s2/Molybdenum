@@ -45,7 +45,7 @@ int iterativeDeepening(Position  &pos, searchTime &st, int maxDepth, [[maybe_unu
     for (int depth = 1; depth != maxDepth; depth++) {
         score = aspirationWindow(score, pos, si, depth);
 
-        if (stop(st, si))
+        if (stop<Soft>(st, si))
             break;
 
 #ifndef DATAGEN
@@ -103,7 +103,7 @@ int aspirationWindow(int prevScore, Position &pos, SearchInfo &si, int depth) {
 
     int score = search<Root>(alpha, beta, pos, depth, si, &stack[2]);
 
-    while ((score >= beta || score <= alpha) && !stop(si.st, si)) {
+    while ((score >= beta || score <= alpha) && !stop<Hard>(si.st, si)) {
         delta += delta / 3;
 
         if (score >= beta)
@@ -143,7 +143,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         return qsearch(alpha, beta, pos, si);
 
     if (   !(si.nodeCount & 1023)
-        && stop(si.st, si))
+        && stop<Hard>(si.st, si))
         si.stop = true;
 
     if constexpr (!ROOT) {
