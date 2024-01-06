@@ -88,6 +88,7 @@ struct SearchStack {
     int staticEval = INFINITE;
     Move currMove = 0;
     PieceToHist *contHist = nullptr;
+    bool dontRFP = false;
 };
 
 extern u64 benchNodes;

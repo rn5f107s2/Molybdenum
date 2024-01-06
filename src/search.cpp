@@ -208,11 +208,24 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         && beta > -MAXMATE) {
 
         int reduction = std::min(depth, (3 + (stack->staticEval >= beta + 274) + (depth > 6)));
-        pos.makeNullMove();
-        stack->currMove = NULL_MOVE;
-        stack->contHist = &continuationHistory[NO_PIECE][0];
-        int nullScore = -search<NonPvNode>(-beta, -alpha, pos, depth - reduction, si, stack+1);
-        pos.unmakeNullMove();
+
+        int nullScore = beta;
+
+        if (depth - reduction > 1) {
+            stack->dontRFP = true;
+            nullScore = search<NonPvNode>(alpha, beta, pos, 1, si, stack);
+            stack->dontRFP = false;
+        }
+
+        if (nullScore >= beta) {
+            pos.makeNullMove();
+            stack->currMove = NULL_MOVE;
+            stack->contHist = &continuationHistory[NO_PIECE][0];
+
+            nullScore = -search<NonPvNode>(-beta, -alpha, pos, depth - reduction, si, stack+1);
+
+            pos.unmakeNullMove();
+        }
 
         if (nullScore >= beta && nullScore < MAXMATE)
             return nullScore;
