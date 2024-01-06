@@ -39,6 +39,7 @@ void clearHistory() {
     memset(&continuationHistory, 0, sizeof(continuationHistory[0]) * continuationHistory.size());
     memset(&pvMoves, 0, sizeof(pvMoves[0]) * pvMoves.size());
     memset(&pvLength, 0, sizeof(pvLength[0]) * pvLength.size());
+    memset(&killers, 0, sizeof(killers[0]) * killers.size());
 }
 
 int iterativeDeepening(Position  &pos, searchTime &st, int maxDepth, [[maybe_unused]] Move &bestMove) {
