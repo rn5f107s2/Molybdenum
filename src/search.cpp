@@ -87,6 +87,7 @@ int iterativeDeepening(Position  &pos, searchTime &st, int maxDepth, [[maybe_unu
     }
 
     benchNodes += si.nodeCount;
+    std::cout << "info nodes " << si.nodeCount << "\n";
     std::cout << "bestmove " << moveToString(si.bestRootMove) << "\n";
 #else
     prevScore = score;
@@ -261,7 +262,10 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         pos.makeMove(currentMove);
         stack->currMove = currentMove;
         stack->contHist = &continuationHistory[pc][to];
-        si.nodeCount++;
+
+        if (!si.stop)
+            si.nodeCount++;
+
         moveCount++;
 
         reductions -= PvNode;
@@ -357,7 +361,9 @@ int qsearch(int alpha, int beta, Position &pos, SearchInfo &si) {
             continue;
 
         pos.makeMove(currentMove);
-        si.nodeCount++;
+
+        if (!si.stop)
+            si.nodeCount++;
 
         int score = -qsearch(-beta, -alpha, pos, si);
 
