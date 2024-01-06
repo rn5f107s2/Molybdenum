@@ -10,12 +10,14 @@
 #include <cmath>
 
 //#define DATAGEN
-//#define TUNE
+#define TUNE
 
 #ifdef TUNE
 
 #include "tune.h"
 #include "UCIOptions.h"
+
+//#define TUNESEE
 
 #define RANGE(x, y, z) int(y), int(z), int(x), reinterpret_cast<void (*)(int)>(x)
 
@@ -23,6 +25,8 @@
 #define UPDATEINT(x) tune.x = tuneOptions.getValue(#x);
 #define TUNEFLOAT(w, x, y, z) if (!initialized) {spinOptions.push(UCIOptionSpin(#w, RANGE(int(x * 100), int(y * 100), int(z * 100))));} UPDATEFLOAT(w)
 #define TUNEINT(w, x, y, z) if (!initialized) {spinOptions.push(UCIOptionSpin(#w, RANGE(x, y, z)));} UPDATEINT(w)
+
+extern Tune tune;
 
 static TuneOptions tuneOptions;
 
@@ -33,43 +37,43 @@ inline void TuneOptions::init() {
     TUNEINT(LMRDepth, 2, 1, 4)
     TUNEINT(LMRMovecount, 2, 1, 4)
 
-    TUNEINT(AspiBase, 83, 1, 160)
-    TUNEINT(AspiLo, 24, 1, 200)
-    TUNEINT(AspiHi, 49, 1, 300)
-    TUNEINT(AspiDepth, 2, 2, 10)
-    TUNEINT(AspiWide, 3, 1, 5)
+    //TUNEINT(AspiBase, 83, 1, 160)
+    //TUNEINT(AspiLo, 24, 1, 200)
+    //TUNEINT(AspiHi, 49, 1, 300)
+    //TUNEINT(AspiDepth, 2, 2, 10)
+    //TUNEINT(AspiWide, 3, 1, 5)
 
-    TUNEINT(RFPBase, 115, 1, 300)
-    TUNEINT(RFPImproving, 203, 1, 400)
-    TUNEINT(RFPDepth, 9, 3, 15)
+    //TUNEINT(RFPBase, 115, 1, 300)
+    //TUNEINT(RFPImproving, 203, 1, 400)
+    //TUNEINT(RFPDepth, 9, 3, 15)
 
-    TUNEINT(NMPDepth, 2, 1, 10)
-    TUNEINT(NMPSeThreshold, 274, 1, 500)
-    TUNEINT(NMPDepthThreshold, 6, 1, 12)
-    TUNEINT(NMPBaseRed, 3, 1, 6)
+    //TUNEINT(NMPDepth, 2, 1, 10)
+    //TUNEINT(NMPSeThreshold, 274, 1, 500)
+    //TUNEINT(NMPDepthThreshold, 6, 1, 12)
+    //TUNEINT(NMPBaseRed, 3, 1, 6)
 
-    TUNEINT(MCPDepth, 4, 1, 24)
-    TUNEINT(MCPMultiplier, 12, 1, 24)
+    //TUNEINT(MCPDepth, 4, 1, 24)
+    //TUNEINT(MCPMultiplier, 12, 1, 24)
 
-    TUNEINT(FPDepth, 7, 1, 24)
-    TUNEINT(FPMult, 209, 1, 400)
-    TUNEINT(FPBase, 179, 1, 350)
+    //TUNEINT(FPDepth, 7, 1, 24)
+    //TUNEINT(FPMult, 209, 1, 400)
+    //TUNEINT(FPBase, 179, 1, 350)
 
-    TUNEINT(HistDepth, 5, 1, 20)
-    TUNEINT(HistMult, -5460, -9000, -1)
+    //TUNEINT(HistDepth, 5, 1, 20)
+    //TUNEINT(HistMult, -5460, -9000, -1)
 
-    TUNEINT(QsSEEMargin, -94, -200, -1)
-    TUNEINT(QsDeltaMargin, 159, 1, 300)
+    //TUNEINT(QsSEEMargin, -94, -200, -1)
+    //TUNEINT(QsDeltaMargin, 159, 1, 300)
 
-    TUNEINT(HistDepthMult, 16, 1, 32)
-    TUNEINT(HistMax, 1638, 1, 3000)
-    TUNEINT(HistLimit, 15, 1, 20)
+    //TUNEINT(HistDepthMult, 16, 1, 32)
+    //TUNEINT(HistMax, 1638, 1, 3000)
+    //TUNEINT(HistLimit, 15, 1, 20)
 
-    TUNEINT(SEEPawn, 100, 1, 1200)
-    TUNEINT(SEEKnight, 299, 1, 1200)
-    TUNEINT(SEEBishop, 281, 1, 1200)
-    TUNEINT(SEERook, 538, 1, 1200)
-    TUNEINT(SEEQueen, 972, 1, 1200)
+    //TUNEINT(SEEPawn, 100, 1, 1200)
+    //TUNEINT(SEEKnight, 299, 1, 1200)
+    //TUNEINT(SEEBishop, 281, 1, 1200)
+    //TUNEINT(SEERook, 538, 1, 1200)
+    //TUNEINT(SEEQueen, 972, 1, 1200)
 
     initialized = true;
 }
@@ -109,7 +113,7 @@ inline std::array<double, 256> initReductions() {
 static std::array<double, 256> Log = initReductions();
 
 inline int lmrReduction(int depth, int movecount, bool improving) {
-    return int(0.75 + !improving * 0.55 + Log[depth] * Log[movecount] / 2.19);
+    return int(tune.LMRBase + !improving * tune.LMRImproving + Log[depth] * Log[movecount] / tune.LMRDiv);
 }
 
 inline int mateInPlies(int score) {

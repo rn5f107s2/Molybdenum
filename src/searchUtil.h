@@ -44,13 +44,13 @@ inline void updateHistory(FromToHist &history, PieceToHist &contHist, PieceToHis
     }
 }
 
-#ifndef TUNE
+#ifndef TUNESEE
     static const std::array<int, 13> PieceValuesSEE = {100, 299, 281, 538, 972, 0, 100, 299, 281, 538, 972, 0, 0};
 #endif
 
 inline bool see(Position &pos, int threshold, Move move) {
 
-#ifdef TUNE
+#ifdef TUNESEE
     std::array<int, 13> PieceValuesSEE = {tune.SEEPawn, tune.SEEKnight, tune.SEEBishop, tune.SEERook, tune.SEEQueen, 0, tune.SEEPawn, tune.SEEKnight, tune.SEEBishop, tune.SEERook, tune.SEEQueen, 0, 0};
 #endif
 

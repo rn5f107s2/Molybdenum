@@ -264,12 +264,12 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         moveCount++;
 
         reductions -= PvNode;
-        reductions = std::max(reductions, 1);
+        reductions = std::max(reductions, 0);
 
-        if (depth > 2 && moveCount > 2) {
-            score = -search<NonPvNode>(-alpha - 1, -alpha, pos, depth - reductions, si, stack+1);
+        if (depth > tune.LMRDepth && moveCount > tune.LMRMovecount) {
+            score = -search<NonPvNode>(-alpha - 1, -alpha, pos, depth - 1 - reductions, si, stack+1);
 
-            if (!PvNode && score > alpha && reductions > 1)
+            if (!PvNode && score > alpha && reductions > 0)
                 score = -search<NonPvNode>(-alpha - 1, -alpha, pos, depth - 1, si, stack+1);
 
             if (PvNode && score > alpha && score < beta)
@@ -334,7 +334,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
 
 int qsearch(int alpha, int beta, Position &pos, SearchInfo &si) {
 
-#ifdef TUNE
+#ifdef TUNESEE
     std::array<int, 13> PieceValuesSEE = {tune.SEEPawn, tune.SEEKnight, tune.SEEBishop, tune.SEERook, tune.SEEQueen, 0, tune.SEEPawn, tune.SEEKnight, tune.SEEBishop, tune.SEERook, tune.SEEQueen, 0, 0};
 #endif
 
