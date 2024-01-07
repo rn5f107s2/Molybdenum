@@ -268,7 +268,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
 
         reductions -= PvNode;
 
-        reductions -= history > 0 ? history / 10000 : history / 25000;
+        reductions -= history > 0 ? history / 5000 : history / 25000;
         reductions = std::max(reductions, 0);
 
         if (depth > 2 && moveCount > 2) {
