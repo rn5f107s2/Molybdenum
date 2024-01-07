@@ -1,24 +1,34 @@
-all: Molybdenum
-
-SRC=src
-OBJ=build
+SRC_DIR=src
+OBJ_DIR=build
+MOLY_DIR=src
 CXX=g++
 
-CXXFLAGS = --std=c++17 
-CXXFLAGS += -Ofast -static-libstdc++ -static -static-libgcc
+DEFAULT_EXE = $(OBJ_DIR)/Molybdenum
+
+all: $(DEFAULT_EXE)
+
+CXXFLAGS = -static-libstdc++ -static -static-libgcc -Ofast
 CXXFLAGS += -Wall -Wextra -pedantic
 
-LDFLAGS += -static-libstdc++ -static -static-libgcc
+LDFLAGS += -static-libstdc++ -static -static-libgcc -Ofast
 
-SOURCES := $(wildcard $(SRC)/*.cpp)
-OBJECTS := $(patsubst $(SRC)/%.cpp, $(OBJ)/%.o, $(SOURCES))
+SOURCES := $(wildcard $(SRC_DIR)/*.cpp)
+OBJECTS := $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SOURCES))
 
-$(OBJ)/%.o: $(SRC)/%.cpp
-	$(CXX) -I$(SRC) $(CXXFLAGS) -c $< -o $@
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
+	$(CXX) -I$(SRC_DIR) $(CXXFLAGS) -c $< -o $@
 
-Molybdenum: $(OBJECTS)
-	$(CXX) $(LDFLAGS) -o Molybdenum $(OBJECTS)
+$(OBJECTS): | $(OBJ_DIR)
+
+$(OBJ_DIR):
+	mkdir -p $(OBJ_DIR)
+
+EXE ?= $(DEFAULT_EXE)
+
+$(DEFAULT_EXE): $(OBJECTS)
+	/usr/bin/c++  -static-libstdc++ -static -static-libgcc -Ofast -Wall -Wextra -pedantic build/main.o build/Position.o build/UCI.o build/eval.o build/search.o build/timemanagment.o build/Transpositiontable.o build/UCIOptions.o -o $(DEFAULT_EXE)
+	@if [ $(EXE) != $(DEFAULT_EXE) ]; then cp $(DEFAULT_EXE) $(EXE); fi
 
 .PHONY: clean
 clean:
-	rm -f $(OBJECTS) Molybdenum
+	rm -f $(OBJECTS) $(DEFAULT_EXE)

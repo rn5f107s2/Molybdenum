@@ -20,7 +20,7 @@ UCIOptions options;
 const std::string name = "Molybdenum";
 const std::string version = "1.0";
 
-void uciCommunication() {
+void uciCommunication(int argc, const std::string &in) {
     Position internalBoard;
 
 #ifdef DATAGEN
@@ -34,7 +34,10 @@ void uciCommunication() {
     options.init();
 
     while (true) {
-        std::getline(std::cin, input);
+        if (argc <= 1)
+            std::getline(std::cin, input);
+        else
+            input = in;
 
         if (contains(input, "quit"))
             return;
@@ -214,9 +217,11 @@ void uciCommunication() {
             auto nps = (benchNodes * 1000) / std::max(milliseconds, 1);
 
             std::cout << "_______________________" << "\n";
-            std::cout << "Nodes searched: " << benchNodes << "\n";
-            std::cout << "Took: " << milliseconds << " milliseconds\n";
-            std::cout << "Speed: " << nps << " nps\n";
+            std::cout << benchNodes << " nodes\n";
+            std::cout << nps << " nps\n";
+
+            if (argc > 1)
+                break;
         }
     }
 }

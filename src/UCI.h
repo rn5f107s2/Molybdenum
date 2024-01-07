@@ -3,7 +3,7 @@
 
 #include "Move.h"
 
-void uciCommunication();
+void uciCommunication(int argc, const std::string &in = "");
 
 inline bool contains(const std::string& input, const std::string& searchedTerm) {
     return input.find(searchedTerm) != std::string::npos;
