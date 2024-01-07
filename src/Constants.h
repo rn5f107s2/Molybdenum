@@ -72,10 +72,11 @@ enum Slider {
     BISHOP_S, QUEEN_S, ROOK_S
 };
 
-constexpr int MAXDEPTH = 220;
-constexpr int INFINITE = 200000;
-constexpr int MATE     = 100000;
-constexpr int MAXMATE  = MATE - MAXDEPTH;
-constexpr int DRAW     = 0;
+constexpr int MAXDEPTH  = 220;
+constexpr int STACKSIZE = MAXDEPTH + 3;
+constexpr int INFINITE  = 200000;
+constexpr int MATE      = 100000;
+constexpr int MAXMATE   = MATE - MAXDEPTH;
+constexpr int DRAW      = 0;
 
 #endif //MOLYBDENUM_CONSTANTS_H

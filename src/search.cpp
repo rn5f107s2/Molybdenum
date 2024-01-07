@@ -8,7 +8,7 @@
 #include <chrono>
 #include <algorithm>
 
-std::array<std::array<Move, 2>, 100> killers;
+std::array<std::array<Move, 2>, STACKSIZE> killers;
 SideFromToHist mainHistory;
 ContHist continuationHistory;
 std::array<std::array<Move, MAXDEPTH>, MAXDEPTH> pvMoves;
@@ -106,7 +106,7 @@ int aspirationWindow(int prevScore, Position &pos, SearchInfo &si, int depth) {
         beta  = std::min( INFINITE, prevScore + delta);
     }
 
-    std::array<SearchStack, MAXDEPTH + 3> stack;
+    std::array<SearchStack, STACKSIZE> stack;
     stack[0].contHist = &continuationHistory[NO_PIECE][0];
     stack[1].contHist = &continuationHistory[NO_PIECE][0];
 
