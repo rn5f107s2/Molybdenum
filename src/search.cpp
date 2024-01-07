@@ -267,13 +267,14 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         history += (*(stack-2)->contHist)[pc][to];
 
         reductions -= PvNode;
-        reductions -= history / 17500;
-        reductions = std::max(reductions, 1);
+
+        reductions -= history > 0 ? history / 5000 : history / 25000;
+        reductions = std::max(reductions, 0);
 
         if (depth > 2 && moveCount > 2) {
-            score = -search<NonPvNode>(-alpha - 1, -alpha, pos, depth - reductions, si, stack+1);
+            score = -search<NonPvNode>(-alpha - 1, -alpha, pos, depth - 1 - reductions, si, stack+1);
 
-            if (!PvNode && score > alpha && reductions > 1)
+            if (!PvNode && score > alpha && reductions > 0)
                 score = -search<NonPvNode>(-alpha - 1, -alpha, pos, depth - 1, si, stack+1);
 
             if (PvNode && score > alpha && score < beta)
