@@ -8,7 +8,7 @@
 struct Tune {
     float LMRDiv, LMRBase, LMRImproving;
     int LMRDepth, LMRMovecount;
-    int AspiBase, AspiLo, AspiHi, AspiDepth, AspiWide;
+    int AspiBase, AspiLo, AspiHi, AspiDepth; float AspiWide;
     int RFPBase, RFPImproving, RFPDepth;
     int NMPDepth, NMPSeThreshold, NMPDepthThreshold, NMPBaseRed;
     int MCPDepth, MCPMultiplier;

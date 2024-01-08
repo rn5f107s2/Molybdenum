@@ -4,6 +4,7 @@
 #include <array>
 #include "Move.h"
 
+#define TUNE
 #ifdef TUNE
 #include "tune.h"
 
@@ -15,20 +16,20 @@ using PieceToHist = std::array<std::array<int, 64>, 13>;
 using SideFromToHist = std::array<FromToHist, 2>;
 using ContHist = std::array<std::array<PieceToHist, 64>, 13>;
 
-const int histLimits = 2 << 15;
+//const int histLimits = 2 << 15;
 
 inline void updateHistory(FromToHist &history, PieceToHist &contHist, PieceToHist  &contHist2, Move bestMove, Stack<Move> &movesToUpdate, int depth, Position &pos, const bool updateCont, const bool updateCont2) {
     int from = extract<FROM>(bestMove);
     int to   = extract<TO  >(bestMove);
     int pc   = pos.pieceOn(from);
-    int bonus = std::min(depth * depth * 16, 1638);
+    int bonus = std::min(depth * depth * tune.HistDepthMult, tune.HistMax);
     int malus = -bonus;
 
-    history[from][to] += bonus - history [from][to] * abs(bonus) / histLimits;
+    history[from][to] += bonus - history [from][to] * abs(bonus) / (2 << tune.HistLimit);
     if (updateCont)
-        contHist[pc][to]  += bonus - contHist[pc][to] * abs(bonus) / histLimits;
+        contHist[pc][to]  += bonus - contHist[pc][to] * abs(bonus) / (2 << tune.HistLimit);
     if (updateCont2)
-        contHist2[pc][to]  += bonus - contHist2[pc][to] * abs(bonus) / histLimits;
+        contHist2[pc][to]  += bonus - contHist2[pc][to] * abs(bonus) / (2 << tune.HistLimit);
 
     while (movesToUpdate.getSize()) {
         Move move = movesToUpdate.pop();
@@ -36,11 +37,11 @@ inline void updateHistory(FromToHist &history, PieceToHist &contHist, PieceToHis
         to   = extract<TO  >(move);
         pc   = pos.pieceOn(from);
 
-        history[from][to] += malus - history [from][to] * abs(malus) / 65536;
+        history[from][to] += malus - history [from][to] * abs(malus) / (2 << tune.HistLimit);
         if (updateCont)
-            contHist[pc][to] += malus - contHist[pc][to] * abs(malus) / 65536;
+            contHist[pc][to] += malus - contHist[pc][to] * abs(malus) / (2 << tune.HistLimit);
         if (updateCont2)
-            contHist2[pc][to] += malus - contHist2[pc][to] * abs(malus) / 65536;
+            contHist2[pc][to] += malus - contHist2[pc][to] * abs(malus) / (2 << tune.HistLimit);
     }
 }
 
