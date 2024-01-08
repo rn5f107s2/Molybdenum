@@ -34,6 +34,8 @@ inline void TuneOptions::init() {
     TUNEFLOAT(LMRImproving, 0.55, 0, 2)
     TUNEINT(LMRDepth, 2, 1, 4)
     TUNEINT(LMRMovecount, 2, 1, 4)
+    TUNEINT(LMRHistDivPos, 5000, 2500, 40000);
+    TUNEINT(LMRHistDivNeg, 25000, 2500, 40000);
 
     TUNEINT(AspiBase, 83, 1, 160)
     TUNEINT(AspiLo, 24, 1, 200)
