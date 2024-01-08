@@ -29,8 +29,8 @@ extern Tune tune;
 static TuneOptions tuneOptions;
 
 inline void TuneOptions::init() {
-    TUNEFLOAT(LMRBase, 0.75, 0.01, 4)
-    TUNEFLOAT(LMRDiv, 2.19, 0.01, 8)
+    TUNEFLOAT(LMRBase, 0.75, 0.01, 1.5)
+    TUNEFLOAT(LMRDiv, 2.19, 1, 3)
     TUNEFLOAT(LMRImproving, 0.55, 0, 2)
     TUNEINT(LMRDepth, 2, 1, 4)
     TUNEINT(LMRMovecount, 2, 1, 4)
