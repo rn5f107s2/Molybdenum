@@ -10,12 +10,14 @@
 #include <cmath>
 
 //#define DATAGEN
-//#define TUNE
+#define TUNE
 
 #ifdef TUNE
 
 #include "tune.h"
 #include "UCIOptions.h"
+
+extern Tune tune;
 
 #define RANGE(x, y, z) int(y), int(z), int(x), reinterpret_cast<void (*)(int)>(x)
 
@@ -27,17 +29,19 @@
 static TuneOptions tuneOptions;
 
 inline void TuneOptions::init() {
-    TUNEFLOAT(LMRBase, 0.75, 0.01, 4)
-    TUNEFLOAT(LMRDiv, 2.19, 0.01, 8)
-    TUNEFLOAT(LMRImproving, 0.55, 0, 2)
+    TUNEFLOAT(LMRBase, 0.75, 0.01, 2)
+    TUNEFLOAT(LMRDiv, 2.19, 0.01, 3)
+    TUNEFLOAT(LMRImproving, 0.55, 0, 1.2)
     TUNEINT(LMRDepth, 2, 1, 4)
     TUNEINT(LMRMovecount, 2, 1, 4)
+    TUNEINT(LMRHistDivPos, 5000, 1, 40000)
+    TUNEINT(LMRHistDivPos, 25000, 1, 40000)
 
     TUNEINT(AspiBase, 83, 1, 160)
     TUNEINT(AspiLo, 24, 1, 200)
     TUNEINT(AspiHi, 49, 1, 300)
     TUNEINT(AspiDepth, 2, 2, 10)
-    TUNEINT(AspiWide, 3, 1, 5)
+    TUNEFLOAT(AspiWide, 1.33, 1.01, 3)
 
     TUNEINT(RFPBase, 115, 1, 300)
     TUNEINT(RFPImproving, 203, 1, 400)
@@ -109,7 +113,7 @@ inline std::array<double, 256> initReductions() {
 static std::array<double, 256> Log = initReductions();
 
 inline int lmrReduction(int depth, int movecount, bool improving) {
-    return int(0.75 + !improving * 0.55 + Log[depth] * Log[movecount] / 2.19);
+    return int(tune.LMRBase + !improving * tune.LMRImproving + Log[depth] * Log[movecount] / tune.LMRDiv);
 }
 
 inline int mateInPlies(int score) {

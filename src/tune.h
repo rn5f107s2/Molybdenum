@@ -6,9 +6,9 @@
 #include "iostream"
 
 struct Tune {
-    float LMRDiv, LMRBase, LMRImproving;
+    float LMRDiv, LMRBase, LMRImproving, LMRHistDivPos, LMRHistDivNeg;
     int LMRDepth, LMRMovecount;
-    int AspiBase, AspiLo, AspiHi, AspiDepth, AspiWide;
+    int AspiBase, AspiLo, AspiHi, AspiDepth; float AspiWide;
     int RFPBase, RFPImproving, RFPDepth;
     int NMPDepth, NMPSeThreshold, NMPDepthThreshold, NMPBaseRed;
     int MCPDepth, MCPMultiplier;
