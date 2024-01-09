@@ -15,7 +15,7 @@ using PieceToHist = std::array<std::array<int, 64>, 13>;
 using SideFromToHist = std::array<FromToHist, 2>;
 using ContHist = std::array<std::array<PieceToHist, 64>, 13>;
 
-const int histLimits = 2 << 15;
+const int histLimits = 2 << 13;
 
 inline void updateHistory(FromToHist &history, PieceToHist &contHist, PieceToHist  &contHist2, Move bestMove, Stack<Move> &movesToUpdate, int depth, Position &pos, const bool updateCont, const bool updateCont2) {
     int from = extract<FROM>(bestMove);
@@ -45,7 +45,7 @@ inline void updateHistory(FromToHist &history, PieceToHist &contHist, PieceToHis
 }
 
 #ifndef TUNE
-    static const std::array<int, 13> PieceValuesSEE = {100, 299, 281, 538, 972, 0, 100, 299, 281, 538, 972, 0, 0};
+    static const std::array<int, 13> PieceValuesSEE = {81, 257, 325, 491, 972, 0, 81, 257, 325, 491, 972, 0, 0};
 #endif
 
 inline bool see(Position &pos, int threshold, Move move) {
