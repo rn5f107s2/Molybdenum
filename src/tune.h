@@ -2,6 +2,7 @@
 #define MOLYBDENUM_TUNE_H
 
 #include <iomanip>
+#include <algorithm>
 #include "UCIOptions.h"
 #include "iostream"
 
@@ -55,7 +56,7 @@ class TuneOptions: public UCIOptions {
                           << option.max
                           << ", "
                           << std::setprecision(3)
-                          << std::max(float(option.max - option.min) / 20, 0.500f)
+                          << std::clamp(float(option.max - option.min) / 20, 0.500f, 1000.0f)
                           << ", 0.0020\n";
             }
         }

@@ -51,8 +51,10 @@ int iterativeDeepening(Position  &pos, searchTime &st, int maxDepth, [[maybe_unu
     for (int depth = 1; depth != maxDepth; depth++) {
         score = aspirationWindow(score, pos, si, depth);
 
-        if (stop<Hard>(st, si))
+        if (stop<Hard>(st, si)) {
+            std::cout << "info nodes " << si.nodeCount << "\n";
             break;
+        }
 
 #ifndef DATAGEN
         std::string uciOutput;
@@ -261,7 +263,8 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         pos.makeMove(currentMove);
         stack->currMove = currentMove;
         stack->contHist = &continuationHistory[pc][to];
-        si.nodeCount++;
+        if (!si.stop)
+            si.nodeCount++;
         moveCount++;
 
         history += (*(stack-2)->contHist)[pc][to];
@@ -361,7 +364,9 @@ int qsearch(int alpha, int beta, Position &pos, SearchInfo &si) {
             continue;
 
         pos.makeMove(currentMove);
-        si.nodeCount++;
+
+        if (!si.stop)
+            si.nodeCount++;
 
         int score = -qsearch(-beta, -alpha, pos, si);
 

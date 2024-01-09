@@ -29,50 +29,50 @@ extern Tune tune;
 static TuneOptions tuneOptions;
 
 inline void TuneOptions::init() {
-    TUNEFLOAT(LMRBase, 0.75, 0.01, 1.5)
-    TUNEFLOAT(LMRDiv, 2.19, 1, 3)
-    TUNEFLOAT(LMRImproving, 0.55, 0, 2)
+    TUNEFLOAT(LMRBase, 0.66, 0.01, 1.5)
+    TUNEFLOAT(LMRDiv, 2.03, 1, 3)
+    TUNEFLOAT(LMRImproving, 0.49, 0, 2)
     TUNEINT(LMRDepth, 2, 1, 4)
     TUNEINT(LMRMovecount, 2, 1, 4)
-    TUNEINT(LMRHistDivPos, 5000, 2500, 40000);
-    TUNEINT(LMRHistDivNeg, 25000, 2500, 40000);
+    TUNEINT(LMRHistDivPos, 4086, 2500, 40000);
+    TUNEINT(LMRHistDivNeg, 25329, 2500, 40000);
 
-    TUNEINT(AspiBase, 83, 1, 160)
-    TUNEINT(AspiLo, 24, 1, 200)
-    TUNEINT(AspiHi, 49, 1, 300)
+    TUNEINT(AspiBase, 81, 1, 160)
+    TUNEINT(AspiLo, 28, 1, 200)
+    TUNEINT(AspiHi, 34, 1, 300)
     TUNEINT(AspiDepth, 2, 2, 10)
-    TUNEFLOAT(AspiWide, 1.33, 1.01, 3)
+    TUNEFLOAT(AspiWide, 1.24, 1.01, 3)
 
-    TUNEINT(RFPBase, 115, 1, 300)
-    TUNEINT(RFPImproving, 203, 1, 400)
-    TUNEINT(RFPDepth, 9, 3, 15)
+    TUNEINT(RFPBase, 101, 1, 300)
+    TUNEINT(RFPImproving, 200, 1, 400)
+    TUNEINT(RFPDepth, 10, 3, 15)
 
     TUNEINT(NMPDepth, 2, 1, 10)
-    TUNEINT(NMPSeThreshold, 274, 1, 500)
+    TUNEINT(NMPSeThreshold, 277, 1, 500)
     TUNEINT(NMPDepthThreshold, 6, 1, 12)
-    TUNEINT(NMPBaseRed, 3, 1, 6)
+    TUNEINT(NMPBaseRed, 4, 1, 6)
 
     TUNEINT(MCPDepth, 4, 1, 24)
-    TUNEINT(MCPMultiplier, 12, 1, 24)
+    TUNEINT(MCPMultiplier, 11, 1, 24)
 
     TUNEINT(FPDepth, 7, 1, 24)
-    TUNEINT(FPMult, 209, 1, 400)
-    TUNEINT(FPBase, 179, 1, 350)
+    TUNEINT(FPMult, 203, 1, 400)
+    TUNEINT(FPBase, 189, 1, 350)
 
     TUNEINT(HistDepth, 5, 1, 20)
-    TUNEINT(HistMult, -5460, -9000, -1)
+    TUNEINT(HistMult, -6000, -9000, -1)
 
-    TUNEINT(QsSEEMargin, -94, -200, -1)
-    TUNEINT(QsDeltaMargin, 159, 1, 300)
+    TUNEINT(QsSEEMargin, -96, -200, -1)
+    TUNEINT(QsDeltaMargin, 137, 1, 300)
 
     TUNEINT(HistDepthMult, 16, 1, 32)
-    TUNEINT(HistMax, 1638, 1, 3000)
-    TUNEINT(HistLimit, 15, 1, 20)
+    TUNEINT(HistMax, 1513, 1, 3000)
+    TUNEINT(HistLimit, 13, 1, 20)
 
-    TUNEINT(SEEPawn, 100, 1, 1200)
-    TUNEINT(SEEKnight, 299, 1, 1200)
-    TUNEINT(SEEBishop, 281, 1, 1200)
-    TUNEINT(SEERook, 538, 1, 1200)
+    TUNEINT(SEEPawn, 81, 1, 1200)
+    TUNEINT(SEEKnight, 257, 1, 1200)
+    TUNEINT(SEEBishop, 324, 1, 1200)
+    TUNEINT(SEERook, 491, 1, 1200)
     TUNEINT(SEEQueen, 972, 1, 1200)
 
     initialized = true;
