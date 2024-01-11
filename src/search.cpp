@@ -155,6 +155,9 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         && stop<Hard>(si.st, si))
         si.stop = true;
 
+    if (si.stop && !(ROOT && depth == (1 + check)))
+        return DRAW;
+
     if constexpr (!ROOT) {
         if (   pos.hasRepeated(stack->plysInSearch)
             || pos.plys50moveRule > 99
