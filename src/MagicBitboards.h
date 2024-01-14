@@ -176,7 +176,6 @@ MagicArrays initMagics() {
         u64 mask = masks[square];
 
         while (!done) {
-            int loopCount = 0;
             //u64 possibleMagic = random3 & random2 & random1;
             u64 possibleMagic = magics[square];
             u64 blockers = 0;
@@ -187,7 +186,6 @@ MagicArrays initMagics() {
             do {
                 u64 idx = ((mask & blockers) * possibleMagic) >> shifts[square];
                 u64 attacks = getSliderAttacks<TYPE, false>(square, blockers);
-                loopCount++;
 
                 if (returnThis.table[square][idx] == attacks || returnThis.table[square][idx] == 0ULL) {
                     returnThis.table[square][idx] = attacks;
