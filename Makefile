@@ -7,12 +7,16 @@ DEFAULT_EXE = $(OBJ_DIR)/Molybdenum
 
 all: $(DEFAULT_EXE)
 
-CXXFLAGS = -static -Ofast
+CXXFLAGS = -static -Ofast -std=c++17
 CXXFLAGS += -Wall -Wextra -pedantic
 CXXFLAGS += -march=native
 CXXFLAGS += -Dmakefile
 
 LDFLAGS += -static -Ofast -march=native
+
+ifeq ($(OS),Windows_NT)
+	LDFLAGS += -Wl,/STACK:4294967296
+endif
 
 SOURCES := $(wildcard $(SRC_DIR)/*.cpp)
 OBJECTS := $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SOURCES))
