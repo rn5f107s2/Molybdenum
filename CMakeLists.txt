@@ -3,9 +3,8 @@ project(Molybdenum)
 
 set(CMAKE_CXX_STANDARD 17)
 
-set(CMAKE_CXX_STANDARD 17)
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libstdc++ -static -static-libgcc")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} O3")
+set(CMAKE_CXX_COMPILER clang++)
+
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic -march=native")
 
@@ -29,3 +28,4 @@ add_executable(Molybdenum
         src/tune.h
         src/incbin/incbin.h
 )
+target_link_libraries(Molybdenum -static)
