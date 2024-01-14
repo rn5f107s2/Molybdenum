@@ -88,10 +88,10 @@ inline std::array<std::array<u64, 64>, 64> initMaskBB() {
             u64 blockers = squareL | square2L;
             u64 mask = 0;
 
-            if (getAttacks<BISHOP>(square, 0ULL) & square2L)
-                mask = getAttacks<BISHOP>(square, blockers) & getAttacks<BISHOP>(square2, blockers);
-            else if  (getAttacks<ROOK>(square, 0ULL) & square2L)
-                mask = getAttacks<ROOK>(square, blockers) & getAttacks<ROOK>(square2, blockers);
+            if (getSliderAttacks<BISHOP_S, false>(square) & square2L)
+                mask = getSliderAttacks<BISHOP_S, false>(square, blockers) & getSliderAttacks<BISHOP_S, false>(square2, blockers);
+            else if  (getSliderAttacks<ROOK_S, false>(square) & square2L)
+                mask = getSliderAttacks<ROOK_S, false>(square, blockers) & getSliderAttacks<ROOK_S, false>(square2, blockers);
 
             mask |= square2L;
 
@@ -110,10 +110,10 @@ inline std::array<std::array<u64, 64>, 64> initExtendedMaskBB() {
             u64 square2L = 1ULL << square2;
             u64 mask = 0;
 
-            if (getAttacks<BISHOP>(square, 0ULL) & square2L)
-                mask = getAttacks<BISHOP>(square) & getAttacks<BISHOP>(square2);
-            else if  (getAttacks<ROOK>(square, 0ULL) & square2L)
-                mask = getAttacks<ROOK>(square) & getAttacks<ROOK>(square2);
+            if (getSliderAttacks<BISHOP_S, false>(square) & square2L)
+                mask = getSliderAttacks<BISHOP_S, false>(square) & getSliderAttacks<BISHOP_S, false>(square2);
+            else if  (getSliderAttacks<ROOK_S, false>(square) & square2L)
+                mask = getSliderAttacks<ROOK_S, false>(square) & getSliderAttacks<ROOK_S, false>(square2);
 
 
             masksBB[square][square2] = mask;

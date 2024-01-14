@@ -70,7 +70,7 @@ struct MagicArrays {
 };
 
 template<Slider Type, bool MASK>
-constexpr u64 getSliderAttacks(int square, u64 blocker) {
+constexpr u64 getSliderAttacks(int square, u64 blocker = 0ULL) {
     constexpr bool ISROOK = Type == ROOK_S;
     u64 squareL = 1ULL << square;
     u64 stop = (((~lFIleOf(square) & edgeFiles) | (~lRankOf(square) & promotionRanks)) | blocker) & ~squareL;

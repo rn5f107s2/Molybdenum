@@ -124,7 +124,7 @@
 /**
  * @brief Optionally override the linker section into which size and data is
  * emitted.
- *
+ * 
  * @warning If you use this facility, you might have to deal with
  * platform-specific linker output section naming on your own.
  */
@@ -151,7 +151,7 @@
  *
  * @warning If you use this facility, you might have to deal with
  * platform-specific linker output section naming on your own.
- *
+ * 
  * @note This is useful for Harvard architectures where program memory cannot
  * be directly read from the program without special instructions. With this you
  * can chose to put the size variable in RAM rather than ROM.
@@ -190,6 +190,10 @@
 #    define INCBIN_TYPE(NAME)    ".type " INCBIN_STRINGIZE(INCBIN_PREFIX) #NAME ", %object\n"
 #  elif defined(__MINGW32__) || defined(__MINGW64__)
 /* Mingw doesn't support this directive either */
+#    define INCBIN_TYPE(NAME)
+#  elif defined(_WIN32)
+// CIEKCE: this just doesn't work on windows at all
+// (This update version of the file is taken from sp, it contained the comment above this is why this is here)
 #    define INCBIN_TYPE(NAME)
 #  else
 /* It's safe to use `@' on other architectures */
@@ -305,11 +309,11 @@
  * // extern const unsigned char *const <prefix>Foo<end>;
  * // extern const unsigned int <prefix>Foo<size>;
  * @endcode
- *
+ * 
  * You may specify a custom optional data type as well as the first argument.
  * @code
  * INCBIN_EXTERN(custom_type, Foo);
- *
+ * 
  * // Now you have the following symbols:
  * // extern const custom_type <prefix>Foo<data>[];
  * // extern const custom_type *const <prefix>Foo<end>;
@@ -378,7 +382,7 @@
  * // const unsigned char *const <prefix>Icon<end>;
  * // const unsigned int <prefix>Icon<size>;
  * @endcode
- *
+ * 
  * You may specify a custom optional data type as well as the first argument.
  * These macros are specialized by arity.
  * @code
@@ -436,7 +440,7 @@
 
 /**
  * @brief Include a textual file into the current translation unit.
- *
+ * 
  * This behaves the same as INCBIN except it produces char compatible arrays
  * and implicitly adds a null-terminator byte, thus the size of data included
  * by this is one byte larger than that of INCBIN.

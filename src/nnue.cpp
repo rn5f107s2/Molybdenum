@@ -2,9 +2,21 @@
 #include "Constants.h"
 #include "BitStuff.h"
 #include "Utility.h"
-#include "incbin/incbin.h"
 #include <cstring>
 #include <fstream>
+
+#ifdef _MSC_VER
+#define _MSC_VER_PUSHED
+#pragma push_macro("_MSC_VER")
+#undef _MSC_VER
+#endif
+
+#include "incbin/incbin.h"
+
+#ifdef _MSC_VER_PUSHED
+#pragma pop_macro("_MSC_VER")
+#undef _MSC_VER_PUSHED
+#endif
 
 #ifdef makefile
 #define defaultNetPath "src/Nets/ne3s23p6.nnue"
@@ -14,12 +26,15 @@
 
 
 INCBIN(network, defaultNetPath);
-const Net defaultNet = *reinterpret_cast<const Net*>(gnetworkData);
+const Weights defaultWeights = *reinterpret_cast<const Weights*>(gnetworkData);
 
 Net net;
 
 void loadDefaultNet() {
-    net = defaultNet;
+    net.weights0 = defaultWeights.weights0;
+    net.weights1 = defaultWeights.weights1;
+    net.bias0 = defaultWeights.bias0;
+    net.bias1 = defaultWeights.bias1;
 }
 
 void readNetwork(const std::string &filename) {

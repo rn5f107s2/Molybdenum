@@ -1,9 +1,10 @@
-cmake_minimum_required(VERSION 3.25)
+cmake_minimum_required(VERSION 3.24.2)
 project(Molybdenum)
 
 set(CMAKE_CXX_STANDARD 17)
 
-set(CMAKE_CXX_COMPILER clang++)
+MATH(EXPR stack_size "4 * 1024 * 1024 * 1024") # 4 Gb
+set(CMAKE_EXE_LINKER_FLAGS "-Wl,--stack,${stack_size}")
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic -march=native")
