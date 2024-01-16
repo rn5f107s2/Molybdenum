@@ -16,7 +16,7 @@
 UCIOptions options;
 
 const std::string name = "Molybdenum";
-const std::string version = "1.0";
+const std::string version = "2.0";
 
 void uciCommunication(const std::string& in) {
     Position internalBoard;
