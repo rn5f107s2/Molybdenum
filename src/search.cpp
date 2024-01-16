@@ -87,7 +87,7 @@ int iterativeDeepening(Position  &pos, searchTime &st, int maxDepth, [[maybe_unu
     }
 
     benchNodes += si.nodeCount;
-    std::cout << "bestmove " << moveToString(si.bestRootMove) << "\n";
+    std::cout << "bestmove " << moveToString(si.bestRootMove) << std::endl;
 #else
     prevScore = score;
     }

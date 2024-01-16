@@ -59,7 +59,7 @@ this prints the current board state as well as a few additional informations and
 this prints the current evaluation from the perspective of the side to move.
 
 ## Evaluation
-The currently used evaluation function is a Neural Network of the Architecture 768->(32x2)->1 trained using exclusively own Selfplay Data.
+The currently used evaluation function is a Neural Network of the Architecture (768->32)x2->1 trained using exclusively own Selfplay Data.
 All nets were trained using the [bullet Trainer](https://github.com/jw1912/bullet), however due to the Board representation some features are flipped horizontally when training the nets, 
 therefore when using on of those nets in another engine they probably need to be flipped again.
 
@@ -78,5 +78,5 @@ During my journey creating this there were a lot of people / ressources that hel
   * [Mess](https://github.com/raklaptudirm/mess), even though mess is not too strong of an engine the well sorted release notes helped me orient myself on what features I could try implementing.
    Some Implementations are also inspired by mess, for example the Late Move-/ Move Count Pruning implementation.
   
-  * [Stormphrax](https://github.com/Ciekce/Stormphrax) was never an engine I really read the source code of, however I would like to mention it as the author [Ciekce](https://github.com/Ciekce)
-    is great at explaining things to people which is something I learned a lot from.
+  * [Stormphrax](https://github.com/Ciekce/Stormphrax), where some of the incinb stuff comes from, the author [Ciekce](https://github.com/Ciekce)
+    is also great at explaining things to people which is something I learned a lot from.

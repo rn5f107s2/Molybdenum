@@ -18,7 +18,7 @@
 #undef _MSC_VER_PUSHED
 #endif
 
-#ifdef makefile
+#ifdef MAKEFILE
 #define defaultNetPath "src/Nets/ne3s23p6.nnue"
 #else
 #define defaultNetPath "../src/Nets/ne3s23p6.nnue"

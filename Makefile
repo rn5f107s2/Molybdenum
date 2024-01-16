@@ -10,7 +10,7 @@ all: $(DEFAULT_EXE)
 CXXFLAGS = -static -Ofast -std=c++17
 CXXFLAGS += -Wall -Wextra -pedantic
 CXXFLAGS += -march=native
-CXXFLAGS += -Dmakefile
+CXXFLAGS += -DMAKEFILE
 
 LDFLAGS += -static -Ofast -march=native
 
