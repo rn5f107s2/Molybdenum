@@ -66,17 +66,19 @@ therefore when using on of those nets in another engine they probably need to be
 ## Credits
 
 During my journey creating this there were a lot of people / ressources that helped me along the way, notably
-* ### [The Stockfish Project](https://github.com/rn5f107s2/Stockfish)
+* ### [The Stockfish Project](https://github.com/official-stockfish/Stockfish)
     I learned a lot through the Stockfish project, 
     mainly through the fishtest framework where I tested some ideas, greatly helping my understanding of chess engines and
     the people on the [Discord Server](https://discord.gg/KSmxy3eKED), helping with explaining why and how some things work.
 * ### [The Enigne Programming Discord Server](https://discord.gg/PMeBDB8N)
     This discord server is great server to lurk in, where I learned a lot of things, 
     through either reading people explain things, or the resources listed in this Server.
+* ### [OpenBench](https://github.com/AndyGrant/OpenBench) and [fast-chess](https://github.com/Disservin/fast-chess)
+    Which are both great tools I heavily relied on for testing this engine
 * ### Other Open-source Engines 
   Notable ones being
   * [Mess](https://github.com/raklaptudirm/mess), even though mess is not too strong of an engine the well sorted release notes helped me orient myself on what features I could try implementing.
    Some Implementations are also inspired by mess, for example the Late Move-/ Move Count Pruning implementation.
   
-  * [Stormphrax](https://github.com/Ciekce/Stormphrax), where some of the incinb stuff comes from, the author [Ciekce](https://github.com/Ciekce)
+  * [Stormphrax](https://github.com/Ciekce/Stormphrax), where some of the incbin stuff comes from, the author [Ciekce](https://github.com/Ciekce)
     is also great at explaining things to people which is something I learned a lot from.

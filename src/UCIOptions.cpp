@@ -19,7 +19,7 @@ bool UCIOptions::setOption(const std::string& name, int value) {
 void foo([[maybe_unused]] int bar){}
 
 void UCIOptions::init() {
-    spinOptions.push(UCIOptionSpin("Hash", 1, 2047, 16, &resizeTT));
+    spinOptions.push(UCIOptionSpin("Hash", 1, 1024, 16, &resizeTT));
     spinOptions.push(UCIOptionSpin("Threads", 1, 1, 1, &foo));
     spinOptions.push(UCIOptionSpin("Move Overhead", 0, 2000, 10, &setOverhead));
 }
