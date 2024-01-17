@@ -267,6 +267,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             && ttHit
             && currentMove == ttMove
             && ttBound != UPPER
+            && ttScore >= beta
             && ttDepth >= depth - 3
             && !excluded) {
             
@@ -276,8 +277,8 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             score = search<nt>(ttScore - 1, ttScore, pos, singDepth, si, stack);
             stack->excluded = NO_MOVE;
 
-            if (score < ttScore)
-                extensions = 1;
+            if (score > ttScore)
+                return beta;
         }
 
         u64 prefetchKey = key;
