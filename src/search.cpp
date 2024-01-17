@@ -263,7 +263,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             && history < -6009 * expectedDepth)
             continue;
 
-        if (   depth >= 8
+        if (   depth >= 6
             && ttHit
             && currentMove == ttMove
             && ttBound != UPPER
@@ -277,7 +277,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             score = search<nt>(ttScore - 1, ttScore, pos, singDepth, si, stack);
             stack->excluded = NO_MOVE;
 
-            if (score > ttScore)
+            if (score >= ttScore)
                 return beta;
         }
 
