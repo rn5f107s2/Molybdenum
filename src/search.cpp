@@ -133,12 +133,16 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
 
     u64 ksq = pos.getPieces(pos.sideToMove, KING);
     u64 checkers = attackersTo<false, false>(lsb(ksq),pos.getOccupied(), pos.sideToMove ? BLACK_PAWN : WHITE_PAWN, pos);
-    Move bestMove = 0, currentMove = 0;
-    int bestScore = -INFINITE, score = -INFINITE, moveCount = 0;
+    Move bestMove = 0, currentMove = 0, excluded = NO_MOVE;
+    int bestScore = -INFINITE, score = -INFINITE, moveCount = 0, extensions = 0;
     bool exact = false, check = checkers, ttHit = false, improving;
     Stack<Move> historyUpdates;
 
-    stack->staticEval = evaluate(pos);
+    excluded = stack->excluded;
+
+    if (!excluded)
+        stack->staticEval = evaluate(pos);
+    
     stack->plysInSearch = ROOT ? 0 : (stack-1)->plysInSearch + 1;
     improving = stack->staticEval > (stack-2)->staticEval;
     pvLength[stack->plysInSearch] = stack->plysInSearch;
@@ -169,12 +173,13 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         && MATE - stack->plysInSearch <= alpha)
         return alpha;
 
-    int ttScore, ttBound, ttDepth;
+    int ttScore = 0, ttBound = UPPER, ttDepth = 0;
     Move ttMove = NO_MOVE;
     u64 key = pos.key();
     TTEntry* tte = TT.probe(key);
 
-    if (tte->key == key) {
+    if (   tte->key == key 
+        && !excluded) {
         ttBound = tte->bound;
         ttMove  = tte->move;
         ttDepth = tte->depth;
@@ -189,6 +194,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
 
     if (   !PvNode
         && ttHit
+        && !excluded
         && ttDepth >= depth
         && (    ttBound == EXACT
             || (ttBound == LOWER && ttScore >= beta)
@@ -197,6 +203,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
 
     if (   !PvNode
         && !check
+        && !excluded
         && depth < 10
         && stack->staticEval - (101 * depth - 200 * improving) >= beta
         && stack->staticEval >= beta)
@@ -204,6 +211,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
 
     if (   !PvNode
         && !check
+        && !excluded
         && depth >= 2
         && (stack-1)->currMove != NULL_MOVE
         && stack->staticEval >= beta
@@ -222,6 +230,10 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
 
     Movepicker mp;
     while ((currentMove = pickNextMove<false>(mp, ttMove, pos, checkers, killers[stack->plysInSearch], mainHistory[pos.sideToMove], *(stack-1)->contHist, *(stack-2)->contHist))) {
+
+        if (currentMove == excluded)
+            continue;
+
         int  from    = extract<FROM>(currentMove);
         int  to      = extract<TO>(currentMove);
         bool capture = pos.isCapture(currentMove);
@@ -251,6 +263,23 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             && history < -6009 * expectedDepth)
             continue;
 
+        if (   depth >= 8
+            && ttHit
+            && currentMove == ttMove
+            && ttBound != UPPER
+            && ttDepth >= depth - 3
+            && !excluded) {
+            
+            int singDepth = depth / 2;
+
+            stack->excluded = ttMove;
+            score = search<nt>(ttScore - 1, ttScore, pos, singDepth, si, stack);
+            stack->excluded = NO_MOVE;
+
+            if (score < ttScore)
+                extensions = 1;
+        }
+
         u64 prefetchKey = key;
         updateKey(pc, from, prefetchKey);
         updateKey(pc, to, prefetchKey);
@@ -275,19 +304,19 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         reductions = std::max(reductions, 0);
 
         if (depth > 2 && moveCount > 2) {
-            score = -search<NonPvNode>(-alpha - 1, -alpha, pos, depth - 1 - reductions, si, stack+1);
+            score = -search<NonPvNode>(-alpha - 1, -alpha, pos, depth - 1 - reductions + extensions, si, stack+1);
 
             if (!PvNode && score > alpha && reductions > 0)
-                score = -search<NonPvNode>(-alpha - 1, -alpha, pos, depth - 1, si, stack+1);
+                score = -search<NonPvNode>(-alpha - 1, -alpha, pos, depth - 1 + extensions, si, stack+1);
 
             if (PvNode && score > alpha && score < beta)
-                score = -search<PVNode>(-beta, -alpha, pos, depth - 1, si, stack+1);
+                score = -search<PVNode>(-beta, -alpha, pos, depth - 1 + extensions, si, stack+1);
         }else {
             if (!PvNode || moveCount > 1)
-                score = -search<NonPvNode>(-alpha - 1, -alpha, pos, depth - 1, si, stack+1);
+                score = -search<NonPvNode>(-alpha - 1, -alpha, pos, depth - 1 + extensions, si, stack+1);
 
             if (PvNode && ((score > alpha && score < beta) || moveCount == 1))
-                score = -search<PVNode>(-beta, -alpha, pos, depth - 1, si, stack+1);
+                score = -search<PVNode>(-beta, -alpha, pos, depth - 1 + extensions, si, stack+1);
         }
 
         pos.unmakeMove(currentMove);
@@ -334,9 +363,11 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         si.bestRootMove = bestMove;
 
     if (bestScore == -INFINITE)
-        return checkers ? (-MATE + stack->plysInSearch) : DRAW;
+        return excluded ? alpha : checkers ? (-MATE + stack->plysInSearch) : DRAW;
 
-    TT.save(tte, key, bestScore, exact ? EXACT : UPPER, bestMove, depth, stack->plysInSearch);
+    if (!excluded)
+        TT.save(tte, key, bestScore, exact ? EXACT : UPPER, bestMove, depth, stack->plysInSearch);
+
     return bestScore;
 }
 
