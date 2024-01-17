@@ -56,6 +56,12 @@ inline Move scoreMoves(Movepicker &mp, Move ttMove, Position &pos, const std::ar
         mp.ml.moves[i].score += contHist[pc][to];
         mp.ml.moves[i].score += contHist2[pc][to];
 
+        if (   mp.ml.moves[i].move != ttMove 
+            && capturedPiece != NO_PIECE
+            && !see(pos, -70, mp.ml.moves[i].move)) {
+               mp.ml.moves[i].score -= 10000000;
+        }
+
 
         if (mp.ml.moves[i].score > bestScore) {
             bestScore = mp.ml.moves[i].score;
@@ -83,7 +89,7 @@ Move pickNextMove(Movepicker &mp, Move ttMove, Position &pos, u64 check = 0ULL, 
     }
 
 
-    int bestScore = -1000000;
+    int bestScore = std::numeric_limits<int>::min();
     int bestIndex = 0;
 
     if (mp.moveIndex == mp.ml.length)
