@@ -264,20 +264,21 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             continue;
 
         if (   depth >= 8
+            && !PvNode
             && ttHit
             && currentMove == ttMove
-            && ttBound != UPPER
-            && ttScore >= beta + 33
+            && ttBound == LOWER
+            && ttScore >= beta
             && ttDepth >= depth - 3
             && !excluded) {
             
             int singDepth = depth / 2;
 
             stack->excluded = ttMove;
-            score = search<nt>(beta - 1, beta, pos, singDepth, si, stack);
+            score = search<nt>(ttScore - 1, ttScore, pos, singDepth, si, stack);
             stack->excluded = NO_MOVE;
 
-            if (score > beta)
+            if (score > ttScore)
                 return beta;
         }
 
