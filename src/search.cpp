@@ -271,9 +271,10 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             && !excluded) {
             
             int singDepth = depth / 3;
+            int singBeta = ttScore - 25;
 
             stack->excluded = ttMove;
-            score = search<nt>(ttScore - 1, ttScore, pos, singDepth, si, stack);
+            score = search<nt>(singBeta - 1, singBeta, pos, singDepth, si, stack);
             stack->excluded = NO_MOVE;
 
             if (score < ttScore)
