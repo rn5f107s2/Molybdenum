@@ -277,7 +277,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             score = search<nt>(beta - 1, beta, pos, singDepth, si, stack);
             stack->excluded = NO_MOVE;
 
-            if (score > ttScore)
+            if (score > beta)
                 return beta;
         }
 
