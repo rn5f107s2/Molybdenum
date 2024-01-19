@@ -139,6 +139,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
     Stack<Move> historyUpdates;
 
     excluded = stack->excluded;
+    (stack+1)->excluded = NO_MOVE;
 
     if (!excluded)
         stack->staticEval = evaluate(pos);
@@ -267,16 +268,17 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             && ttHit
             && currentMove == ttMove
             && ttBound != UPPER
+            && ttScore >= beta
             && ttDepth >= depth - 3
             && !excluded) {
             
             int singDepth = depth / 2;
 
             stack->excluded = ttMove;
-            score = search<nt>(ttScore - 1, ttScore, pos, singDepth, si, stack);
+            score = search<nt>(beta - 1, beta, pos, singDepth, si, stack);
             stack->excluded = NO_MOVE;
 
-            if (score < ttScore)
+            if (score < beta)
                 extensions = 1;
         }
 
