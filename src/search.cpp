@@ -220,8 +220,13 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             return nullScore;
     }
 
-    Movepicker mp;
-    while ((currentMove = pickNextMove<false>(mp, ttMove, pos, checkers, killers[stack->plysInSearch], mainHistory[pos.sideToMove], *(stack-1)->contHist, *(stack-2)->contHist))) {
+    Movepicker mp = Movepicker<false>(&pos, ttMove, 
+                                            &killers[stack->plysInSearch], 
+                                            &mainHistory[pos.sideToMove], 
+                                            &*(stack-1)->contHist, 
+                                            &*(stack-2)->contHist, checkers);
+    while ((currentMove = mp.pickMove())) {
+
         int  from    = extract<FROM>(currentMove);
         int  to      = extract<TO>(currentMove);
         bool capture = pos.isCapture(currentMove);
@@ -353,8 +358,9 @@ int qsearch(int alpha, int beta, Position &pos, SearchInfo &si) {
     if (bestScore >= beta)
         return bestScore;
 
-    Movepicker mp;
-    while ((currentMove = pickNextMove<true>(mp, NO_MOVE, pos)) != 0) {
+    Movepicker mp = Movepicker<true>(&pos, NO_MOVE);
+
+    while ((currentMove = mp.pickMove())) {
         if (   pos.isCapture(currentMove)
             && staticEval + PieceValuesSEE[pos.pieceOn(extract<TO>(currentMove))] + 137 <= alpha)
             continue;
