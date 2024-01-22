@@ -38,6 +38,7 @@ class Position {
         inline Piece pieceOn(int sq);
         inline u64 getOccupied();
         template<Color c> u64 getOccupied();
+        void explode();
     private:
         Stack<Piece>  capturedHistory;
         Stack<int>  plys50mrHistory;

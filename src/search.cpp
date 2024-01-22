@@ -3,7 +3,7 @@
 #include "search.h"
 #include "eval.h"
 #include "Constants.h"
-#include "Movepicker.h"
+#include "Movepickernew.h"
 #include "searchUtil.h"
 #include <chrono>
 #include <algorithm>
@@ -220,8 +220,10 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             return nullScore;
     }
 
-    Movepicker mp;
-    while ((currentMove = pickNextMove<false>(mp, ttMove, pos, checkers, killers[stack->plysInSearch], mainHistory[pos.sideToMove], *(stack-1)->contHist, *(stack-2)->contHist))) {
+    Movepickernew mp = Movepickernew<false>(&pos, ttMove, &killers[stack->plysInSearch], &mainHistory[pos.sideToMove], &*(stack-1)->contHist, &*(stack-2)->contHist, checkers);
+    while (/*(currentMove = */
+            (currentMove = mp.pickMove())) {
+
         int  from    = extract<FROM>(currentMove);
         int  to      = extract<TO>(currentMove);
         bool capture = pos.isCapture(currentMove);

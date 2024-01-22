@@ -15,7 +15,7 @@ static std::array<Move, 2> empty = {0, 0};
 static const FromToHist empty2 = {{{0}}};
 static const PieceToHist empty3 = {{{0}}};
 
-const std::array<std::array<int, 13>, 13> MVVLVA =
+static const std::array<std::array<int, 13>, 13> MVVLVA =
          {{
                  {1050000, 2050000, 3050000, 4050000, 5050000, 6050000, 1050000, 2050000, 3050000, 4050000, 5050000, 6050000, 0},
                  {1040000, 2040000, 3040000, 4040000, 5040000, 6040000, 1040000, 2040000, 3040000, 4040000, 5040000, 6040000, 0},
@@ -68,6 +68,11 @@ inline Move scoreMoves(Movepicker &mp, Move ttMove, Position &pos, const std::ar
     mp.ml.moves[bestIndex] = temp;
 
     return mp.ml.moves[mp.moveIndex++].move;
+}
+
+template<bool qsearch> inline
+void initMP() {
+
 }
 
 template<bool qsearch> inline
