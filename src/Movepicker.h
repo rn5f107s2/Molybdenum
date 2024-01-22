@@ -1,19 +1,9 @@
-#ifndef MOLYBDENUM_MOVEPICKER_H
-#define MOLYBDENUM_MOVEPICKER_H
-
-#include "Movegen.h"
 #include "searchUtil.h"
+#include "Movegen.h"
 
-struct Movepicker {
-    MoveList ml;
-    int moveIndex = 0;
-    bool scored = false;
-    bool moveListInitialized = false;
-};
-
-static std::array<Move, 2> empty = {0, 0};
-static const FromToHist empty2 = {{{0}}};
-static const PieceToHist empty3 = {{{0}}};
+std::array<Move, 2> emptyKillers = {NO_MOVE, NO_MOVE};
+FromToHist emptyMain  = {{{0}}};
+PieceToHist emptyCont = {{{0}}};
 
 const std::array<std::array<int, 13>, 13> MVVLVA =
          {{
@@ -32,75 +22,111 @@ const std::array<std::array<int, 13>, 13> MVVLVA =
                  {     0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0, 0}
          }};
 
-//This also returns the best move
-inline Move scoreMoves(Movepicker &mp, Move ttMove, Position &pos, const std::array<Move, 2> &killers, const FromToHist &history, const PieceToHist &contHist, const PieceToHist &contHist2) {
-    int bestScore = -1000000;
-    int bestIndex = 0;
+template<bool qsearch>
+class Movepicker {
+    private:
+        std::array<Move, 2> *killers{};
+        FromToHist *mainHist{};
+        PieceToHist *contHist1{};
+        PieceToHist *contHist2{};
+        Move ttMove = NO_MOVE;
+        MoveList ml{};
+        Position *pos;
+        ScoredMove *currentMove = nullptr;
+        ScoredMove *endMoveList = nullptr;
+        bool scored = false;
 
-    for (int i = mp.moveIndex; i < mp.ml.length; i++) {
-        if (mp.ml.moves[i].move == ttMove)
-            mp.ml.moves[i].score = 10000000;
-        else if (mp.ml.moves[i].move == killers[0])
-            mp.ml.moves[i].score = 900000;
-        else if (mp.ml.moves[i].move == killers[1])
-            mp.ml.moves[i].score = 800000;
+    public:
+        Movepicker(Position *p, Move ttm, 
+                      std::array<Move, 2> *k = &emptyKillers, 
+                      FromToHist  *main  = &emptyMain, 
+                      PieceToHist *cont1 = &emptyCont, 
+                      PieceToHist *cont2 = &emptyCont, 
+                      u64 checkers = 0ULL) 
+        {
+            ttMove = ttm; 
+            killers = k; 
+            mainHist = main; 
+            contHist1 = cont1; 
+            contHist2 = cont2;
+            pos = p;
 
-        int from = extract<FROM>(mp.ml.moves[i].move);
-        int to   = extract<TO  >(mp.ml.moves[i].move);
-        int movingPiece   = pos.pieceLocations[from];
-        int capturedPiece = pos.pieceLocations[to];
-        Piece pc = pos.pieceOn(from);
+            generateMoves<qsearch>(*pos, ml, checkers);
 
-        mp.ml.moves[i].score += MVVLVA[movingPiece][capturedPiece];
-        mp.ml.moves[i].score += history[from][to];
-        mp.ml.moves[i].score += contHist[pc][to];
-        mp.ml.moves[i].score += contHist2[pc][to];
-
-
-        if (mp.ml.moves[i].score > bestScore) {
-            bestScore = mp.ml.moves[i].score;
-            bestIndex = i;
+            currentMove = &ml.moves[0];
+            endMoveList = &ml.moves[ml.length];;
         }
-    }
 
-    ScoredMove temp = mp.ml.moves[mp.moveIndex];
-    mp.ml.moves[mp.moveIndex] = mp.ml.moves[bestIndex];
-    mp.ml.moves[bestIndex] = temp;
+        inline Move scoreMoves() {
+            int idx = 0;
 
-    return mp.ml.moves[mp.moveIndex++].move;
-}
+            int bestScore = std::numeric_limits<int>::min(); 
+            ScoredMove *best = currentMove;
 
-template<bool qsearch> inline
-Move pickNextMove(Movepicker &mp, Move ttMove, Position &pos, u64 check = 0ULL, const std::array<Move, 2> &killers = empty, const FromToHist &history = empty2, const PieceToHist &contHist = empty3, const PieceToHist &contHist2 = empty3) {
-    if (!mp.moveListInitialized)
-        generateMoves<qsearch>(pos, mp.ml, check);
+            while (idx < ml.length) {
+                ScoredMove *current = &ml.moves[idx++];
+                Move move  = current->move;
+                int *score = &current->score;
 
-    mp.moveListInitialized = true;
+                int from = extract<FROM>(move);
+                int to   = extract<TO  >(move);
+                int movingPiece   = pos->pieceLocations[from];
+                int capturedPiece = pos->pieceLocations[to];
+                Piece pc = pos->pieceOn(from);
 
-    if (!mp.scored) {
-        mp.scored = true;
-        return scoreMoves(mp, ttMove, pos, killers, history, contHist, contHist2);
-    }
+                if (move == ttMove)
+                    *score = 10000000;
+                else if (move == killers[0][0])
+                    *score = 900000;
+                else if (move == killers[0][1])
+                    *score = 800000;
 
+                *score += mainHist [0][from][to];
+                *score += contHist1[0][pc][to];
+                *score += contHist2[0][pc][to];
 
-    int bestScore = -1000000;
-    int bestIndex = 0;
+                *score += MVVLVA[movingPiece][capturedPiece];
 
-    if (mp.moveIndex == mp.ml.length)
-        return NO_MOVE;
+                if (*score > bestScore) {
+                    bestScore = *score;
+                    best = current;
+                }
+            }
 
-    for (int i = mp.moveIndex; i < mp.ml.length; i++) {
-        if (mp.ml.moves[i].score > bestScore) {
-            bestScore = mp.ml.moves[i].score;
-            bestIndex = i;
+            ScoredMove temp = *currentMove;
+            *currentMove = *best;
+            *best = temp;
+ 
+            return currentMove++->move;
         }
-    }
 
-    ScoredMove temp = mp.ml.moves[mp.moveIndex];
-    mp.ml.moves[mp.moveIndex] = mp.ml.moves[bestIndex];
-    mp.ml.moves[bestIndex] = temp;
+        inline Move sortNext() {
+            ScoredMove *best = currentMove;
+            int bestScore = std::numeric_limits<int>::min();
 
-    return mp.ml.moves[mp.moveIndex++].move;
-}
 
-#endif //MOLYBDENUM_MOVEPICKER_H
+            for (ScoredMove* i = currentMove; i != endMoveList; i++) {
+                if (i->score > bestScore) {
+                    bestScore = i->score;
+                    best = i;
+                }
+            }
+
+            ScoredMove temp = *currentMove;
+            *currentMove = *best;
+            *best = temp;
+
+            return currentMove++->move;
+        }
+
+        inline Move pickMove() {
+            if (!scored && (scored = true))
+                return scoreMoves();
+
+            if (currentMove == endMoveList)
+                return NO_MOVE;
+
+            return sortNext();
+        }
+        
+};
