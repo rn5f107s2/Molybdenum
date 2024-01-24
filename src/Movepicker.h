@@ -54,7 +54,7 @@ class Movepicker {
             generateMoves<qsearch>(*pos, ml, checkers);
 
             currentMove = &ml.moves[0];
-            endMoveList = &ml.moves[ml.length];
+            endMoveList = &ml.moves[ml.length];;
         }
 
         inline Move scoreMoves() {
