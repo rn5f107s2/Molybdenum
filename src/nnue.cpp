@@ -6,16 +6,16 @@
 #include <fstream>
 
 #ifdef _MSC_VER
-#define _MSC_VER_PUSHED
+#define PUSHED_MACRO
 #pragma push_macro("_MSC_VER")
-#undef _MSC_VER
+#undef PUSHED_MACRO
 #endif
 
 #include "incbin/incbin.h"
 
-#ifdef _MSC_VER_PUSHED
+#ifdef PUSHED_MACRO
 #pragma pop_macro("_MSC_VER")
-#undef _MSC_VER_PUSHED
+#undef PUSHED_MACRO
 #endif
 
 #ifdef MAKEFILE
