@@ -69,7 +69,7 @@ During my journey creating this there were a lot of people / ressources that hel
 * ### [The Stockfish Project](https://github.com/official-stockfish/Stockfish)
     I learned a lot through the Stockfish project, 
     mainly through the fishtest framework where I tested some ideas, greatly helping my understanding of chess engines and
-    the people on the [Discord Server](https://discord.gg/KSmxy3eKED), helping with explaining why and how some things work.
+    the people on the [Discord Server](https://discord.gg/dxy7eAZSCk), helping with explaining why and how some things work.
 * ### [The Enigne Programming Discord Server](https://discord.gg/PMeBDB8N)
     This discord server is great server to lurk in, where I learned a lot of things, 
     through either reading people explain things, or the resources listed in this Server.
