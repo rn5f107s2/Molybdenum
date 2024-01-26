@@ -256,6 +256,13 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             && history < -6009 * expectedDepth)
             continue;
 
+        if (   !PvNode
+            && bestScore > -MAXMATE
+            && !capture
+            && depth <= 5
+            && !see(pos, -100 * depth, currentMove))
+            continue;
+
         u64 prefetchKey = key;
         updateKey(pc, from, prefetchKey);
         updateKey(pc, to, prefetchKey);
