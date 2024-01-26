@@ -1,5 +1,6 @@
 #include "searchUtil.h"
 #include "Movegen.h"
+#include "Position.h"
 
 std::array<Move, 2> emptyKillers = {NO_MOVE, NO_MOVE};
 FromToHist emptyMain  = {{{0}}};
@@ -35,9 +36,11 @@ class Movepicker {
         Position *pos;
         ScoredMove *currentMove = nullptr;
         ScoredMove *endMoveList = nullptr;
+        u64 check = 0;
         bool scored = false;
         bool root   = false;
         bool searchedPrio = true;
+        bool triedTTM = false;
 
     public:
         Movepicker(Position *p, Move ttm, 
@@ -53,14 +56,9 @@ class Movepicker {
             mainHist = main; 
             contHist1 = cont1; 
             contHist2 = cont2;
-            pos  = p;
+            pos = p;
+            check = checkers;
             root = r;
-
-
-            generateMoves<qsearch>(*pos, ml, checkers);
-
-            currentMove = &ml.moves[0];
-            endMoveList = &ml.moves[ml.length];;
         }
 
         inline Move scoreMoves() {
@@ -126,14 +124,28 @@ class Movepicker {
         }
 
         inline Move pickMove() {
-
             if (!searchedPrio) {
                 searchedPrio = true;
                 return prioMove;
             }
 
-            if (!scored && (scored = true))
-                return scoreMoves();
+            if (   !triedTTM 
+                && (triedTTM = true) 
+                && ttMove 
+                && pos->isLegal(ttMove))
+                return ttMove;
+
+            if (!scored && (scored = true)) {
+                generateMoves<qsearch>(*pos, ml, check);
+
+                currentMove = &ml.moves[0];
+                endMoveList = &ml.moves[ml.length];
+
+                Move bm = scoreMoves();
+
+                if (!bm || bm != ttMove)
+                    return bm;
+            }
 
             if (currentMove == endMoveList)
                 return NO_MOVE;

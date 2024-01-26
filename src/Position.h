@@ -34,6 +34,7 @@ class Position {
         bool hasRepeated(int plysInSearch);
         bool isCapture(Move move);
         std::string fen();
+        bool isLegal(Move m);
         template<Color c> u64 getPieces(PieceType pt);
         template<PieceType pt> u64 getPieces(Color c);
         inline u64 getPieces(Color c, PieceType pt);
