@@ -374,3 +374,110 @@ std::string Position::fen() {
 
     return fen;
 }
+
+bool Position::isLegal(Move move) {
+    int from = extract<FROM>(move);
+    int to   = extract<TO  >(move);
+    int flag = extract<FLAG>(move);
+
+    int pc = pieceLocations[from];
+    int pt = typeOf(pc);
+    int captured = pieceLocations[to];
+    u64 blockers = getOccupied();
+    u64 attackers;
+    u64 fromL = 1ULL << from;
+    u64 toL   = 1ULL << to;
+
+    //A ttMove can be illegal for a few reasons (assuming it is a legal move in any position (may not always hold true in multithreading))
+
+    //1. There is no piece on the from square
+    if (pc == NO_PIECE) {
+        std::cout << "failMoving" << std::endl;
+        return false;
+    }
+
+    //2. It captures a piece of the same color
+    if (captured != NO_PIECE && colorOf(captured) == sideToMove) {
+        std::cout << "failCapture" << std::endl;
+        return false;
+    }
+
+    if (pt == PAWN && captured == NO_PIECE && flag != ENPASSANT) {
+        u64 trail = 0ULL;
+
+        //3. It is a pawnmove, however its neither a single nor a double push
+        if (   !( (trail |= movePawn(fromL, sideToMove)) & toL) 
+            && !(((trail |= movePawn(trail, sideToMove)) & toL) && rankOf(from) == sideToMove ? RANK2 : RANK7)) {
+            return false;
+        }
+
+        //4. The path is blocked
+        if (blockers & trail) {
+            printBB(trail);
+            return false;
+        }
+
+
+    } else if (flag == CASTLING) {
+        int castlingRight = from > to  ? 
+                            sideToMove ? WHITE_CASTLE_KINGSIDE  : BLACK_CASTLE_KINGSIDE :
+                            sideToMove ? WHITE_CASTLE_QUEENSIDE : BLACK_CASTLE_QUEENSIDE;
+
+
+        u64 castlingPath =  from > to  ? 
+                            sideToMove ? WHITE_CASTLING_SQUARES_KINGSIDE  : BLACK_CASTLING_SQUARES_KINGSIDE :
+                            sideToMove ? WHITE_CASTLING_SQUARES_QUEENSIDE : BLACK_CASTLING_SQUARES_QUEENSIDE;
+
+        //5. Its a castling move, however the castling right is not set
+        if (!(castlingRight & castlingRights)) {
+            return false;
+        }
+
+        int sq = 0;
+        //6. Any of the squares between rook and king are occupied
+        if (blockers & castlingPath) {
+            return false;
+        }
+
+        castlingPath &= fromL >> 1 | fromL << 1 | fromL;
+
+        //7. Any of the squares between from and to are attacked, to square is checked later
+        while (castlingPath) {
+            sq = popLSB(castlingPath);
+            if ((blockers & (1ULL << sq)) || attackersTo<true, false>(sq, blockers ^ fromL, sideToMove ? BLACK_PAWN : WHITE_PAWN, *this)) {
+                printBB(castlingPath);
+                std::cout << sq << "\n";
+                return false;
+            }
+        }
+
+    } else if (!(getAttacks(pt, from, blockers, sideToMove) & toL)) {
+        //7. It is not a Castling move and not a non-capture pawn move and the moving piece does not attack the to-square from the from-square
+        return false;
+    }
+
+    int kingSquare = lsb(bitBoards[sideToMove ? WHITE_KING : BLACK_KING]);
+
+    if (pt != KING) {
+        attackers = attackersTo<false, false>(kingSquare, (blockers ^ fromL) | toL, sideToMove ? BLACK_PAWN : WHITE_PAWN, *this);
+
+        //8. It is not a king move and leaves the king vulnerable to attacks
+        if (attackers && attackers != toL) {
+            return false;
+        }
+
+    }else if (attackersTo<true, false>(to, blockers ^ fromL, sideToMove ? BLACK_PAWN : WHITE_PAWN, *this)) {
+        //9. It is a king move and leaves the king vulnerable
+        return false;
+    }
+
+    if (flag != ENPASSANT)
+        return true;
+
+    //10. It is en passant, however the to square is not the enpassant square
+    if (flag == ENPASSANT) {
+        return captured == NO_PIECE && (toL & enPassantSquare);
+    }
+
+    return true;
+}
