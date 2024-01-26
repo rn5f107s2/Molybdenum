@@ -11,6 +11,7 @@
 std::array<std::array<Move, 2>, STACKSIZE> killers;
 SideFromToHist mainHistory;
 ContHist continuationHistory;
+CaptHist captureHistory;
 std::array<std::array<Move, MAXDEPTH>, MAXDEPTH> pvMoves;
 std::array<int, MAXDEPTH> pvLength;
 
@@ -224,7 +225,8 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
                                             &killers[stack->plysInSearch], 
                                             &mainHistory[pos.sideToMove], 
                                             &*(stack-1)->contHist, 
-                                            &*(stack-2)->contHist, checkers);
+                                            &*(stack-2)->contHist, 
+                                            &captureHistory, checkers);
     while ((currentMove = mp.pickMove())) {
 
         int  from    = extract<FROM>(currentMove);
@@ -308,10 +310,10 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
                 alpha = score;
                 exact = true;
 
-                if (score >= beta) {
-                    if (!pos.isCapture(bestMove)) {
-                        updateHistory(mainHistory[pos.sideToMove], *(stack-1)->contHist, *(stack-2)->contHist, bestMove, historyUpdates, depth, pos, (stack-1)->currMove && (stack-1)->currMove != NULL_MOVE, (stack-2)->currMove && (stack-2)->currMove != NULL_MOVE);
+                if (score >= beta) {    
+                    updateHistory(mainHistory[pos.sideToMove], *(stack-1)->contHist, *(stack-2)->contHist, bestMove, historyUpdates, depth, pos, (stack-1)->currMove && (stack-1)->currMove != NULL_MOVE, (stack-2)->currMove && (stack-2)->currMove != NULL_MOVE, captureHistory);
 
+                    if (!pos.isCapture(bestMove)) {
                         if (bestMove != killers[stack->plysInSearch][0]) {
                             killers[stack->plysInSearch][1] = killers[stack->plysInSearch][0];
                             killers[stack->plysInSearch][0] = bestMove;

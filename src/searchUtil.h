@@ -14,21 +14,28 @@ using FromToHist = std::array<std::array<int, 64>, 64>;
 using PieceToHist = std::array<std::array<int, 64>, 13>;
 using SideFromToHist = std::array<FromToHist, 2>;
 using ContHist = std::array<std::array<PieceToHist, 64>, 13>;
+using CaptHist = std::array<PieceToHist, 13>;
 
 const int histLimits = 2 << 13;
 
-inline void updateHistory(FromToHist &history, PieceToHist &contHist, PieceToHist  &contHist2, Move bestMove, Stack<Move> &movesToUpdate, int depth, Position &pos, const bool updateCont, const bool updateCont2) {
+inline void updateHistory(FromToHist &history, PieceToHist &contHist, PieceToHist  &contHist2, Move bestMove, Stack<Move> &movesToUpdate, int depth, Position &pos, const bool updateCont, const bool updateCont2, CaptHist &captHist) {
     int from = extract<FROM>(bestMove);
     int to   = extract<TO  >(bestMove);
     int pc   = pos.pieceOn(from);
-    int bonus = std::min(depth * depth * 16, 1638);
-    int malus = -bonus;
 
-    history[from][to] += bonus - history [from][to] * abs(bonus) / histLimits;
-    if (updateCont)
-        contHist[pc][to]  += bonus - contHist[pc][to] * abs(bonus) / histLimits;
-    if (updateCont2)
-        contHist2[pc][to]  += bonus - contHist2[pc][to] * abs(bonus) / histLimits;
+    int bonus    = std::min(depth * depth * 16, 1638);
+    int malus    = -bonus;
+    bool capture = pos.isCapture(bestMove);
+
+    if (!capture) {
+        history[from][to] += bonus - history [from][to] * abs(bonus) / histLimits;
+        if (updateCont)
+            contHist[pc][to]  += bonus - contHist[pc][to] * abs(bonus) / histLimits;
+        if (updateCont2)
+            contHist2[pc][to]  += bonus - contHist2[pc][to] * abs(bonus) / histLimits;
+    }else {
+        captHist[pc][to][pos.pieceOn(to)] += bonus - captHist[pc][to][pos.pieceOn(to)] * abs(bonus) / histLimits;
+    }
 
     while (movesToUpdate.getSize()) {
         Move move = movesToUpdate.pop();
@@ -36,11 +43,16 @@ inline void updateHistory(FromToHist &history, PieceToHist &contHist, PieceToHis
         to   = extract<TO  >(move);
         pc   = pos.pieceOn(from);
 
-        history[from][to] += malus - history [from][to] * abs(malus) / 65536;
-        if (updateCont)
-            contHist[pc][to] += malus - contHist[pc][to] * abs(malus) / 65536;
-        if (updateCont2)
-            contHist2[pc][to] += malus - contHist2[pc][to] * abs(malus) / 65536;
+        if (!capture && !pos.isCapture(move)) {
+            history[from][to] += malus - history [from][to] * abs(malus) / 65536;
+            if (updateCont)
+                contHist[pc][to] += malus - contHist[pc][to] * abs(malus) / 65536;
+            if (updateCont2)
+                contHist2[pc][to] += malus - contHist2[pc][to] * abs(malus) / 65536;
+        }
+
+        if (capture && pos.isCapture(move))
+            captHist[pc][to][pos.pieceOn(to)] += malus - captHist[pc][to][pos.pieceOn(to)] * abs(malus) / 65536;
     }
 }
 

@@ -4,6 +4,7 @@
 std::array<Move, 2> emptyKillers = {NO_MOVE, NO_MOVE};
 FromToHist emptyMain  = {{{0}}};
 PieceToHist emptyCont = {{{0}}};
+CaptHist    emptyCapt = {{{{{0}}}}};
 
 const std::array<std::array<int, 13>, 13> MVVLVA =
          {{
@@ -29,6 +30,7 @@ class Movepicker {
         FromToHist *mainHist{};
         PieceToHist *contHist1{};
         PieceToHist *contHist2{};
+        CaptHist *captHist{};
         Move ttMove = NO_MOVE;
         MoveList ml{};
         Position *pos;
@@ -41,7 +43,8 @@ class Movepicker {
                       std::array<Move, 2> *k = &emptyKillers, 
                       FromToHist  *main  = &emptyMain, 
                       PieceToHist *cont1 = &emptyCont, 
-                      PieceToHist *cont2 = &emptyCont, 
+                      PieceToHist *cont2 = &emptyCont,
+                      CaptHist *capt     = &emptyCapt,
                       u64 checkers = 0ULL) 
         {
             ttMove = ttm; 
@@ -49,6 +52,7 @@ class Movepicker {
             mainHist = main; 
             contHist1 = cont1; 
             contHist2 = cont2;
+            captHist = capt;
             pos = p;
 
             generateMoves<qsearch>(*pos, ml, checkers);
@@ -85,8 +89,9 @@ class Movepicker {
                 *score += contHist1[0][pc][to];
                 *score += contHist2[0][pc][to];
 
-                *score += MVVLVA[movingPiece][capturedPiece];
-
+                if (capturedPiece != NO_PIECE)
+                    *score += (PieceValuesSEE[capturedPiece] * 300000) + captHist[0][movingPiece][to][capturedPiece];
+ 
                 if (*score > bestScore) {
                     bestScore = *score;
                     best = current;
