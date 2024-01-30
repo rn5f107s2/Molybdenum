@@ -12,7 +12,7 @@ CXXFLAGS += -Wall -Wextra -pedantic
 CXXFLAGS += -march=native
 CXXFLAGS += -DMAKEFILE
 
-LDFLAGS += -static -Ofast -march=native
+LDFLAGS += -static -Ofast -march=native -flto
 
 ifeq ($(OS),Windows_NT)
 	LDFLAGS += -Wl,/STACK:4294967296
