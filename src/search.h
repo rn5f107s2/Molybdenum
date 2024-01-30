@@ -87,6 +87,7 @@ struct SearchStack {
     int plysInSearch = 0;
     int staticEval = INFINITE;
     Move currMove = 0;
+    Move excluded = NO_MOVE;
     PieceToHist *contHist = nullptr;
 };
 
