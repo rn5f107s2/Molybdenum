@@ -273,7 +273,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             && currentMove == ttMove
             && ttBound != UPPER
             //&& ttScore >= beta
-            && ttDepth >= depth - 3
+            && ttDepth >= std::min(depth / 2 + 3, depth - 3)
             && !excluded) {
             
             int singDepth = depth / 2;
