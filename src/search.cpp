@@ -148,7 +148,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
     improving = stack->staticEval > (stack-2)->staticEval;
     pvLength[stack->plysInSearch] = stack->plysInSearch;
 
-    depth += check;
+    depth += check && depth < 8;
 
     if (stack->plysInSearch >= MAXDEPTH)
         return stack->staticEval;
