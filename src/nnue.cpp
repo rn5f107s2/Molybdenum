@@ -19,9 +19,9 @@
 #endif
 
 #ifdef MAKEFILE
-#define defaultNetPath "src/Nets/ne3s23p6.nnue"
+#define defaultNetPath "src/Nets/5kAllFixed-epoch40.nnue"
 #else
-#define defaultNetPath "../src/Nets/ne3s23p6.nnue"
+#define defaultNetPath "../src/Nets/5kAllFixed-epoch40.nnue"
 #endif
 
 
