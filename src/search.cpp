@@ -285,6 +285,8 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
 
             if (score < singBeta)
                 extensions = 1;
+            else if (!ROOT && singBeta >= beta)
+                return ttScore;
         }
 
         u64 prefetchKey = key;
