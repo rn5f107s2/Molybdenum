@@ -30,11 +30,13 @@ class Movepicker {
         PieceToHist *contHist1{};
         PieceToHist *contHist2{};
         Move ttMove = NO_MOVE;
+        Move prioMove = NO_MOVE;
         MoveList ml{};
         Position *pos;
         ScoredMove *currentMove = nullptr;
         ScoredMove *endMoveList = nullptr;
         bool scored = false;
+        bool searchedPrio = true;
 
     public:
         Movepicker(Position *p, Move ttm, 
@@ -120,13 +122,25 @@ class Movepicker {
         }
 
         inline Move pickMove() {
+
+            if (!searchedPrio) {
+                searchedPrio = true;
+                return prioMove;
+            }
+
             if (!scored && (scored = true))
                 return scoreMoves();
 
             if (currentMove == endMoveList)
                 return NO_MOVE;
 
-            return sortNext();
+            Move next = sortNext();
+            return (next == prioMove) ? sortNext() : next; 
+        }
+
+        inline void setPrioMove(Move pm) {
+            prioMove = pm;
+            searchedPrio = false;
         }
         
 };
