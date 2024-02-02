@@ -135,7 +135,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
     u64 checkers = attackersTo<false, false>(lsb(ksq),pos.getOccupied(), pos.sideToMove ? BLACK_PAWN : WHITE_PAWN, pos);
     Move bestMove = 0, currentMove = 0, excluded = NO_MOVE;
     int bestScore = -INFINITE, score = -INFINITE, moveCount = 0, extensions = 0;
-    bool exact = false, check = checkers, ttHit = false, improving;
+    bool exact = false, check = checkers, ttHit = false, improving, secondSearched = true;
     Stack<Move> historyUpdates;
 
     excluded = stack->excluded;
@@ -236,7 +236,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
                                             &*(stack-2)->contHist, checkers);
     while ((currentMove = mp.pickMove())) {
     
-    if (currentMove == excluded)
+        if (currentMove == excluded)
             continue;
 
         int  from    = extract<FROM>(currentMove);
@@ -271,6 +271,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         if (   depth >= 8
             && ttHit
             && currentMove == ttMove
+            && moveCount == 0
             && ttBound != UPPER
             //&& ttScore >= beta
             && ttDepth >= depth - 3
@@ -280,11 +281,25 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             int singBeta  = ttScore - 25; 
 
             stack->excluded = ttMove;
+            stack->currMove = NO_MOVE;
             score = search<nt>(singBeta - 1, singBeta, pos, singDepth, si, stack);
             stack->excluded = NO_MOVE;
 
             if (score < singBeta)
                 extensions = 1;
+
+            if (stack->currMove && score > singBeta + (depth - singDepth) * 20) {
+                mp.setPrioMove(ttMove);
+
+                currentMove = stack->currMove;
+
+                from    = extract<FROM>(currentMove);
+                to      = extract<TO>(currentMove);
+                capture = pos.isCapture(currentMove);
+                pc = pos.pieceOn(from);
+
+                history = (*(stack-1)->contHist)[pc][to] + mainHistory[pos.sideToMove][from][to];
+            }
         }
 
         u64 prefetchKey = key;
