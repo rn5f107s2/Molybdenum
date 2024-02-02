@@ -135,7 +135,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
     u64 checkers = attackersTo<false, false>(lsb(ksq),pos.getOccupied(), pos.sideToMove ? BLACK_PAWN : WHITE_PAWN, pos);
     Move bestMove = 0, currentMove = 0, excluded = NO_MOVE;
     int bestScore = -INFINITE, score = -INFINITE, moveCount = 0, extensions = 0;
-    bool exact = false, check = checkers, ttHit = false, improving, secondSearched = true;
+    bool exact = false, check = checkers, ttHit = false, improving;
     Stack<Move> historyUpdates;
 
     excluded = stack->excluded;
@@ -288,7 +288,12 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             if (score < singBeta)
                 extensions = 1;
 
-            if (stack->currMove && score > singBeta + (depth - singDepth) * 20) {
+            if (   stack->currMove 
+                && score > ttScore
+                && score >= beta
+                && ttScore < beta
+                && ttBound == LOWER) {
+
                 mp.setPrioMove(ttMove);
 
                 currentMove = stack->currMove;
