@@ -11,7 +11,7 @@
 std::array<std::array<Move, 2>, STACKSIZE> killers;
 SideFromToHist mainHistory;
 ContHist continuationHistory;
-ContHist threatHistory;
+std::array<ContHist, 13> threatHistory;
 std::array<std::array<Move, MAXDEPTH>, MAXDEPTH> pvMoves;
 std::array<int, MAXDEPTH> pvLength;
 
@@ -139,7 +139,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
     bool exact = false, check = checkers, ttHit = false, improving;
     Stack<Move> historyUpdates;
 
-    PieceToHist *threatHist = &threatHistory[NO_PIECE][0];
+    PieceToHist *threatHist = &threatHistory[NO_PIECE][NO_PIECE][0];
 
     excluded = stack->excluded;
     (stack+1)->excluded = NO_MOVE;
@@ -231,7 +231,9 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         
         int nullScore = -search<NonPvNode>(-beta, -alpha, pos, depth - reduction, si, stack+1);
         threat = (stack+1)->currMove;
-        threatHist = threatHistory[pos.pieceOn(extract<FROM>(threat)][extract<TO>(threat)];
+
+        if (threat)
+            threatHist = &threatHistory[pos.pieceOn(extract<TO>(threat))][pos.pieceOn(extract<FROM>(threat))][extract<TO>(threat)];
         
         pos.unmakeNullMove();
 
@@ -243,7 +245,8 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
                                             &killers[stack->plysInSearch], 
                                             &mainHistory[pos.sideToMove], 
                                             &*(stack-1)->contHist, 
-                                            &*(stack-2)->contHist, checkers);
+                                            &*(stack-2)->contHist,
+                                            &*(threatHist), checkers);
     while ((currentMove = mp.pickMove())) {
     
     if (currentMove == excluded)
@@ -351,7 +354,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
 
                 if (score >= beta) {
                     if (!pos.isCapture(bestMove)) {
-                        updateHistory(mainHistory[pos.sideToMove], *(stack-1)->contHist, *(stack-2)->contHist, bestMove, historyUpdates, depth, pos, (stack-1)->currMove && (stack-1)->currMove != NULL_MOVE, (stack-2)->currMove && (stack-2)->currMove != NULL_MOVE);
+                        updateHistory(mainHistory[pos.sideToMove], *(stack-1)->contHist, *(stack-2)->contHist, bestMove, historyUpdates, depth, pos, (stack-1)->currMove && (stack-1)->currMove != NULL_MOVE, (stack-2)->currMove && (stack-2)->currMove != NULL_MOVE, *(threatHist), threat);
 
                         if (bestMove != killers[stack->plysInSearch][0]) {
                             killers[stack->plysInSearch][1] = killers[stack->plysInSearch][0];

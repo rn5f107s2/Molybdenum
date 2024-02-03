@@ -29,6 +29,7 @@ class Movepicker {
         FromToHist *mainHist{};
         PieceToHist *contHist1{};
         PieceToHist *contHist2{};
+        PieceToHist *threatHist{};
         Move ttMove = NO_MOVE;
         MoveList ml{};
         Position *pos;
@@ -41,7 +42,8 @@ class Movepicker {
                       std::array<Move, 2> *k = &emptyKillers, 
                       FromToHist  *main  = &emptyMain, 
                       PieceToHist *cont1 = &emptyCont, 
-                      PieceToHist *cont2 = &emptyCont, 
+                      PieceToHist *cont2 = &emptyCont,
+                      PieceToHist *threat = &emptyCont,
                       u64 checkers = 0ULL) 
         {
             ttMove = ttm; 
@@ -49,6 +51,7 @@ class Movepicker {
             mainHist = main; 
             contHist1 = cont1; 
             contHist2 = cont2;
+            threatHist = threat;
             pos = p;
 
             generateMoves<qsearch>(*pos, ml, checkers);
@@ -81,9 +84,10 @@ class Movepicker {
                 else if (move == killers[0][1])
                     *score = 800000;
 
-                *score += mainHist [0][from][to];
-                *score += contHist1[0][pc][to];
-                *score += contHist2[0][pc][to];
+                *score += mainHist  [0][from][to];
+                *score += contHist1 [0][pc][to];
+                *score += contHist2 [0][pc][to];
+                *score += threatHist[0][pc][to];
 
                 *score += MVVLVA[movingPiece][capturedPiece];
 

@@ -17,7 +17,7 @@ using ContHist = std::array<std::array<PieceToHist, 64>, 13>;
 
 const int histLimits = 2 << 13;
 
-inline void updateHistory(FromToHist &history, PieceToHist &contHist, PieceToHist  &contHist2, Move bestMove, Stack<Move> &movesToUpdate, int depth, Position &pos, const bool updateCont, const bool updateCont2) {
+inline void updateHistory(FromToHist &history, PieceToHist &contHist, PieceToHist  &contHist2, Move bestMove, Stack<Move> &movesToUpdate, int depth, Position &pos, const bool updateCont, const bool updateCont2, PieceToHist &threatHist, Move threat) {
     int from = extract<FROM>(bestMove);
     int to   = extract<TO  >(bestMove);
     int pc   = pos.pieceOn(from);
@@ -29,6 +29,8 @@ inline void updateHistory(FromToHist &history, PieceToHist &contHist, PieceToHis
         contHist[pc][to]  += bonus - contHist[pc][to] * abs(bonus) / histLimits;
     if (updateCont2)
         contHist2[pc][to]  += bonus - contHist2[pc][to] * abs(bonus) / histLimits;
+    if (threat)
+        threatHist[pc][to] += bonus - threatHist[pc][to] * abs(bonus) / histLimits;
 
     while (movesToUpdate.getSize()) {
         Move move = movesToUpdate.pop();
@@ -41,6 +43,8 @@ inline void updateHistory(FromToHist &history, PieceToHist &contHist, PieceToHis
             contHist[pc][to] += malus - contHist[pc][to] * abs(malus) / 65536;
         if (updateCont2)
             contHist2[pc][to] += malus - contHist2[pc][to] * abs(malus) / 65536;
+        if (threat)
+            threatHist[pc][to] += malus - threatHist[pc][to] * abs(malus) / 65536;
     }
 }
 
