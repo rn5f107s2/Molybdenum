@@ -11,6 +11,7 @@
 std::array<std::array<Move, 2>, STACKSIZE> killers;
 SideFromToHist mainHistory;
 ContHist continuationHistory;
+ContHist threatHistory;
 std::array<std::array<Move, MAXDEPTH>, MAXDEPTH> pvMoves;
 std::array<int, MAXDEPTH> pvLength;
 
@@ -133,10 +134,12 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
 
     u64 ksq = pos.getPieces(pos.sideToMove, KING);
     u64 checkers = attackersTo<false, false>(lsb(ksq),pos.getOccupied(), pos.sideToMove ? BLACK_PAWN : WHITE_PAWN, pos);
-    Move bestMove = 0, currentMove = 0, excluded = NO_MOVE;
+    Move bestMove = 0, currentMove = 0, excluded = NO_MOVE, threat = NO_MOVE;
     int bestScore = -INFINITE, score = -INFINITE, moveCount = 0, extensions = 0;
     bool exact = false, check = checkers, ttHit = false, improving;
     Stack<Move> historyUpdates;
+
+    PieceToHist *threatHist = &threatHistory[NO_PIECE][0];
 
     excluded = stack->excluded;
     (stack+1)->excluded = NO_MOVE;
@@ -219,10 +222,17 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         && beta > -MAXMATE) {
 
         int reduction = std::min(depth, (4 + (stack->staticEval >= beta + 276) + (depth > 6)));
+        
         pos.makeNullMove();
+        
         stack->currMove = NULL_MOVE;
         stack->contHist = &continuationHistory[NO_PIECE][0];
+        (stack+1)->currMove = NO_MOVE;
+        
         int nullScore = -search<NonPvNode>(-beta, -alpha, pos, depth - reduction, si, stack+1);
+        threat = (stack+1)->currMove;
+        threatHist = threatHistory[pos.pieceOn(extract<FROM>(threat)][extract<TO>(threat)];
+        
         pos.unmakeNullMove();
 
         if (nullScore >= beta && nullScore < MAXMATE)
