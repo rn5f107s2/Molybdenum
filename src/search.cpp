@@ -290,7 +290,6 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
 
             if (   stack->currMove 
                 && score > ttScore + 25
-                && score >= beta
                 && ttScore < beta
                 && ttBound == LOWER) {
 
@@ -312,7 +311,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
                 stack->excluded = NO_MOVE;
 
                 if (score < singBeta)
-                    extension = 1;
+                    extensions = 1;
             }
         }
 
