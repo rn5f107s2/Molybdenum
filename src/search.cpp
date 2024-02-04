@@ -289,7 +289,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
                 extensions = 1;
 
             if (   stack->currMove 
-                && score > ttScore
+                && score > ttScore + 25
                 && score >= beta
                 && ttScore < beta
                 && ttBound == LOWER) {
@@ -304,6 +304,15 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
                 pc = pos.pieceOn(from);
 
                 history = (*(stack-1)->contHist)[pc][to] + mainHistory[pos.sideToMove][from][to];
+
+                singBeta = score - 25;
+                stack->excluded = currentMove;
+
+                score = search<nt>(singBeta - 1, singBeta, pos, singDepth, si, stack);
+                stack->excluded = NO_MOVE;
+
+                if (score < singBeta)
+                    extension = 1;
             }
         }
 
