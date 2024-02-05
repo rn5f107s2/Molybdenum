@@ -17,6 +17,18 @@ using ContHist = std::array<std::array<PieceToHist, 64>, 13>;
 
 const int histLimits = 2 << 13;
 
+inline void prefetchTTEntry(Position &pos, int pc, int from, int to, bool capture) {
+    u64 prefetchKey = pos.key();
+    updateKey(pc, from, prefetchKey);
+    updateKey(pc, to, prefetchKey);
+    updateKey(prefetchKey);
+
+    if (capture)
+        updateKey(pos.pieceOn(to), to, prefetchKey);
+
+    __builtin_prefetch(TT.probe(prefetchKey));
+}
+
 inline void updateHistory(FromToHist &history, PieceToHist &contHist, PieceToHist  &contHist2, Move bestMove, Stack<Move> &movesToUpdate, int depth, Position &pos, const bool updateCont, const bool updateCont2) {
     int from = extract<FROM>(bestMove);
     int to   = extract<TO  >(bestMove);

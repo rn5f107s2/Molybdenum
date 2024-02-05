@@ -27,7 +27,7 @@ enum NodeType {
 
 template<NodeType NT>
 int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, SearchStack *stack);
-int qsearch(int alpha, int beta, Position &pos, SearchInfo &si);
+int qsearch(int alpha, int beta, Position &pos, SearchInfo &si, SearchStack *stack);
 
 int startSearch(Position &pos, searchTime &st, int maxDepth, Move &bestMove) {
     return iterativeDeepening(pos, st, maxDepth,bestMove);
@@ -154,7 +154,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         return stack->staticEval;
 
     if (depth <= 0)
-        return qsearch(alpha, beta, pos, si);
+        return qsearch(alpha, beta, pos, si, stack);
 
     if (   !(si.nodeCount & 1023)
         && stop<Hard>(si.st, si))
@@ -291,15 +291,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
                 mp.setPrioMove(stack->currMove);
         }
 
-        u64 prefetchKey = key;
-        updateKey(pc, from, prefetchKey);
-        updateKey(pc, to, prefetchKey);
-        updateKey(prefetchKey);
-
-        if (capture)
-            updateKey(pos.pieceOn(to), to, prefetchKey);
-
-        __builtin_prefetch(TT.probe(prefetchKey));
+        prefetchTTEntry(pos, pc, from, to, capture);
 
         pos.makeMove(currentMove);
         stack->currMove = currentMove;
@@ -382,7 +374,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
     return bestScore;
 }
 
-int qsearch(int alpha, int beta, Position &pos, SearchInfo &si) {
+int qsearch(int alpha, int beta, Position &pos, SearchInfo &si, SearchStack *stack) {
 
 #ifdef TUNE
     std::array<int, 13> PieceValuesSEE = {tune.SEEPawn, tune.SEEKnight, tune.SEEBishop, tune.SEERook, tune.SEEQueen, 0, tune.SEEPawn, tune.SEEKnight, tune.SEEBishop, tune.SEERook, tune.SEEQueen, 0, 0};
@@ -390,7 +382,35 @@ int qsearch(int alpha, int beta, Position &pos, SearchInfo &si) {
 
     Move currentMove;
     int staticEval;
-    int bestScore = staticEval = evaluate(pos);
+
+    stack->plysInSearch = (stack-1)->plysInSearch + 1;
+
+    if (stack->plysInSearch >= MAXDEPTH)
+        return evaluate(pos);
+
+    int ttScore = 0, ttBound = UPPER;
+    bool ttHit = false;
+    u64 key = pos.key();
+    TTEntry* tte = TT.probe(key);
+
+    if (tte->key == key) {
+        ttBound = tte->bound;
+        ttScore = tte->score;
+        ttHit   = true;
+
+        if (ttScore > MAXMATE)
+            ttScore -= stack->plysInSearch;
+        else if (ttScore < -MAXMATE)
+            ttScore += stack->plysInSearch;
+    }
+
+    if (   ttHit
+        && (    ttBound == EXACT
+            || (ttBound == LOWER && ttScore >= beta)
+            || (ttBound == UPPER && ttScore <= alpha)))
+            return ttScore;
+
+    int bestScore = staticEval = evaluate(pos);    
 
     if (bestScore >= beta)
         return bestScore;
@@ -398,18 +418,25 @@ int qsearch(int alpha, int beta, Position &pos, SearchInfo &si) {
     Movepicker mp = Movepicker<true>(&pos, NO_MOVE);
 
     while ((currentMove = mp.pickMove())) {
-        if (   pos.isCapture(currentMove)
-            && staticEval + PieceValuesSEE[pos.pieceOn(extract<TO>(currentMove))] + 137 <= alpha)
+        int from     = extract<FROM>(currentMove);
+        int to       = extract<TO  >(currentMove);
+        int pc       = pos.pieceOn(from);
+        int captured = pos.pieceOn(to);
+
+        if (   captured != NO_PIECE
+            && staticEval + PieceValuesSEE[captured] + 137 <= alpha)
             continue;
 
-        if (   pos.isCapture(currentMove)
+        if (   captured != NO_PIECE
             && !see(pos, -96, currentMove))
             continue;
+
+        prefetchTTEntry(pos, pc, from, to, captured != NO_PIECE);
 
         pos.makeMove(currentMove);
         si.nodeCount++;
 
-        int score = -qsearch(-beta, -alpha, pos, si);
+        int score = -qsearch(-beta, -alpha, pos, si, stack+1);
 
         pos.unmakeMove(currentMove);
 
