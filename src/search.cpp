@@ -236,7 +236,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
                                             &*(stack-2)->contHist, checkers);
     while ((currentMove = mp.pickMove())) {
     
-    if (currentMove == excluded)
+        if (currentMove == excluded)
             continue;
 
         int  from    = extract<FROM>(currentMove);
@@ -272,7 +272,6 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             && ttHit
             && currentMove == ttMove
             && ttBound != UPPER
-            //&& ttScore >= beta
             && ttDepth >= depth - 3
             && !excluded) {
             
@@ -280,11 +279,16 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             int singBeta  = ttScore - 25; 
 
             stack->excluded = ttMove;
+            stack->currMove = NO_MOVE;
             score = search<nt>(singBeta - 1, singBeta, pos, singDepth, si, stack);
             stack->excluded = NO_MOVE;
 
             if (score < singBeta)
                 extensions = 1;
+
+            if (   score > singBeta
+                && stack->currMove) 
+                mp.setPrioMove(stack->currMove);
         }
 
         u64 prefetchKey = key;
