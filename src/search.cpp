@@ -390,6 +390,7 @@ int qsearch(int alpha, int beta, Position &pos, SearchInfo &si, SearchStack *sta
 
     int ttScore = 0, ttBound = UPPER;
     bool ttHit = false;
+    Move ttMove = NO_MOVE;
     u64 key = pos.key();
     TTEntry* tte = TT.probe(key);
 
@@ -397,6 +398,9 @@ int qsearch(int alpha, int beta, Position &pos, SearchInfo &si, SearchStack *sta
         ttBound = tte->bound;
         ttScore = tte->score;
         ttHit   = true;
+
+        if (tte->move && pos.pieceOn(extract<TO>(tte->move)) != NO_PIECE)
+            ttMove = tte->move;
 
         if (ttScore > MAXMATE)
             ttScore -= stack->plysInSearch;
@@ -415,7 +419,7 @@ int qsearch(int alpha, int beta, Position &pos, SearchInfo &si, SearchStack *sta
     if (bestScore >= beta)
         return bestScore;
 
-    Movepicker mp = Movepicker<true>(&pos, NO_MOVE);
+    Movepicker mp = Movepicker<true>(&pos, ttMove);
 
     while ((currentMove = mp.pickMove())) {
         int from     = extract<FROM>(currentMove);
