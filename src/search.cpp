@@ -219,10 +219,14 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         && beta > -MAXMATE) {
 
         int reduction = std::min(depth, (4 + (stack->staticEval >= beta + 276) + (depth > 6)));
+
         pos.makeNullMove();
+
         stack->currMove = NULL_MOVE;
         stack->contHist = &continuationHistory[NO_PIECE][0];
+
         int nullScore = -search<NonPvNode>(-beta, -alpha, pos, depth - reduction, si, stack+1);
+
         pos.unmakeNullMove();
 
         if (nullScore >= beta && nullScore < MAXMATE)
@@ -272,6 +276,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             && ttHit
             && currentMove == ttMove
             && ttBound != UPPER
+            && moveCount == 0
             && ttDepth >= depth - 3
             && !excluded) {
             
@@ -288,7 +293,24 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
 
             if (   score > singBeta
                 && stack->currMove) 
-                mp.setPrioMove(stack->currMove);
+            {
+                if (   score < beta
+                    || ttScore >= beta
+                    || ttBound == EXACT) {
+                    mp.setPrioMove(stack->currMove);
+                } else {
+                    mp.setPrioMove(ttMove);
+
+                    currentMove = stack->currMove;
+
+                    from    = extract<FROM>(currentMove);
+                    to      = extract<TO>(currentMove);
+                    capture = pos.isCapture(currentMove);
+                    pc = pos.pieceOn(from);
+
+                    history = (*(stack-1)->contHist)[pc][to] + mainHistory[pos.sideToMove][from][to];
+                }
+            }
         }
 
         prefetchTTEntry(pos, pc, from, to, capture);
