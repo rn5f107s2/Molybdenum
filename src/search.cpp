@@ -134,8 +134,8 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
     u64 ksq = pos.getPieces(pos.sideToMove, KING);
     u64 checkers = attackersTo<false, false>(lsb(ksq),pos.getOccupied(), pos.sideToMove ? BLACK_PAWN : WHITE_PAWN, pos);
     Move bestMove = 0, currentMove = 0, excluded = NO_MOVE;
-    int bestScore = -INFINITE, score = -INFINITE, moveCount = 0, extensions = 0;
-    bool exact = false, check = checkers, ttHit = false, improving;
+    int bestScore = -INFINITE, score = -INFINITE, moveCount = 0, extensions = 0, probCutBeta = beta + 200;
+    bool exact = false, check = checkers, ttHit = false, improving, doProbCut = false, ttFineForProb = true;
     Stack<Move> historyUpdates;
 
     excluded = stack->excluded;
@@ -186,6 +186,8 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         ttDepth = tte->depth;
         ttScore = tte->score;
         ttHit   = true;
+
+        ttFineForProb = ttScore >= probCutBeta && (!ttMove || pos.pieceOn(extract<TO>(ttMove) != NO_PIECE));
 
         if (ttScore > MAXMATE)
             ttScore -= stack->plysInSearch;
@@ -244,6 +246,12 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         bool capture = pos.isCapture(currentMove);
         Piece pc = pos.pieceOn(from);
 
+        doProbCut =    !PvNode 
+                    && ttFineForProb 
+                    && depth > 5 
+                    && capture 
+                    && see(pos, probCutBeta - stack->staticEval, currentMove);
+
         int reductions = lmrReduction(depth, moveCount, improving);
         int expectedDepth = std::max(depth - reductions, 1);
         int history = (*(stack-1)->contHist)[pc][to] + mainHistory[pos.sideToMove][from][to];
@@ -298,6 +306,15 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         stack->contHist = &continuationHistory[pc][to];
         si.nodeCount++;
         moveCount++;
+
+        if (doProbCut) {
+            score = -search<NonPvNode>(-probCutBeta - 1, -probCutBeta, pos, depth - 4, si, stack+1);
+
+            if (score >= probCutBeta) {
+                pos.unmakeMove(currentMove);
+                return score;
+            }
+        }
 
         history += (*(stack-2)->contHist)[pc][to];
 
