@@ -296,6 +296,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             {
                 if (   score < beta
                     || ttScore >= beta
+                    || ttScore > (score - 5 * depth / 2)
                     || ttBound == EXACT) {
                     mp.setPrioMove(stack->currMove);
                 } else {
@@ -306,7 +307,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
                     from    = extract<FROM>(currentMove);
                     to      = extract<TO>(currentMove);
                     capture = pos.isCapture(currentMove);
-                    pc = pos.pieceOn(from);
+                    pc      = pos.pieceOn(from);
 
                     history = (*(stack-1)->contHist)[pc][to] + mainHistory[pos.sideToMove][from][to];
                 }
