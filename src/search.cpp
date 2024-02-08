@@ -271,6 +271,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         if (   depth >= 8
             && ttHit
             && currentMove == ttMove
+            && moveCount == 0
             && ttBound != UPPER
             && ttDepth >= depth - 3
             && !excluded) {
@@ -286,9 +287,42 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             if (score < singBeta)
                 extensions = 1;
 
-            if (   score > singBeta
-                && stack->currMove) 
-                mp.setPrioMove(stack->currMove);
+            if (score > singBeta) {
+                if (stack->currMove) {
+                    mp.setPrioMove(stack->currMove);
+
+                    if (!PvNode) {
+                        prefetchTTEntry(pos, 
+                                        pos.pieceOn(extract<FROM>(stack->currMove)), 
+                                        extract<FROM>(stack->currMove), 
+                                        extract<TO>(stack->currMove), 
+                                        pos.isCapture(stack->currMove));
+
+                        pos.makeMove(stack->currMove);
+
+                        score = -search<NonPvNode>(-ttScore - 1, -ttScore, pos, ttDepth, si, stack+1);
+
+                        pos.unmakeMove(stack->currMove);
+
+                        if (score >= ttScore) {
+                            if (ttScore >= beta)
+                                return beta;
+                            else {
+                                mp.setPrioMove(ttMove);
+
+                                currentMove = stack->currMove;
+
+                                from    = extract<FROM>(currentMove);
+                                to      = extract<TO>(currentMove);
+                                capture = pos.isCapture(currentMove);
+                                pc      = pos.pieceOn(from);
+
+                                history = (*(stack-1)->contHist)[pc][to] + mainHistory[pos.sideToMove][from][to];
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         prefetchTTEntry(pos, pc, from, to, capture);
