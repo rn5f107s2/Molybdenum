@@ -6,13 +6,13 @@
 #include "MagicBitboards.h"
 #include "Move.h"
 
-enum TTBound {
+enum TTBound : uint8_t {
     UPPER, LOWER, EXACT
 };
 
 struct TTEntry {
     int score;
-    int depth;
+    uint8_t depth;
     TTBound bound;
     Move move;
     u64 key;
