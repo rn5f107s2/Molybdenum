@@ -80,7 +80,7 @@ int iterativeDeepening(Position  &pos, searchTime &st, int maxDepth, [[maybe_unu
         for (int i = 0; i < pvLength[0]; i++)
             uciOutput += moveToString(pvMoves[0][i]) + " ";
 
-        std::cout << uciOutput << "\n";
+        std::cout << uciOutput << std::endl;
 
         if (stop<Soft>(st, si))
             break;
