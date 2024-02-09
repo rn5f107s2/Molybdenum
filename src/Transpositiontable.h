@@ -7,7 +7,7 @@
 #include "Move.h"
 
 enum TTBound {
-    LOWER, UPPER, EXACT
+    UPPER, LOWER, EXACT
 };
 
 struct TTEntry {
