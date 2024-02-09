@@ -37,6 +37,11 @@ void TranspositionTable::save(TTEntry *tte, u64 key, int score, TTBound bound, M
         && depth + bound < tte->depth + tte->bound - 3)
         return;
 
+    if (   tte->key != key
+        && key != 0
+        && bound == UPPER && depth < 5)
+        return;
+
     tte->key = key;
     tte->move = move;
     tte->bound = bound;
