@@ -134,7 +134,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
     u64 ksq = pos.getPieces(pos.sideToMove, KING);
     u64 checkers = attackersTo<false, false>(lsb(ksq),pos.getOccupied(), pos.sideToMove ? BLACK_PAWN : WHITE_PAWN, pos);
     Move bestMove = 0, currentMove = 0, excluded = NO_MOVE;
-    int bestScore = -INFINITE, score = -INFINITE, moveCount = 0, extensions = 0;
+    int bestScore = -INFINITE, score = -INFINITE, moveCount = 0;
     bool exact = false, check = checkers, ttHit = false, improving;
     Stack<Move> historyUpdates;
 
@@ -244,6 +244,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         bool capture = pos.isCapture(currentMove);
         Piece pc = pos.pieceOn(from);
 
+        int extensions = 0;
         int reductions = lmrReduction(depth, moveCount, improving);
         int expectedDepth = std::max(depth - reductions, 1);
         int history = (*(stack-1)->contHist)[pc][to] + mainHistory[pos.sideToMove][from][to];
