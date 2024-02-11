@@ -251,7 +251,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         if (   !capture
             && bestScore > -MAXMATE
             && depth <= 4
-            && moveCount > 11 * depth)
+            && moveCount > (11 * depth - std::clamp((alpha - stack->staticEval) / 50, 0, 5)))
             continue;
 
         if (   !PvNode
