@@ -174,7 +174,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         && MATE - stack->plysInSearch <= alpha)
         return alpha;
 
-    int ttScore = 0, ttBound = UPPER, ttDepth = 0;
+    int ttScore = 0, ttBound = EXACT, ttDepth = 0;
     Move ttMove = NO_MOVE;
     u64 key = pos.key();
     TTEntry* tte = TT.probe(key);
@@ -301,6 +301,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
 
         history += (*(stack-2)->contHist)[pc][to];
 
+        reductions += ttBound == UPPER;
         reductions -= PvNode;
 
         reductions -= history > 0 ? history / 4085 : history / 25329;
