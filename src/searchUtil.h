@@ -3,6 +3,7 @@
 
 #include <array>
 #include "Move.h"
+#include "Movegen.h"
 
 #ifdef TUNE
 #include "tune.h"
