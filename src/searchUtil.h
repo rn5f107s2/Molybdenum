@@ -48,11 +48,11 @@ inline void updateHistory(FromToHist &history, PieceToHist &contHist, PieceToHis
         to   = extract<TO  >(move);
         pc   = pos.pieceOn(from);
 
-        history[from][to] += malus - history [from][to] * abs(malus) / 65536;
+        history[from][to] += malus - history [from][to] * abs(malus) / histLimits;
         if (updateCont)
-            contHist[pc][to] += malus - contHist[pc][to] * abs(malus) / 65536;
+            contHist[pc][to] += malus - contHist[pc][to] * abs(malus) / histLimits;
         if (updateCont2)
-            contHist2[pc][to] += malus - contHist2[pc][to] * abs(malus) / 65536;
+            contHist2[pc][to] += malus - contHist2[pc][to] * abs(malus) / histLimits;
     }
 }
 
