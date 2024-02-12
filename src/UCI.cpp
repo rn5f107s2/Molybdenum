@@ -26,7 +26,7 @@ void uciCommunication(const std::string& in) {
         std::cerr << "No Outputfile provided\n";
         return;
     } else {
-        readNetwork("ne3s23p6.nnue");
+        loadDefaultNet();
         start(internalBoard, in);
     }
 #endif
