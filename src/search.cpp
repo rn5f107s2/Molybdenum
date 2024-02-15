@@ -146,7 +146,9 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
     
     stack->plysInSearch = ROOT ? 0 : (stack-1)->plysInSearch + 1;
     improving = stack->staticEval > (stack-2)->staticEval;
-    pvLength[stack->plysInSearch] = stack->plysInSearch;
+
+    if (PvNode)
+        pvLength[stack->plysInSearch] = stack->plysInSearch;
 
     depth += check;
 
@@ -235,15 +237,15 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
 
     if (    PvNode
         && !ttMove
-        && depth >= 2) {
+        && depth > 5) {
         
         ttDepth = depth / 2;
         ttHit   = true;
         stack->currMove = NO_MOVE;
 
-        ttScore = search<NonPvNode>(alpha, alpha + 1, pos, ttDepth, si, stack)
-
+        ttScore = search<PVNode>(alpha, alpha + 1, pos, ttDepth, si, stack);
         ttMove  = stack->currMove;
+        
         ttBound = score > alpha ? LOWER : UPPER;
     }
 
