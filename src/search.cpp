@@ -219,14 +219,32 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         && beta > -MAXMATE) {
 
         int reduction = std::min(depth, (4 + (stack->staticEval >= beta + 276) + (depth > 6)));
+
         pos.makeNullMove();
+
         stack->currMove = NULL_MOVE;
         stack->contHist = &continuationHistory[NO_PIECE][0];
+
         int nullScore = -search<NonPvNode>(-beta, -alpha, pos, depth - reduction, si, stack+1);
+
         pos.unmakeNullMove();
 
         if (nullScore >= beta && nullScore < MAXMATE)
             return nullScore;
+    }
+
+    if (    PvNode
+        && !ttMove
+        && depth >= 2) {
+        
+        ttDepth = depth / 2;
+        ttHit   = true;
+        stack->currMove = NO_MOVE;
+
+        ttScore = search<NonPvNode>(alpha, alpha + 1, pos, ttDepth, si, stack)
+
+        ttMove  = stack->currMove;
+        ttBound = score > alpha ? LOWER : UPPER;
     }
 
     Movepicker mp = Movepicker<false>(&pos, ttMove, 
