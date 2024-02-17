@@ -1,7 +1,12 @@
 #ifndef MOLYBDENUM_TUNE_H
 #define MOLYBDENUM_TUNE_H
 
-//#define TUNE
+//#define TUNESEARCH
+#define TUNETIME
+
+#if defined(TUNESEARCH) || defined(TUNETIME) 
+#define TUNE
+#endif
 
 #ifdef TUNE
 
@@ -22,6 +27,8 @@ struct Tune {
     int QsSEEMargin, QsDeltaMargin;
     int HistDepthMult, HistMax, HistLimit;
     int SEEPawn, SEEKnight, SEEBishop, SEERook, SEEQueen;
+    
+    float TimeleftMultHard, IncrementMultHard, SoftMult;
 };
 
 class TuneOptions: public UCIOptions {
@@ -81,6 +88,7 @@ extern TuneOptions tuneOptions;
 extern Tune tune;
 
 inline void TuneOptions::init() {
+#ifdef TUNESEARCH
     TUNEFLOAT(LMRBase, 0.75, 0.01, 4)
     TUNEFLOAT(LMRDiv, 2.19, 0.01, 8)
     TUNEFLOAT(LMRImproving, 0.55, 0, 2)
@@ -124,6 +132,12 @@ inline void TuneOptions::init() {
     TUNEINT(SEEBishop, 281, 1, 1200)
     TUNEINT(SEERook, 538, 1, 1200)
     TUNEINT(SEEQueen, 972, 1, 1200)
+#endif
+#ifdef TUNETIME
+    TUNEFLOAT(TimeleftMultHard, 0.2, 0.05, 0.5);
+    TUNEFLOAT(IncrementMultHard, 0.5, 0.1, 1);
+    TUNEFLOAT(SoftMult, 0.25, 0.1, 1);
+#endif
 
     initialized = true;
 }

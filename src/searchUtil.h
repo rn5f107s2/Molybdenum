@@ -7,7 +7,7 @@
 
 #include "tune.h"
 
-#ifdef TUNE
+#ifdef TUNESEARCH
 extern Tune tune;
 #endif
 
@@ -57,13 +57,13 @@ inline void updateHistory(FromToHist &history, PieceToHist &contHist, PieceToHis
     }
 }
 
-#ifndef TUNE
+#ifndef TUNESEARCH
     static const std::array<int, 13> PieceValuesSEE = {81, 257, 325, 491, 972, 0, 81, 257, 325, 491, 972, 0, 0};
 #endif
 
 inline bool see(Position &pos, int threshold, Move move) {
 
-#ifdef TUNE
+#ifdef TUNESEARCH
     std::array<int, 13> PieceValuesSEE = {tune.SEEPawn, tune.SEEKnight, tune.SEEBishop, tune.SEERook, tune.SEEQueen, 0, tune.SEEPawn, tune.SEEKnight, tune.SEEBishop, tune.SEERook, tune.SEEQueen, 0, 0};
 #endif
 

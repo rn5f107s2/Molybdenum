@@ -11,7 +11,7 @@
 
 #include "tune.h"
 
-#ifdef TUNE
+#ifdef TUNESEARCH
 extern Tune tune;
 #endif
 

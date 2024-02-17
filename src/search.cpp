@@ -18,7 +18,7 @@ u64 benchNodes = 0;
 
 #include "tune.h"
 
-#ifdef TUNE
+#ifdef TUNESEARCH
 Tune tune;
 #endif
 
@@ -378,7 +378,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
 
 int qsearch(int alpha, int beta, Position &pos, SearchInfo &si, SearchStack *stack) {
 
-#ifdef TUNE
+#ifdef TUNESEARCH
     std::array<int, 13> PieceValuesSEE = {tune.SEEPawn, tune.SEEKnight, tune.SEEBishop, tune.SEERook, tune.SEEQueen, 0, tune.SEEPawn, tune.SEEKnight, tune.SEEBishop, tune.SEERook, tune.SEEQueen, 0, 0};
 #endif
 
