@@ -16,8 +16,9 @@ std::array<int, MAXDEPTH> pvLength;
 
 u64 benchNodes = 0;
 
-#ifdef TUNE
 #include "tune.h"
+
+#ifdef TUNE
 Tune tune;
 #endif
 

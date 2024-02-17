@@ -1,11 +1,13 @@
 #include <string>
 #include <iostream>
+#include <chrono>
+
+#include "tune.h"
 #include "UCI.h"
 #include "Position.h"
 #include "BitStuff.h"
 #include "Perft.h"
 #include "search.h"
-#include <chrono>
 #include "eval.h"
 #include "timemanagement.h"
 #include "UCIOptions.h"
@@ -14,6 +16,10 @@
 #include "Datagen/Datagen.h"
 
 UCIOptions options;
+
+#ifdef TUNE
+TuneOptions tuneOptions;
+#endif
 
 const std::string name = "Molybdenum";
 const std::string version = "2.1";

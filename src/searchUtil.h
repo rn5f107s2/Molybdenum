@@ -5,9 +5,9 @@
 #include "Move.h"
 #include "Movegen.h"
 
-#ifdef TUNE
 #include "tune.h"
 
+#ifdef TUNE
 extern Tune tune;
 #endif
 
