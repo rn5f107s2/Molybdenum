@@ -149,6 +149,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
     improving = stack->staticEval > (stack-2)->staticEval;
     whatAreYouDoing = (stack->staticEval + (stack-1)->staticEval) > 0;
     pvLength[stack->plysInSearch] = stack->plysInSearch;
+    stack->quarterRed = 0;
 
     depth += check;
 
@@ -246,7 +247,9 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         bool capture = pos.isCapture(currentMove);
         Piece pc = pos.pieceOn(from);
 
-        int reductions = lmrReduction(depth, moveCount, improving);
+        float red = lmrReduction(depth, moveCount, improving);
+
+        int reductions = int(red);
         int expectedDepth = std::max(depth - reductions, 1);
         int history = (*(stack-1)->contHist)[pc][to] + mainHistory[pos.sideToMove][from][to];
 
@@ -301,9 +304,12 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         si.nodeCount++;
         moveCount++;
 
+        stack->quarterRed = int((red - reductions) * 4);
+
         history += (*(stack-2)->contHist)[pc][to];
 
         reductions -= PvNode;
+        reductions += ((stack-1)->quarterRed + stack->quarterRed) / 4;
 
         reductions -= history > 0 ? history / 4085 : history / 25329;
         reductions = std::max(reductions, 0);
