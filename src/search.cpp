@@ -246,8 +246,9 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         bool capture = pos.isCapture(currentMove);
         Piece pc = pos.pieceOn(from);
 
-        int reductions = lmrReduction(depth, moveCount, improving);
-        int expectedDepth = std::max(depth - reductions, 1);
+        double red = lmrReduction(depth, moveCount, improving);
+        double expectedDepth = std::max(depth - red, 1.0);
+        int reductions = int(red);
         int history = (*(stack-1)->contHist)[pc][to] + mainHistory[pos.sideToMove][from][to];
 
         if (   !capture
