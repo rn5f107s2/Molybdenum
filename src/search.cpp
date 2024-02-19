@@ -138,6 +138,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
     int bestScore = -INFINITE, score = -INFINITE, moveCount = 0, extensions = 0;
     bool exact = false, check = checkers, ttHit = false, improving, whatAreYouDoing;
     Stack<Move> historyUpdates;
+    stack->fractionalReductions = 0;
 
     excluded = stack->excluded;
     (stack+1)->excluded = NO_MOVE;
@@ -246,9 +247,11 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         bool capture = pos.isCapture(currentMove);
         Piece pc = pos.pieceOn(from);
 
-        int reductions = lmrReduction(depth, moveCount, improving);
+        int red        = lmrReduction(depth, moveCount, improving);
+        int reductions = red / DEPTHGRAIN;
         int expectedDepth = std::max(depth - reductions, 1);
         int history = (*(stack-1)->contHist)[pc][to] + mainHistory[pos.sideToMove][from][to];
+        stack->fractionalReductions = red - (reductions * DEPTHGRAIN);
 
         if (   !capture
             && bestScore > -MAXMATE
@@ -304,6 +307,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         history += (*(stack-2)->contHist)[pc][to];
 
         reductions -= PvNode;
+        reductions += (stack->fractionalReductions + (stack-1)->fractionalReductions) / DEPTHGRAIN;
 
         reductions -= history > 0 ? history / 4085 : history / 25329;
         reductions = std::max(reductions, 0);
