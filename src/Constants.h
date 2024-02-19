@@ -78,6 +78,6 @@ constexpr int INFINITE   = 200000;
 constexpr int MATE       = 100000;
 constexpr int MAXMATE    = MATE - MAXDEPTH;
 constexpr int DRAW       = 0;
-constexpr int DEPTHGRAIN = 32;
+constexpr int DEPTHGRAIN = 4;
 
 #endif //MOLYBDENUM_CONSTANTS_H
