@@ -252,7 +252,8 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         int expectedDepth = std::max(depth - reductions, 1);
         int history = (*(stack-1)->contHist)[pc][to] + mainHistory[pos.sideToMove][from][to];
 
-        if (   !capture
+        if (   !PvNode
+            && !capture
             && bestScore > -MAXMATE
             && depth <= 4
             && moveCount > 11 * depth)
