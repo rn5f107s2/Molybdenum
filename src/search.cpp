@@ -262,7 +262,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             && !capture
             && bestScore > -MAXMATE
             && depth <= 7
-            && stack->staticEval + 188 + 203 * expectedDepth <= alpha)
+            && stack->staticEval + 188 + 203 * expectedDepth - (203 * quarterRed) / 4 <= alpha)
             continue;
 
         if (   !PvNode
