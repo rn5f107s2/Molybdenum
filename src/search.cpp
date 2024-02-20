@@ -139,6 +139,8 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
     bool exact = false, check = checkers, ttHit = false, improving, whatAreYouDoing;
     Stack<Move> historyUpdates;
 
+    stack->quarterRed = 0;
+
     excluded = stack->excluded;
     (stack+1)->excluded = NO_MOVE;
 
@@ -248,14 +250,14 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
 
         double red = lmrReduction(depth, moveCount, improving);
         int reductions = int(red);
-        int quarterRed = (red - reductions) * 4;
+        stack->quarterRed = (red - reductions) * 4;
         int expectedDepth = std::max(depth - reductions, 1);
         int history = (*(stack-1)->contHist)[pc][to] + mainHistory[pos.sideToMove][from][to];
 
         if (   !capture
             && bestScore > -MAXMATE
             && depth <= 4
-            && moveCount > 11 * depth)
+            && moveCount > 11 * depth - ((stack-1)->quarterRed * 11) / 4)
             continue;
 
         if (   !PvNode
@@ -269,7 +271,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             && bestScore > -MAXMATE
             && !capture
             && depth <= 5
-            && history < -6009 * expectedDepth - (-6009 * quarterRed) / 4)
+            && history < -6009 * expectedDepth - (-6009 * stack->quarterRed) / 4)
             continue;
 
         if (   depth >= 8
