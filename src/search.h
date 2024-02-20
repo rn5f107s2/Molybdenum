@@ -41,15 +41,16 @@ void clearHistory();
 inline std::array<double, 256> initReductions() {
     std::array<double, 256> R{};
 
-    for (int i = 0; i < 256; i++) R[i] = std::log(i);
+    for (int i = 1; i < 256; i++) R[i] = std::log(i);
+    R[0] = 0;
 
     return R;
 }
 
 static std::array<double, 256> Log = initReductions();
 
-inline int lmrReduction(int depth, int movecount, bool improving) {
-    return int(0.66 + !improving * 0.49 + Log[depth] * Log[movecount] / 2.02);
+inline double lmrReduction(int depth, int movecount, bool improving) {
+    return 0.66 + !improving * 0.49 + Log[depth] * Log[movecount] / 2.02;
 }
 
 inline int mateInPlies(int score) {
