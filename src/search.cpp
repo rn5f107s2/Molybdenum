@@ -269,7 +269,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             && bestScore > -MAXMATE
             && !capture
             && depth <= 5
-            && history < -6009 * expectedDepth - (-6009 * quarterRed) / 4)
+            && history < -6009 * expectedDepth)
             continue;
 
         if (   depth >= 8
