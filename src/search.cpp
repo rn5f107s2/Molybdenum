@@ -293,8 +293,13 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
                 extensions = 1;
 
             if (   score > singBeta
-                && stack->currMove) 
+                && stack->currMove)
+            { 
                 mp.setPrioMove(stack->currMove);
+
+                if (!PvNode && singBeta >= beta)
+                    return beta;
+            }
         }
 
         prefetchTTEntry(pos, pc, from, to, capture);
