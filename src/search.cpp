@@ -214,7 +214,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         && depth < 10
         && eval - (101 * depth - 180 * improving - 40 * whatAreYouDoing) >= beta
         && eval >= beta)
-        return eval
+        return eval;
 
     if (   !PvNode
         && !check
