@@ -302,7 +302,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             if (   (score > stack->staticEval && score > singBeta)
                 || (score < stack->staticEval && score < singBeta))
             {
-                movesLoppEval = score;
+                movesLoppEval = std::clamp(score, stack->staticEval - 100, stack->staticEval + 100);
             }
         }
 
