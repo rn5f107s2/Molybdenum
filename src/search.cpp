@@ -238,6 +238,9 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
                                             &mainHistory[pos.sideToMove], 
                                             &*(stack-1)->contHist, 
                                             &*(stack-2)->contHist, checkers);
+
+    int movesLoppEval = stack->staticEval;
+
     while ((currentMove = mp.pickMove())) {
     
         if (currentMove == excluded)
@@ -264,7 +267,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             && !capture
             && bestScore > -MAXMATE
             && depth <= 7
-            && stack->staticEval + 188 + 203 * expectedDepth  - (203 * stack->quarterRed) / 4 <= alpha)
+            && stack->staticEval + 188 + 203 * movesLoppEval  - (203 * stack->quarterRed) / 4 <= alpha)
             continue;
 
         if (   !PvNode
@@ -295,6 +298,12 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             if (   score > singBeta
                 && stack->currMove) 
                 mp.setPrioMove(stack->currMove);
+
+            if (   (score > stack->staticEval && score > singBeta)
+                || (score < stack->staticEval && score < singBeta))
+            {
+                movesLoppEval = score;
+            }
         }
 
         prefetchTTEntry(pos, pc, from, to, capture);
