@@ -252,7 +252,9 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         int reductions = int(red);
         stack->quarterRed = (red - reductions) * 4;
         int expectedDepth = std::max(depth - reductions, 1);
-        int history = (*(stack-1)->contHist)[pc][to] + mainHistory[pos.sideToMove][from][to];
+        int history =   mainHistory[pos.sideToMove][from][to];
+                      + (*(stack-2)->contHist)[pc][to];
+                      + (*(stack-1)->contHist)[pc][to];
 
         if (   !capture
             && bestScore > -MAXMATE
@@ -304,8 +306,6 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         stack->contHist = &continuationHistory[pc][to];
         si.nodeCount++;
         moveCount++;
-
-        history += (*(stack-2)->contHist)[pc][to];
 
         reductions -= PvNode;
 
