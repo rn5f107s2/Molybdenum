@@ -61,8 +61,8 @@ inline int mateInPlies(int score) {
 }
 
 template<LimitType LT> inline
-bool stop(searchTime &st, SearchInfo &si) {
-    return    (std::chrono::steady_clock::now() > (si.st.searchStart + si.st.thinkingTime[LT]) && st.limit == Time)
+bool stop(searchTime &st, SearchInfo &si, double mult = 1) {
+    return    (std::chrono::steady_clock::now() > (si.st.searchStart + si.st.thinkingTime[LT] * (LT == Soft ? mult : 1)) && st.limit == Time)
               || (st.limit == Nodes && si.nodeCount >= st.nodeLimit);
 }
 

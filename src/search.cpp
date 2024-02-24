@@ -46,6 +46,8 @@ void clearHistory() {
 int iterativeDeepening(Position  &pos, searchTime &st, int maxDepth, [[maybe_unused]] Move &bestMove) {
     int score = 0;
     int prevScore = 0;
+    int bestMoveCount = 0;
+    Move bm = NO_MOVE;
     SearchInfo si;
     si.st = st;
 
@@ -83,7 +85,16 @@ int iterativeDeepening(Position  &pos, searchTime &st, int maxDepth, [[maybe_unu
 
         std::cout << uciOutput << std::endl;
 
-        if (stop<Soft>(st, si))
+        bestMoveCount++;
+
+        if (si.bestRootMove != bm)
+            bestMoveCount = 0;
+
+        bm = si.bestRootMove;
+
+        double mult = std::clamp(1.3 - (0.5 * bestMoveCount), 0.6, 1.0);
+
+        if (stop<Soft>(st, si, mult))
             break;
     }
 
