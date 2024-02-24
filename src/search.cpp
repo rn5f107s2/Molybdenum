@@ -102,7 +102,7 @@ int aspirationWindow(int prevScore, Position &pos, SearchInfo &si, int depth) {
     int alpha = -INFINITE;
     int beta  =  INFINITE;
 
-    if (depth >= 2) {
+    if (depth >= 6) {
         alpha = std::max(-INFINITE, prevScore - delta);
         beta  = std::min( INFINITE, prevScore + delta);
     }
