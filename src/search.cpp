@@ -210,6 +210,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         && !check
         && !excluded
         && depth < 10
+        && (!ttHit || ttScore >= beta)
         && stack->staticEval - (101 * depth - 180 * improving - 40 * whatAreYouDoing) >= beta
         && stack->staticEval >= beta)
         return stack->staticEval;
