@@ -114,7 +114,7 @@ int aspirationWindow(int prevScore, Position &pos, SearchInfo &si, int depth) {
     int score = search<Root>(alpha, beta, pos, depth, si, &stack[2]);
 
     while ((score >= beta || score <= alpha) && !stop<Hard>(si.st, si)) {
-        delta *= 3.72;
+        delta *= 1.24;
 
         if (score >= beta)
             beta = std::max(score + delta, INFINITE);
