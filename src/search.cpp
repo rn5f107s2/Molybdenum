@@ -98,7 +98,7 @@ int iterativeDeepening(Position  &pos, searchTime &st, int maxDepth, [[maybe_unu
 }
 
 int aspirationWindow(int prevScore, Position &pos, SearchInfo &si, int depth) {
-    int delta = std::clamp(81 - depth * depth, 28, 34);
+    int delta = 30;
     int alpha = -INFINITE;
     int beta  =  INFINITE;
 
