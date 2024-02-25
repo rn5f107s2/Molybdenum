@@ -215,6 +215,16 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         return stack->staticEval;
 
     if (   !PvNode
+        && stack->staticEval < alpha - 200 * depth
+        && (!ttHit || ttScore < alpha)) {
+
+        score = qsearch(alpha, alpha + 1, pos, si, stack);
+
+        if (score <= alpha)
+            return score;
+    }
+
+    if (   !PvNode
         && !check
         && !excluded
         && depth >= 2
