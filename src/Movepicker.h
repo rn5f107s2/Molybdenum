@@ -36,7 +36,9 @@ class Movepicker {
         ScoredMove *currentMove = nullptr;
         ScoredMove *endMoveList = nullptr;
         bool scored = false;
+        bool searchedTT = false;
         bool searchedPrio = true;
+        u64 checkers;
 
     public:
         Movepicker(Position *p, Move ttm, 
@@ -44,7 +46,7 @@ class Movepicker {
                       FromToHist  *main  = &emptyMain, 
                       PieceToHist *cont1 = &emptyCont, 
                       PieceToHist *cont2 = &emptyCont, 
-                      u64 checkers = 0ULL) 
+                      u64 check = 0ULL) 
         {
             ttMove = ttm; 
             killers = k; 
@@ -52,11 +54,7 @@ class Movepicker {
             contHist1 = cont1; 
             contHist2 = cont2;
             pos = p;
-
-            generateMoves<qsearch>(*pos, ml, checkers);
-
-            currentMove = &ml.moves[0];
-            endMoveList = &ml.moves[ml.length];;
+            checkers = check;
         }
 
         inline Move scoreMoves() {
@@ -107,7 +105,7 @@ class Movepicker {
             int bestScore = std::numeric_limits<int>::min();
 
 
-            for (ScoredMove* i = currentMove; i != endMoveList; i++) {
+            for (ScoredMove* i = currentMove; i < endMoveList; i++) {
                 if (i->score > bestScore) {
                     bestScore = i->score;
                     best = i;
@@ -128,8 +126,26 @@ class Movepicker {
                 return prioMove;
             }
 
-            if (!scored && (scored = true))
-                return scoreMoves();
+            if (   ttMove 
+                && !searchedTT
+                && (searchedTT = true)
+                && pos->isLegal(ttMove)) {
+
+                return ttMove;
+            }
+
+            if (!scored && (scored = true)) {
+
+                generateMoves<qsearch>(*pos, ml, checkers);
+
+                currentMove = &ml.moves[0];
+                endMoveList = &ml.moves[ml.length];
+
+                Move next = scoreMoves();
+                
+                if (next != ttMove)
+                    return next;
+            }
 
             if (currentMove == endMoveList)
                 return NO_MOVE;
