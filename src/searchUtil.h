@@ -58,7 +58,7 @@ inline void updateHistory(FromToHist &history, PieceToHist &contHist, PieceToHis
 }
 
 #ifndef TUNE
-    static const std::array<int, 13> PieceValuesSEE = {81, 257, 325, 491, 972, 0, 81, 257, 325, 491, 972, 0, 0};
+    static const std::array<int, 13> PieceValuesSEE = {243, 771, 975, 1473, 2916, 0, 243, 771, 975, 1473, 2916, 0, 0};
 #endif
 
 inline bool see(Position &pos, int threshold, Move move) {
