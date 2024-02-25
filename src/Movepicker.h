@@ -36,6 +36,7 @@ class Movepicker {
         ScoredMove *currentMove = nullptr;
         ScoredMove *endMoveList = nullptr;
         bool scored = false;
+        bool triedTT = false;
         bool searchedTT = false;
         bool searchedPrio = true;
         u64 checkers;
@@ -127,9 +128,11 @@ class Movepicker {
             }
 
             if (   ttMove 
-                && !searchedTT
-                && (searchedTT = true)
+                && !triedTT
+                && (triedTT = true)
                 && pos->isLegal(ttMove)) {
+
+                searchedTT = true;
 
                 return ttMove;
             }
@@ -143,7 +146,7 @@ class Movepicker {
 
                 Move next = scoreMoves();
                 
-                if (next != ttMove)
+                if (next != ttMove || !searchedTT)
                     return next;
             }
 
