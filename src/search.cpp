@@ -233,6 +233,17 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             return nullScore;
     }
 
+    if (   PvNode
+        && depth >= 5
+        && !ttMove)
+    {
+        stack->currMove = NO_MOVE;
+
+        search<PVNode>(alpha, alpha + 1, pos, depth - 4, si, stack);
+
+        ttMove = stack->currMove;
+    }
+
     Movepicker mp = Movepicker<false>(&pos, ttMove, 
                                             &killers[stack->plysInSearch], 
                                             &mainHistory[pos.sideToMove], 
