@@ -217,7 +217,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             if (stack->staticEval >= futilityMargin)
                 return stack->staticEval;
 
-            futilityMargin += 100;
+            futilityMargin = std::max((depth - 1) * 100 - 50 * improving, beta);
 
             score = qsearch(futilityMargin - 1, futilityMargin, pos, si, stack);
 
