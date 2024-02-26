@@ -217,7 +217,11 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             if (stack->staticEval >= futilityMargin)
                 return stack->staticEval;
 
-            if (stack->staticEval + 200 >= futilityMargin) {
+
+            if (stack->staticEval + 100 >= futilityMargin) {
+
+                futilityMargin += 100;
+
                 score = qsearch(futilityMargin - 1, futilityMargin, pos, si, stack);
 
                 if (score >= futilityMargin)
