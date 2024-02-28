@@ -219,7 +219,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
 
             futilityMargin += 200;
 
-            if (!ttHit || ttScore >= futilityMargin || ttBound == LOWER) {
+            if (depth < 5) {
                 score = qsearch(futilityMargin - 1, futilityMargin, pos, si, stack);
 
                 if (score >= futilityMargin)
