@@ -219,10 +219,12 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
 
             futilityMargin += 200;
 
-            score = qsearch(futilityMargin - 1, futilityMargin, pos, si, stack);
+            if (!ttHit || ttScore >= futilityMargin || ttBound == LOWER) {
+                score = qsearch(futilityMargin - 1, futilityMargin, pos, si, stack);
 
-            if (score >= futilityMargin)
-                return score;
+                if (score >= futilityMargin)
+                    return score;
+            }
     }
 
     if (   !PvNode
