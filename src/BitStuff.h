@@ -28,6 +28,10 @@ inline int lsb(const int &bitboard) {
 #endif
 }
 
+inline int popcount(u64 bb) {
+    return __builtin_popcountll(bb);
+}
+
 inline int popLSB(u64 &bitboard) {
     int bit = lsb(bitboard);
     bitboard &= bitboard - 1;

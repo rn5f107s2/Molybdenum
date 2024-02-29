@@ -374,3 +374,70 @@ std::string Position::fen() {
 
     return fen;
 }
+
+
+// First 2 bits: wdl 11 = 1-0 10 == 1/2 - 1/2 00 = 0 - 1
+// Next 7 bits: movecount
+// Next 7 bits: 50mr 
+// Next 2 bytes: stm relative eval
+// total non board stuff 4 bytes
+
+std::string Position::molyFormat(float wdlF, int evalI) {
+
+    int16_t eval = std::clamp(evalI, -32768, 32767);
+
+    uint8_t wdl = wdlF == 1.0 ? 3 : wdlF == 0.5 ? 2 : 0;
+    uint8_t mc = std::clamp(movecount, 0, 127);      //only keep track of movecounts up to 127
+    uint8_t fiftyMR = std::clamp(movecount, 0, 127); //only keep track of 50mrs up to fifty, could be caused by faulty fens
+
+    uint32_t nonBoardStuff =  (eval << 16) | (fiftyMR << 9) | (mc << 2) | wdl;
+
+    std::array<std::array<int, 2>, 6> pieceCount{};
+    std::array<uint8_t, 32> pieceBits;
+    std::array<uint8_t, 2> promotedSquare = {-1, -1};
+    std::array<int, 6> maxPieces = {8, 2, 2, 2, 1, 1};
+    //Queen is set as 1, additional queens are handled seperatly
+
+    pieceCount[PAWN] = {popcount(getPieces(BLACK, PAWN)), popcount(getPieces(WHITE, PAWN))};
+
+    // If a position has:
+    //  - More than 8 pawns one color
+    //  - More than 2 non pawn pieces of one color
+    //  - or 2 Queens and atleast 7 Pawns of the same color
+    // it can not be represented in Moly format
+
+    int idx = 0;
+    pieceBits.fill(-1);
+    
+    for (int pt = KING; pt >= PAWN; pt--) {
+        for (int c = 0; c != 2; c++) {
+            u64 bb = getPieces(Color(c), PieceType(pt));
+            pieceCount[pt][c] = popcount(bb);
+
+            if (pieceCount[pt][c] > (2 + 6 * pt == PAWN))
+                return "";
+
+            if (   pt == QUEEN 
+                && pieceCount[pt][c] == 2 
+                && pieceCount[PAWN][c] > 6)
+                return "";
+
+            int neg1Count = 0;
+
+            for (int i = 0; i != maxPieces[pt]; i++) {
+                int square = bb ? popLSB(bb) : -1;
+                neg1Count += square == -1;
+
+                if (   pt == PAWN
+                    && neg1Count == 2)
+                    square = promotedSquare[c];
+
+                pieceBits[idx++] = square;
+
+                if (   (pt != PAWN || neg1Count == 2)
+                    &&  square == -1)
+                    break;
+            }
+        }
+    }
+}
