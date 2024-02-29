@@ -16,7 +16,7 @@ using PieceToHist = std::array<std::array<int, 64>, 13>;
 using SideFromToHist = std::array<FromToHist, 2>;
 using ContHist = std::array<std::array<PieceToHist, 64>, 13>;
 
-const int histLimits = 2 << tune.HistLimit;
+//const int histLimits = 2 << tune.HistLimit;
 
 inline void prefetchTTEntry(Position &pos, int pc, int from, int to, bool capture) {
     u64 prefetchKey = pos.key();
@@ -36,6 +36,8 @@ inline void updateHistory(FromToHist &history, PieceToHist &contHist, PieceToHis
     int pc   = pos.pieceOn(from);
     int bonus = std::min(depth * depth * tune.HistDepthMult, tune.HistMax);
     int malus = -bonus;
+
+    int histLimits = 2 << tune.HistLimit;
 
     history[from][to] += bonus - history [from][to] * abs(bonus) / histLimits;
     if (updateCont)

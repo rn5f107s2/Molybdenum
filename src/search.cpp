@@ -448,7 +448,7 @@ int qsearch(int alpha, int beta, Position &pos, SearchInfo &si, SearchStack *sta
         int captured = pos.pieceOn(to);
 
         if (   captured != NO_PIECE
-            && staticEval + PieceValuesSEE[captured] + tune.QsSEEMargin <= alpha)
+            && staticEval + PieceValuesSEE[captured] + tune.QsDeltaMargin <= alpha)
             continue;
 
         if (   captured != NO_PIECE

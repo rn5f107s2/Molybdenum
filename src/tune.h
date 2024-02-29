@@ -98,6 +98,11 @@ inline void TuneOptions::init() {
     TUNEINT(AspiDepth, 2, 2, 10)
     TUNEFLOAT(AspiWide, 1.24, 1.01, 2)
 
+    TUNEINT(RFPBase, 101, 1, 300)
+    TUNEINT(RFPImproving, 180, 1, 400)
+    TUNEINT(RFPDepth, 10, 3, 15)
+    TUNEINT(RFPOppWorsening, 40, 0, 100)
+
     TUNEINT(RFPCBase, 101, 1, 300)
     TUNEINT(RFPCImproving, 180, 1, 400)
     TUNEINT(RFPCDepth, 10, 3, 15)
