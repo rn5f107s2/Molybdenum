@@ -1,7 +1,7 @@
 #ifndef MOLYBDENUM_TUNE_H
 #define MOLYBDENUM_TUNE_H
 
-//#define TUNE
+#define TUNE
 
 #ifdef TUNE
 
@@ -12,13 +12,16 @@
 
 struct Tune {
     float LMRDiv, LMRBase, LMRImproving;
-    int LMRDepth, LMRMovecount;
-    int AspiBase, AspiLo, AspiHi, AspiDepth, AspiWide;
-    int RFPBase, RFPImproving, RFPDepth;
+    int LMRDepth, LMRMovecount, LMRHistDivPos, LMRHistDivNeg;
+    int AspiBase, AspiLo, AspiHi, AspiDepth;
+    float AspiWide;
+    int RFPBase, RFPImproving, RFPDepth, RFPOppWorsening;
+    int RFPCBase, RFPCImproving, RFPCDepth, RFPCOppWorsening, RFPCMargin;
     int NMPDepth, NMPSeThreshold, NMPDepthThreshold, NMPBaseRed;
-    int MCPDepth, MCPMultiplier;
-    int FPDepth, FPBase, FPMult;
-    int HistDepth, HistMult;
+    int MCPDepth, MCPMultiplier, MCPFractDepthMult;
+    int FPDepth, FPBase, FPMult, FPFractDepthMult;
+    int HistDepth, HistMult, HistFractDepthMult;
+    int SeDepth, SeTTDepth, SbMargin;
     int QsSEEMargin, QsDeltaMargin;
     int HistDepthMult, HistMax, HistLimit;
     int SEEPawn, SEEKnight, SEEBishop, SEERook, SEEQueen;
@@ -81,49 +84,60 @@ extern TuneOptions tuneOptions;
 extern Tune tune;
 
 inline void TuneOptions::init() {
-    TUNEFLOAT(LMRBase, 0.75, 0.01, 4)
-    TUNEFLOAT(LMRDiv, 2.19, 0.01, 8)
-    TUNEFLOAT(LMRImproving, 0.55, 0, 2)
+    TUNEFLOAT(LMRBase, 0.66, 0.01, 1)
+    TUNEFLOAT(LMRDiv, 2.02, 0.01, 3)
+    TUNEFLOAT(LMRImproving, 0.49, 0, 1)
     TUNEINT(LMRDepth, 2, 1, 4)
     TUNEINT(LMRMovecount, 2, 1, 4)
+    TUNEINT(LMRHistDivPos, 4085, 1000, 20000)
+    TUNEINT(LMRHistDivNeg, 25329, 10000, 30000)
 
-    TUNEINT(AspiBase, 83, 1, 160)
-    TUNEINT(AspiLo, 24, 1, 200)
-    TUNEINT(AspiHi, 49, 1, 300)
+    TUNEINT(AspiBase, 81, 1, 160)
+    TUNEINT(AspiLo, 28, 1, 100)
+    TUNEINT(AspiHi, 34, 1, 100)
     TUNEINT(AspiDepth, 2, 2, 10)
-    TUNEINT(AspiWide, 3, 1, 5)
+    TUNEFLOAT(AspiWide, 1.24, 1.01, 2)
 
-    TUNEINT(RFPBase, 115, 1, 300)
-    TUNEINT(RFPImproving, 203, 1, 400)
-    TUNEINT(RFPDepth, 9, 3, 15)
+    TUNEINT(RFPCBase, 101, 1, 300)
+    TUNEINT(RFPCImproving, 180, 1, 400)
+    TUNEINT(RFPCDepth, 10, 3, 15)
+    TUNEINT(RFPCOppWorsening, 40, 0, 100)
+    TUNEINT(RFPCMargin, 200, 0, 400)
 
     TUNEINT(NMPDepth, 2, 1, 10)
-    TUNEINT(NMPSeThreshold, 274, 1, 500)
+    TUNEINT(NMPSeThreshold, 276, 1, 500)
     TUNEINT(NMPDepthThreshold, 6, 1, 12)
-    TUNEINT(NMPBaseRed, 3, 1, 6)
+    TUNEINT(NMPBaseRed, 4, 1, 6)
 
     TUNEINT(MCPDepth, 4, 1, 24)
-    TUNEINT(MCPMultiplier, 12, 1, 24)
+    TUNEINT(MCPMultiplier, 11, 1, 24)
+    TUNEINT(MCPFractDepthMult, 11, 1, 24)
 
     TUNEINT(FPDepth, 7, 1, 24)
-    TUNEINT(FPMult, 209, 1, 400)
-    TUNEINT(FPBase, 179, 1, 350)
+    TUNEINT(FPMult, 203, 1, 400)
+    TUNEINT(FPBase, 188, 1, 350)
+    TUNEINT(FPFractDepthMult, 203, 1, 400)
 
     TUNEINT(HistDepth, 5, 1, 20)
-    TUNEINT(HistMult, -5460, -9000, -1)
+    TUNEINT(HistMult, -6009, -9000, -1)
+    TUNEINT(HistFractDepthMult, -6009, -9000, -1)
 
-    TUNEINT(QsSEEMargin, -94, -200, -1)
-    TUNEINT(QsDeltaMargin, 159, 1, 300)
+    TUNEINT(SeDepth, 8, 4, 12)
+    TUNEINT(SeTTDepth, 3, 1, 5)
+    TUNEINT(SbMargin, 25, 1, 100)
+
+    TUNEINT(QsSEEMargin, -96, -200, -1)
+    TUNEINT(QsDeltaMargin, 137, 1, 300)
 
     TUNEINT(HistDepthMult, 16, 1, 32)
     TUNEINT(HistMax, 1638, 1, 3000)
-    TUNEINT(HistLimit, 15, 1, 20)
+    TUNEINT(HistLimit, 13, 1, 20)
 
-    TUNEINT(SEEPawn, 100, 1, 1200)
-    TUNEINT(SEEKnight, 299, 1, 1200)
-    TUNEINT(SEEBishop, 281, 1, 1200)
-    TUNEINT(SEERook, 538, 1, 1200)
-    TUNEINT(SEEQueen, 972, 1, 1200)
+    TUNEINT(SEEPawn, 81, 1, 300)
+    TUNEINT(SEEKnight, 257, 100, 500)
+    TUNEINT(SEEBishop, 325, 100, 500)
+    TUNEINT(SEERook, 491, 300, 700)
+    TUNEINT(SEEQueen, 972, 700, 1200)
 
     initialized = true;
 }

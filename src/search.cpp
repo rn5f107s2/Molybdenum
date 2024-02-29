@@ -98,11 +98,11 @@ int iterativeDeepening(Position  &pos, searchTime &st, int maxDepth, [[maybe_unu
 }
 
 int aspirationWindow(int prevScore, Position &pos, SearchInfo &si, int depth) {
-    int delta = std::clamp(81 - depth * depth, 28, 34);
+    int delta = std::clamp(tune.AspiBase - depth * depth, tune.AspiLo, tune.AspiHi);
     int alpha = -INFINITE;
     int beta  =  INFINITE;
 
-    if (depth >= 2) {
+    if (depth >= tune.AspiDepth) {
         alpha = std::max(-INFINITE, prevScore - delta);
         beta  = std::min( INFINITE, prevScore + delta);
     }
@@ -114,7 +114,7 @@ int aspirationWindow(int prevScore, Position &pos, SearchInfo &si, int depth) {
     int score = search<Root>(alpha, beta, pos, depth, si, &stack[2]);
 
     while ((score >= beta || score <= alpha) && !stop<Hard>(si.st, si)) {
-        delta *= 1.24;
+        delta *= tune.AspiWide;
 
         if (score >= beta)
             beta = std::max(score + delta, INFINITE);
@@ -209,31 +209,34 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
     if (   !PvNode
         && !check
         && !excluded
-        && depth < 10
+        && depth < tune.RFPDepth
         && stack->staticEval >= beta) {
 
-            int futilityMargin = beta + (101 * depth - 180 * improving - 40 * whatAreYouDoing);
+            int futilityMargin = beta + (tune.RFPBase * depth - tune.RFPImproving * improving - tune.RFPOppWorsening * whatAreYouDoing);
             
             if (stack->staticEval >= futilityMargin)
                 return stack->staticEval;
 
-            futilityMargin += 200;
+            futilityMargin = beta + (tune.RFPCBase * depth - tune.RFPCImproving * improving - tune.RFPCOppWorsening * whatAreYouDoing) + tune.RFPCMargin;
 
-            score = qsearch(futilityMargin - 1, futilityMargin, pos, si, stack);
 
-            if (score >= futilityMargin)
-                return score;
+            if (depth < tune.RFPCDepth) {
+                score = qsearch(futilityMargin - 1, futilityMargin, pos, si, stack);
+
+                if (score >= futilityMargin)
+                    return score;
+            }
     }
 
     if (   !PvNode
         && !check
         && !excluded
-        && depth >= 2
+        && depth >= tune.NMPDepth
         && (stack-1)->currMove != NULL_MOVE
         && stack->staticEval >= beta
         && beta > -MAXMATE) {
 
-        int reduction = std::min(depth, (4 + (stack->staticEval >= beta + 276) + (depth > 6)));
+        int reduction = std::min(depth, (tune.NMPBaseRed + (stack->staticEval >= beta + tune.NMPSeThreshold) + (depth > tune.NMPDepthThreshold)));
         pos.makeNullMove();
         stack->currMove = NULL_MOVE;
         stack->contHist = &continuationHistory[NO_PIECE][0];
@@ -267,33 +270,33 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
 
         if (   !capture
             && bestScore > -MAXMATE
-            && depth <= 4
-            && moveCount > 11 * depth - ((stack-1)->quarterRed * 11) / 4)
+            && depth <= tune.MCPDepth
+            && moveCount > tune.MCPMultiplier * depth - ((stack-1)->quarterRed * tune.MCPFractDepthMult) / 4)
             continue;
 
         if (   !PvNode
             && !capture
             && bestScore > -MAXMATE
-            && depth <= 7
-            && stack->staticEval + 188 + 203 * expectedDepth  - (203 * stack->quarterRed) / 4 <= alpha)
+            && depth <= tune.FPDepth
+            && stack->staticEval + tune.FPBase + tune.FPMult * expectedDepth - (tune.FPFractDepthMult * stack->quarterRed) / 4 <= alpha)
             continue;
 
         if (   !PvNode
             && bestScore > -MAXMATE
             && !capture
-            && depth <= 5
-            && history < -6009 * expectedDepth - (-6009 * stack->quarterRed) / 4)
+            && depth <= tune.HistDepth
+            && history < tune.HistMult * expectedDepth - (tune.HistFractDepthMult * stack->quarterRed) / 4)
             continue;
 
-        if (   depth >= 8
+        if (   depth >= tune.SeDepth
             && ttHit
             && currentMove == ttMove
             && ttBound != UPPER
-            && ttDepth >= depth - 3
+            && ttDepth >= depth - tune.SeTTDepth
             && !excluded) {
             
             int singDepth = depth / 2;
-            int singBeta  = ttScore - 25; 
+            int singBeta  = ttScore - tune.SbMargin; 
 
             stack->excluded = ttMove;
             stack->currMove = NO_MOVE;
@@ -320,10 +323,10 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
 
         reductions -= PvNode;
 
-        reductions -= history > 0 ? history / 4085 : history / 25329;
+        reductions -= history > 0 ? history / tune.LMRHistDivPos : history / tune.LMRHistDivNeg;
         reductions = std::max(reductions, 0);
 
-        if (depth > 2 && moveCount > 2) {
+        if (depth > tune.LMRDepth && moveCount > tune.LMRMovecount) {
             score = -search<NonPvNode>(-alpha - 1, -alpha, pos, depth - 1 - reductions + extensions, si, stack+1);
 
             if (!PvNode && score > alpha && reductions > 0)
@@ -445,11 +448,11 @@ int qsearch(int alpha, int beta, Position &pos, SearchInfo &si, SearchStack *sta
         int captured = pos.pieceOn(to);
 
         if (   captured != NO_PIECE
-            && staticEval + PieceValuesSEE[captured] + 137 <= alpha)
+            && staticEval + PieceValuesSEE[captured] + tune.QsSEEMargin <= alpha)
             continue;
 
         if (   captured != NO_PIECE
-            && !see(pos, -96, currentMove))
+            && !see(pos, tune.QsSEEMargin, currentMove))
             continue;
 
         prefetchTTEntry(pos, pc, from, to, captured != NO_PIECE);
