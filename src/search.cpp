@@ -98,7 +98,7 @@ int iterativeDeepening(Position  &pos, searchTime &st, int maxDepth, [[maybe_unu
 }
 
 int aspirationWindow(int prevScore, Position &pos, SearchInfo &si, int depth) {
-    int delta = std::clamp(81 - depth * depth, 28, 34);
+    int delta = std::clamp(78 - depth * depth, 27, 34);
     int alpha = -INFINITE;
     int beta  =  INFINITE;
 
@@ -114,7 +114,7 @@ int aspirationWindow(int prevScore, Position &pos, SearchInfo &si, int depth) {
     int score = search<Root>(alpha, beta, pos, depth, si, &stack[2]);
 
     while ((score >= beta || score <= alpha) && !stop<Hard>(si.st, si)) {
-        delta *= 1.24;
+        delta *= 1.25;
 
         if (score >= beta)
             beta = std::max(score + delta, INFINITE);
@@ -210,7 +210,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         && !check
         && !excluded
         && depth < 10
-        && stack->staticEval - (101 * depth - 180 * improving - 40 * whatAreYouDoing) >= beta
+        && stack->staticEval - (100 * depth - 170 * improving - 43 * whatAreYouDoing) >= beta
         && stack->staticEval >= beta)
         return stack->staticEval;
 
@@ -222,7 +222,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         && stack->staticEval >= beta
         && beta > -MAXMATE) {
 
-        int reduction = std::min(depth, (4 + (stack->staticEval >= beta + 276) + (depth > 6)));
+        int reduction = std::min(depth, (4 + (stack->staticEval >= beta + 281) + (depth > 6)));
         pos.makeNullMove();
         stack->currMove = NULL_MOVE;
         stack->contHist = &continuationHistory[NO_PIECE][0];
@@ -257,21 +257,21 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         if (   !capture
             && bestScore > -MAXMATE
             && depth <= 4
-            && moveCount > 11 * depth - ((stack-1)->quarterRed * 11) / 4)
+            && moveCount > 11 * depth - ((stack-1)->quarterRed * 10) / 4)
             continue;
 
         if (   !PvNode
             && !capture
             && bestScore > -MAXMATE
             && depth <= 7
-            && stack->staticEval + 188 + 203 * expectedDepth  - (203 * stack->quarterRed) / 4 <= alpha)
+            && stack->staticEval + 194 + 208 * expectedDepth  - (194 * stack->quarterRed) / 4 <= alpha)
             continue;
 
         if (   !PvNode
             && bestScore > -MAXMATE
             && !capture
             && depth <= 5
-            && history < -6009 * expectedDepth - (-6009 * stack->quarterRed) / 4)
+            && history < -6082 * expectedDepth - (-6123 * stack->quarterRed) / 4)
             continue;
 
         if (   depth >= 8
@@ -282,7 +282,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             && !excluded) {
             
             int singDepth = depth / 2;
-            int singBeta  = ttScore - 25; 
+            int singBeta  = ttScore - 21; 
 
             stack->excluded = ttMove;
             stack->currMove = NO_MOVE;
@@ -309,7 +309,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
 
         reductions -= PvNode;
 
-        reductions -= history > 0 ? history / 4085 : history / 25329;
+        reductions -= history > 0 ? history / 3500 : history / 25511;
         reductions = std::max(reductions, 0);
 
         if (depth > 2 && moveCount > 2) {
@@ -434,11 +434,11 @@ int qsearch(int alpha, int beta, Position &pos, SearchInfo &si, SearchStack *sta
         int captured = pos.pieceOn(to);
 
         if (   captured != NO_PIECE
-            && staticEval + PieceValuesSEE[captured] + 137 <= alpha)
+            && staticEval + PieceValuesSEE[captured] + 142 <= alpha)
             continue;
 
         if (   captured != NO_PIECE
-            && !see(pos, -96, currentMove))
+            && !see(pos, -103, currentMove))
             continue;
 
         prefetchTTEntry(pos, pc, from, to, captured != NO_PIECE);
