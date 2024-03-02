@@ -210,9 +210,20 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         && !check
         && !excluded
         && depth < 10
-        && stack->staticEval - (100 * depth - 164 * improving - 43 * whatAreYouDoing) >= beta
-        && stack->staticEval >= beta)
-        return stack->staticEval;
+        && stack->staticEval >= beta) {
+
+        int futilityMargin = beta + (100 * depth - 164 * improving - 43 * whatAreYouDoing);
+
+        if (stack->staticEval >= futilityMargin)
+            return stack->staticEval;
+
+        futilityMargin = beta + (80 * depth - 183 * improving - 41 * whatAreYouDoing) + 211;
+
+        score = qsearch(futilityMargin - 1, futilityMargin, pos, si, stack);
+
+        if (score >= futilityMargin)
+            return score;
+    }
 
     if (   !PvNode
         && !check
