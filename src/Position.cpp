@@ -276,6 +276,7 @@ void Position::printBoard() {
     std::cout << "castling rights     : " << castling << "\n";
     std::cout << "key                 : " << key() << "\n";
     std::cout << "FEN                 : " << fen() << "\n";
+    std::cout << "MolyFormat          : " << molyFormat(1.0, 270) << "\n";
 }
 
 u64 Position::key() {
@@ -384,17 +385,24 @@ std::string Position::fen() {
 
 std::string Position::molyFormat(float wdlF, int evalI) {
 
+    std::string out = "";
+
     int16_t eval = std::clamp(evalI, -32768, 32767);
 
     uint8_t wdl = wdlF == 1.0 ? 3 : wdlF == 0.5 ? 2 : 0;
     uint8_t mc = std::clamp(movecount, 0, 127);      //only keep track of movecounts up to 127
     uint8_t fiftyMR = std::clamp(movecount, 0, 127); //only keep track of 50mrs up to fifty, could be caused by faulty fens
 
-    uint32_t nonBoardStuff =  (eval << 16) | (fiftyMR << 9) | (mc << 2) | wdl;
+    uint32_t nonBoardStuff = (eval << 16) | (fiftyMR << 9) | (mc << 2) | wdl;
+
+    for (int i = 0; i != 4; i++)
+        out += char(nonBoardStuff & (0xff << 8 * i));
+
+    return out;
 
     std::array<std::array<int, 2>, 6> pieceCount{};
-    std::array<uint8_t, 32> pieceBits;
-    std::array<uint8_t, 2> promotedSquare = {-1, -1};
+    std::array<int8_t, 32> pieceBits;
+    std::array<int8_t, 2> promotedSquare = {-1, -1};
     std::array<int, 6> maxPieces = {8, 2, 2, 2, 1, 1};
     //Queen is set as 1, additional queens are handled seperatly
 
@@ -414,7 +422,7 @@ std::string Position::molyFormat(float wdlF, int evalI) {
             u64 bb = getPieces(Color(c), PieceType(pt));
             pieceCount[pt][c] = popcount(bb);
 
-            if (pieceCount[pt][c] > (2 + 6 * pt == PAWN))
+            if (pieceCount[pt][c] > (2 + 6 * (pt == PAWN)))
                 return "";
 
             if (   pt == QUEEN 
@@ -440,4 +448,25 @@ std::string Position::molyFormat(float wdlF, int evalI) {
             }
         }
     }
+
+    int usedBits = 0;
+    char currentChar = 0;
+
+    for (int idx2 = 0; idx2 <= idx; idx2++) {
+        int usableBits = 8 - usedBits;
+        int8_t usableMask = (1ULL << usableBits) - 1;
+        int8_t nextMask   = ~usableMask;
+
+        currentChar |= (pieceBits[idx2] & usableMask) << usedBits;
+
+        if (usableBits <= 6) {
+            out += currentChar;
+            currentChar = 0;
+
+            currentChar |= (pieceBits[idx2] & nextMask);
+        }
+    }
+
+    out += currentChar;
+    return out;
 }
