@@ -280,7 +280,7 @@ void Position::printBoard() {
     std::cout << "FEN                 : " << fen() << "\n";
     std::cout << "MolyFormat          : ";
 
-    std::array<int8_t, 36> mf = molyFormat(0.0, 0);
+    std::array<int8_t, 32> mf = molyFormat(0.0, 0);
 
     for (int i = 0; i != 36; i++)
         std::cout << std::bitset<8>(mf[i]);
@@ -392,9 +392,9 @@ std::string Position::fen() {
 // Next 2 bytes: stm relative eval
 // total non board stuff 4 bytes
 
-std::array<int8_t, 36> Position::molyFormat(float wdlF, int evalI) {
+std::array<int8_t, 32> Position::molyFormat(float wdlF, int evalI) {
 
-    std::array<int8_t, 36> out{};
+    std::array<int8_t, 32> out{};
     int outIdx = 0;
 
     int16_t eval = std::clamp(evalI, -32768, 32767);
@@ -409,7 +409,7 @@ std::array<int8_t, 36> Position::molyFormat(float wdlF, int evalI) {
         out[outIdx++] = char(nonBoardStuff & (0xff << 8 * i));
 
     std::array<std::array<int, 2>, 6> pieceCount{};
-    std::array<int8_t, 32> pieceBits;
+    std::array<int8_t, 32> pieceBits{};
     std::array<int8_t, 2> promotedSquare = {-1, -1};
     std::array<int, 6> maxPieces = {8, 2, 2, 2, 1, 1};
     //Queen is set as 1, additional queens are handled seperatly
@@ -466,6 +466,7 @@ std::array<int8_t, 36> Position::molyFormat(float wdlF, int evalI) {
         int8_t nextMask   = ~usableMask;
 
         current |= (pieceBits[idx2] & usableMask) << usedBits;
+        usedBits = (usedBits + 6) % 8;
 
         if (usableBits <= 6) {
             out[outIdx++] = current;
