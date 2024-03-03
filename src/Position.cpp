@@ -394,7 +394,7 @@ std::string Position::fen() {
 
 std::array<int8_t, 36> Position::molyFormat(float wdlF, int evalI) {
 
-    std::array<int8_t, 36> out;
+    std::array<int8_t, 36> out{};
     int outIdx = 0;
 
     int16_t eval = std::clamp(evalI, -32768, 32767);
@@ -448,7 +448,7 @@ std::array<int8_t, 36> Position::molyFormat(float wdlF, int evalI) {
                     && neg1Count == 2)
                     square = promotedSquare[c];
 
-                out[outIdx++] = square;
+                pieceBits[idx++] = square;
 
                 if (   (pt != PAWN || neg1Count == 2)
                     &&  square == -1)
@@ -457,7 +457,6 @@ std::array<int8_t, 36> Position::molyFormat(float wdlF, int evalI) {
         }
     }
 
-    /*
     int usedBits = 0;
     int8_t current = 0;
 
@@ -477,6 +476,5 @@ std::array<int8_t, 36> Position::molyFormat(float wdlF, int evalI) {
     }
 
     out[outIdx++] = current;
-    */
     return out;
 }
