@@ -278,12 +278,11 @@ void Position::printBoard() {
     std::cout << "castling rights     : " << castling << "\n";
     std::cout << "key                 : " << key() << "\n";
     std::cout << "FEN                 : " << fen() << "\n";
-    std::cout << "MolyFormat          : ";
 
     std::array<int8_t, 32> mf = molyFormat(0.0, 0);
 
-    for (int i = 0; i != 36; i++)
-        std::cout << std::bitset<8>(mf[i]);
+    for (int i = 0; i != 32; i++)
+        std::cout << std::bitset<8>(mf[i]) << "\n";
 
     std::cout << "\n";
 }
@@ -460,20 +459,21 @@ std::array<int8_t, 32> Position::molyFormat(float wdlF, int evalI) {
     int usedBits = 0;
     int8_t current = 0;
 
-    for (int idx2 = 0; idx2 <= idx; idx2++) {
+    for (int idx2 = 0; idx2 < idx; idx2++) {
         int usableBits = 8 - usedBits;
         int8_t usableMask = (1ULL << usableBits) - 1;
-        int8_t nextMask   = ~usableMask;
+        int8_t nextMask   = ~usableMask & ~0x80;
 
         current |= (pieceBits[idx2] & usableMask) << usedBits;
-        usedBits = (usedBits + 6) % 8;
 
-        if (usableBits <= 6) {
+        if (usableBits <= 7) {
             out[outIdx++] = current;
             current = 0;
 
-            current |= (pieceBits[idx2] & nextMask);
+            current |= (pieceBits[idx2] & nextMask) >> usableBits;
         }
+
+        usedBits = (usedBits + 7) % 8;
     }
 
     out[outIdx++] = current;
