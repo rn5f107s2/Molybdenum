@@ -1,5 +1,7 @@
 #include <iostream>
 #include <cstring>
+#include <bitset>
+
 #include "Position.h"
 #include "Transpositiontable.h"
 #include "PSQT.h"
@@ -276,7 +278,14 @@ void Position::printBoard() {
     std::cout << "castling rights     : " << castling << "\n";
     std::cout << "key                 : " << key() << "\n";
     std::cout << "FEN                 : " << fen() << "\n";
-    std::cout << "MolyFormat          : " << molyFormat(1.0, 270) << "\n";
+    std::cout << "MolyFormat          : ";
+
+    std::array<int8_t, 36> mf = molyFormat(0.0, 0);
+
+    for (int i = 0; i != 36; i++)
+        std::cout << std::bitset<8>(mf[i]);
+
+    std::cout << "\n";
 }
 
 u64 Position::key() {
@@ -383,22 +392,21 @@ std::string Position::fen() {
 // Next 2 bytes: stm relative eval
 // total non board stuff 4 bytes
 
-std::string Position::molyFormat(float wdlF, int evalI) {
+std::array<int8_t, 36> Position::molyFormat(float wdlF, int evalI) {
 
-    std::string out = "";
+    std::array<int8_t, 36> out;
+    int outIdx = 0;
 
     int16_t eval = std::clamp(evalI, -32768, 32767);
 
     uint8_t wdl = wdlF == 1.0 ? 3 : wdlF == 0.5 ? 2 : 0;
     uint8_t mc = std::clamp(movecount, 0, 127);      //only keep track of movecounts up to 127
-    uint8_t fiftyMR = std::clamp(movecount, 0, 127); //only keep track of 50mrs up to fifty, could be caused by faulty fens
+    uint8_t fiftyMR = std::clamp(plys50moveRule, 0, 127); //only keep track of 50mrs up to fifty, could be caused by faulty fens
 
     uint32_t nonBoardStuff = (eval << 16) | (fiftyMR << 9) | (mc << 2) | wdl;
 
     for (int i = 0; i != 4; i++)
-        out += char(nonBoardStuff & (0xff << 8 * i));
-
-    return out;
+        out[outIdx++] = char(nonBoardStuff & (0xff << 8 * i));
 
     std::array<std::array<int, 2>, 6> pieceCount{};
     std::array<int8_t, 32> pieceBits;
@@ -423,12 +431,12 @@ std::string Position::molyFormat(float wdlF, int evalI) {
             pieceCount[pt][c] = popcount(bb);
 
             if (pieceCount[pt][c] > (2 + 6 * (pt == PAWN)))
-                return "";
+                return {};
 
             if (   pt == QUEEN 
                 && pieceCount[pt][c] == 2 
                 && pieceCount[PAWN][c] > 6)
-                return "";
+                return {};
 
             int neg1Count = 0;
 
@@ -440,7 +448,7 @@ std::string Position::molyFormat(float wdlF, int evalI) {
                     && neg1Count == 2)
                     square = promotedSquare[c];
 
-                pieceBits[idx++] = square;
+                out[outIdx++] = square;
 
                 if (   (pt != PAWN || neg1Count == 2)
                     &&  square == -1)
@@ -449,24 +457,26 @@ std::string Position::molyFormat(float wdlF, int evalI) {
         }
     }
 
+    /*
     int usedBits = 0;
-    char currentChar = 0;
+    int8_t current = 0;
 
     for (int idx2 = 0; idx2 <= idx; idx2++) {
         int usableBits = 8 - usedBits;
         int8_t usableMask = (1ULL << usableBits) - 1;
         int8_t nextMask   = ~usableMask;
 
-        currentChar |= (pieceBits[idx2] & usableMask) << usedBits;
+        current |= (pieceBits[idx2] & usableMask) << usedBits;
 
         if (usableBits <= 6) {
-            out += currentChar;
-            currentChar = 0;
+            out[outIdx++] = current;
+            current = 0;
 
-            currentChar |= (pieceBits[idx2] & nextMask);
+            current |= (pieceBits[idx2] & nextMask);
         }
     }
 
-    out += currentChar;
+    out[outIdx++] = current;
+    */
     return out;
 }

@@ -31,7 +31,7 @@ class Position {
         bool hasRepeated(int plysInSearch);
         bool isCapture(Move move);
         std::string fen();
-        std::string molyFormat(float wdl, int eval);
+        std::array<int8_t, 36> molyFormat(float wdl, int eval);
         template<Color c> u64 getPieces(PieceType pt);
         template<PieceType pt> u64 getPieces(Color c);
         inline u64 getPieces(Color c, PieceType pt);
