@@ -309,6 +309,11 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
 
         reductions -= PvNode;
 
+        if (stack->quarterRed + (stack-1)->quarterRed >= 1) {
+            reductions++;
+            stack->quarterRed -= 1;
+        }
+
         reductions -= history > 0 ? history / 4085 : history / 25329;
         reductions = std::max(reductions, 0);
 
