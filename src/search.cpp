@@ -98,6 +98,7 @@ int iterativeDeepening(Position  &pos, searchTime &st, int maxDepth, [[maybe_unu
 }
 
 int aspirationWindow(int prevScore, Position &pos, SearchInfo &si, int depth) {
+    const int maxDeltaDiff = 75;
     int delta = std::clamp(79 - depth * depth, 23, 34);
     int alpha = -INFINITE;
     int beta  =  INFINITE;
@@ -116,9 +117,10 @@ int aspirationWindow(int prevScore, Position &pos, SearchInfo &si, int depth) {
     while ((score >= beta || score <= alpha) && !stop<Hard>(si.st, si)) {
         delta *= 1.23;
 
-        if (score >= beta)
-            beta = std::max(score + delta, INFINITE);
-        else
+        if (score >= beta) {
+            beta  = std::max(score + delta, INFINITE);
+            alpha = std::max(alpha, beta - maxDeltaDiff);
+        } else
             alpha = std::max(score - delta, -INFINITE);
 
         score = search<Root>(alpha, beta, pos, depth, si, &stack[2]);
