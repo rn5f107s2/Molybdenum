@@ -279,12 +279,9 @@ void Position::printBoard() {
     std::cout << "key                 : " << key() << "\n";
     std::cout << "FEN                 : " << fen() << "\n";
 
-    std::array<int8_t, 32> mf = molyFormat(0.0, 0);
+    std::array<int8_t, 32> mf = molyFormat(0.0, 32000);
 
-    for (int i = 0; i != 32; i++)
-        std::cout << std::bitset<8>(mf[i]) << "\n";
-
-    std::cout << "\n";
+    std::cout << getData(mf) << "\n";
 }
 
 u64 Position::key() {
@@ -396,7 +393,7 @@ std::array<int8_t, 32> Position::molyFormat(float wdlF, int evalI) {
     std::array<int8_t, 32> out{};
     int outIdx = 0;
 
-    int16_t eval = std::clamp(evalI, -32768, 32767);
+    int eval = std::clamp(evalI, -32768, 32767);
 
     uint8_t wdl = wdlF == 1.0 ? 3 : wdlF == 0.5 ? 2 : 0;
     uint8_t mc = std::clamp(movecount, 0, 127);      //only keep track of movecounts up to 127
@@ -405,7 +402,7 @@ std::array<int8_t, 32> Position::molyFormat(float wdlF, int evalI) {
     uint32_t nonBoardStuff = (eval << 16) | (fiftyMR << 9) | (mc << 2) | wdl;
 
     for (int i = 0; i != 4; i++)
-        out[outIdx++] = char(nonBoardStuff & (0xff << 8 * i));
+        out[outIdx++] = (nonBoardStuff & (0xff << 8 * i)) >> 8 * i;
 
     std::array<std::array<int, 2>, 6> pieceCount{};
     std::array<int8_t, 32> pieceBits{};
@@ -477,5 +474,36 @@ std::array<int8_t, 32> Position::molyFormat(float wdlF, int evalI) {
     }
 
     out[outIdx++] = current;
+    return out;
+}
+
+std::string Position::getData(const std::array<int8_t, 32> &mf) {
+    std::string out;
+
+    out += "Eval: ";
+    out +=  std::to_string(mf[2] | (mf[3] << 8)); 
+    out += "\n";
+
+    int wdlI = mf[0] & 0b11;
+    std::string wdl = wdlI == 3 ? "1.0" : wdlI == 0 ? "0.0" : "0.5";
+
+    out += "WDL : ";
+    out += wdl;
+    out += "\n";
+
+    std::array<int, 6> maxPieces = {8, 2, 2, 2, 1, 1};
+    std::array<int8_t, 32> pieceSquares{};
+
+    int usedBits = 0;
+    int current = 0;
+    int idx = 0;
+
+    for (int pt = KING; pt >= PAWN; pt--) {
+        for (Color c : {BLACK, WHITE}) {
+            
+        }
+    }
+
+
     return out;
 }

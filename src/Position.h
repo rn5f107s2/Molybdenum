@@ -32,6 +32,7 @@ class Position {
         bool isCapture(Move move);
         std::string fen();
         std::array<int8_t, 32> molyFormat(float wdl, int eval);
+        std::string getData(const std::array<int8_t, 32> &mf);
         template<Color c> u64 getPieces(PieceType pt);
         template<PieceType pt> u64 getPieces(Color c);
         inline u64 getPieces(Color c, PieceType pt);
