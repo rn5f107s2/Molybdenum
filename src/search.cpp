@@ -309,9 +309,9 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
 
         reductions -= PvNode;
 
-        if (stack->quarterRed + (stack-1)->quarterRed >= 1) {
+        if (stack->quarterRed + (stack-1)->quarterRed >= 4) {
             reductions++;
-            stack->quarterRed -= 1;
+            stack->quarterRed -= 4;
         }
 
         reductions -= history > 0 ? history / 4085 : history / 25329;
