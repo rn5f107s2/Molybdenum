@@ -135,7 +135,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
     u64 ksq = pos.getPieces(pos.sideToMove, KING);
     u64 checkers = attackersTo<false, false>(lsb(ksq),pos.getOccupied(), pos.sideToMove ? BLACK_PAWN : WHITE_PAWN, pos);
     Move bestMove = 0, currentMove = 0, excluded = NO_MOVE;
-    int bestScore = -INFINITE, score = -INFINITE, moveCount = 0, extensions = 0;
+    int bestScore = -INFINITE, score = -INFINITE, moveCount = 0, extensions = 0, threatSquare = 65;
     bool exact = false, check = checkers, ttHit = false, improving, whatAreYouDoing;
     Stack<Move> historyUpdates;
 
@@ -143,6 +143,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
 
     excluded = stack->excluded;
     (stack+1)->excluded = NO_MOVE;
+    (stack+1)->currMove = NO_MOVE;
 
     if (!excluded)
         stack->staticEval = evaluate(pos);
@@ -223,11 +224,17 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         && beta > -MAXMATE) {
 
         int reduction = std::min(depth, (4 + (stack->staticEval >= beta + 290) + (depth > 6)));
+
         pos.makeNullMove();
         stack->currMove = NULL_MOVE;
         stack->contHist = &continuationHistory[NO_PIECE][0];
+
         int nullScore = -search<NonPvNode>(-beta, -alpha, pos, depth - reduction, si, stack+1);
+
         pos.unmakeNullMove();
+
+        if ((stack+1)->currMove)
+            threatSquare = extract<TO>((stack+1)->currMove);
 
         if (nullScore >= beta && nullScore < MAXMATE)
             return nullScore;
@@ -237,7 +244,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
                                             &killers[stack->plysInSearch], 
                                             &mainHistory[pos.sideToMove], 
                                             &*(stack-1)->contHist, 
-                                            &*(stack-2)->contHist, checkers);
+                                            &*(stack-2)->contHist, checkers, threatSquare);
     while ((currentMove = mp.pickMove())) {
     
         if (currentMove == excluded)

@@ -31,6 +31,7 @@ class Movepicker {
         PieceToHist *contHist2{};
         Move ttMove = NO_MOVE;
         Move prioMove = NO_MOVE;
+        int threatSquare = 65;
         MoveList ml{};
         Position *pos;
         ScoredMove *currentMove = nullptr;
@@ -44,7 +45,7 @@ class Movepicker {
                       FromToHist  *main  = &emptyMain, 
                       PieceToHist *cont1 = &emptyCont, 
                       PieceToHist *cont2 = &emptyCont, 
-                      u64 checkers = 0ULL) 
+                      u64 checkers = 0ULL, int threatSqr = 65) 
         {
             ttMove = ttm; 
             killers = k; 
@@ -52,6 +53,7 @@ class Movepicker {
             contHist1 = cont1; 
             contHist2 = cont2;
             pos = p;
+            threatSquare = threatSqr;
 
             generateMoves<qsearch>(*pos, ml, checkers);
 
@@ -88,6 +90,8 @@ class Movepicker {
                 *score += contHist2[0][pc][to];
 
                 *score += MVVLVA[movingPiece][capturedPiece];
+
+                *score += 25000 * (from == threatSquare);
 
                 if (*score > bestScore) {
                     bestScore = *score;
