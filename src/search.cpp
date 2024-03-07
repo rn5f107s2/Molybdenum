@@ -143,6 +143,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
 
     excluded = stack->excluded;
     (stack+1)->excluded = NO_MOVE;
+    stack->pv = PvNode;
 
     if (!excluded)
         stack->staticEval = evaluate(pos);
@@ -207,6 +208,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         return ttScore;
 
     if (   !PvNode
+        && !(stack-1)->pv
         && !check
         && !excluded
         && depth < 10

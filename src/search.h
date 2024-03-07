@@ -26,6 +26,7 @@ struct SearchStack {
     int plysInSearch = 0;
     int staticEval = INFINITE;
     int quarterRed = 0;
+    bool pv = false;
     Move currMove = 0;
     Move excluded = NO_MOVE;
     PieceToHist *contHist = nullptr;
