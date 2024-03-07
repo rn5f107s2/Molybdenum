@@ -492,7 +492,8 @@ std::string Position::getData(const std::array<int8_t, 32> &mf) {
     out += "\n";
 
     std::array<int, 6> maxPieces = {8, 2, 2, 2, 1, 1};
-    std::array<int8_t, 32> pieceSquares{};
+    std::array<int8_t, 32> pieceSquares;
+    pieceSquares.fill(-1);
 
     int usedBits = 0;
     int current = 0;
