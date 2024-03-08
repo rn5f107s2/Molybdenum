@@ -136,7 +136,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
     u64 checkers = attackersTo<false, false>(lsb(ksq),pos.getOccupied(), pos.sideToMove ? BLACK_PAWN : WHITE_PAWN, pos);
     Move bestMove = 0, currentMove = 0, excluded = NO_MOVE;
     int bestScore = -INFINITE, score = -INFINITE, moveCount = 0, extensions = 0;
-    bool exact = false, check = checkers, ttHit = false, improving, whatAreYouDoing;
+    bool exact = false, check = checkers, ttHit = false, improving, whatAreYouDoing, singularlyExtended;
     Stack<Move> historyUpdates;
 
     stack->quarterRed = 0;
@@ -151,6 +151,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
     improving = stack->staticEval > (stack-2)->staticEval;
     whatAreYouDoing = (stack->staticEval + (stack-1)->staticEval) > 0;
     pvLength[stack->plysInSearch] = stack->plysInSearch;
+    singularlyExtended = false;
 
     depth += check;
 
@@ -290,7 +291,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             stack->excluded = NO_MOVE;
 
             if (score < singBeta)
-                extensions = 1;
+                singularlyExtended = extensions = 1;
 
             if (   score > singBeta
                 && stack->currMove) 
@@ -308,6 +309,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         history += (*(stack-2)->contHist)[pc][to];
 
         reductions -= PvNode;
+        reductions += singularlyExtended && ttBound == EXACT;
 
         reductions -= history > 0 ? history / 4085 : history / 25329;
         reductions = std::max(reductions, 0);
