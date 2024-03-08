@@ -374,6 +374,11 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
     if (bestScore == -INFINITE)
         return excluded ? alpha : checkers ? (-MATE + stack->plysInSearch) : DRAW;
 
+    if (   !PvNode
+        && ttDepth > depth
+        && ttBound == (ttScore >= bestScore ? LOWER : UPPER))
+        bestScore = ttScore;
+
     if (!excluded)
         TT.save(tte, key, bestScore, exact ? EXACT : UPPER, bestMove, depth, stack->plysInSearch);
 
