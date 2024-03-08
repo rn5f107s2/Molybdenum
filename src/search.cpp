@@ -135,7 +135,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
     u64 ksq = pos.getPieces(pos.sideToMove, KING);
     u64 checkers = attackersTo<false, false>(lsb(ksq),pos.getOccupied(), pos.sideToMove ? BLACK_PAWN : WHITE_PAWN, pos);
     Move bestMove = 0, currentMove = 0, excluded = NO_MOVE;
-    int bestScore = -INFINITE, score = -INFINITE, moveCount = 0, extensions = 0;
+    int bestScore = -INFINITE, score = -INFINITE, moveCount = 0, extensions = 0, ttAdjustedEval;
     bool exact = false, check = checkers, ttHit = false, improving, whatAreYouDoing;
     Stack<Move> historyUpdates;
 
@@ -146,6 +146,8 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
 
     if (!excluded)
         stack->staticEval = evaluate(pos);
+
+    ttAdjustedEval = stack->staticEval;
     
     stack->plysInSearch = ROOT ? 0 : (stack-1)->plysInSearch + 1;
     improving = stack->staticEval > (stack-2)->staticEval;
@@ -206,11 +208,18 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             || (ttBound == UPPER && ttScore <= alpha)))
         return ttScore;
 
+    if (   ttHit
+        && (    (ttBound == LOWER && ttScore >= ttAdjustedEval)
+             || (ttBound == UPPER && ttScore <= ttAdjustedEval)
+             || (ttBound == EXACT)))
+             ttAdjustedEval = ttScore;
+
     if (   !PvNode
         && !check
         && !excluded
         && depth < 10
-        && stack->staticEval - (100 * depth - 164 * improving - 43 * whatAreYouDoing) >= beta
+        && ttAdjustedEval - (100 * depth - 164 * improving - 43 * whatAreYouDoing) >= beta
+        && ttAdjustedEval >= beta
         && stack->staticEval >= beta)
         return stack->staticEval;
 
