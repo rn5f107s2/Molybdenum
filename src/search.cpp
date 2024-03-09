@@ -146,7 +146,8 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
 
     if (!excluded)
         stack->staticEval = evaluate(pos);
-    
+
+    stack->check = check;
     stack->plysInSearch = ROOT ? 0 : (stack-1)->plysInSearch + 1;
     improving = stack->staticEval > (stack-2)->staticEval;
     whatAreYouDoing = (stack->staticEval + (stack-1)->staticEval) > 0;
@@ -210,7 +211,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         && !check
         && !excluded
         && depth < 10
-        && stack->staticEval - (100 * depth - 164 * improving - 43 * whatAreYouDoing) >= beta
+        && stack->staticEval - (100 * depth - 164 * improving - 43 * (whatAreYouDoing || (stack-1)->check)) >= beta
         && stack->staticEval >= beta)
         return stack->staticEval;
 
