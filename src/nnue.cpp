@@ -8,7 +8,7 @@
 #ifdef _MSC_VER
 #define PUSHED_MACRO
 #pragma push_macro("_MSC_VER")
-#undef PUSHED_MACRO
+#undef _MSC_VER
 #endif
 
 #include "incbin/incbin.h"
@@ -18,12 +18,7 @@
 #undef PUSHED_MACRO
 #endif
 
-#ifdef MAKEFILE
 #define defaultNetPath "src/Nets/ne3s23p6.nnue"
-#else
-#define defaultNetPath "../src/Nets/ne3s23p6.nnue"
-#endif
-
 
 INCBIN(network, defaultNetPath);
 const Weights defaultWeights = *reinterpret_cast<const Weights*>(gnetworkData);
