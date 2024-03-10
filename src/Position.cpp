@@ -279,7 +279,7 @@ void Position::printBoard() {
     std::cout << "key                 : " << key() << "\n";
     std::cout << "FEN                 : " << fen() << "\n";
 
-    std::array<int8_t, 32> mf = molyFormat(0.0, 32000);
+    std::array<uint8_t, 32> mf = molyFormat(0.0, 32000);
 
     std::cout << getData(mf) << "\n";
 }
@@ -388,9 +388,9 @@ std::string Position::fen() {
 // Next 2 bytes: stm relative eval
 // total non board stuff 4 bytes
 
-std::array<int8_t, 32> Position::molyFormat(float wdlF, int evalI) {
+std::array<uint8_t, 32> Position::molyFormat(float wdlF, int evalI) {
 
-    std::array<int8_t, 32> out{};
+    std::array<uint8_t, 32> out{};
     int outIdx = 0;
 
     int eval = std::clamp(evalI, -32768, 32767);
@@ -434,6 +434,10 @@ std::array<int8_t, 32> Position::molyFormat(float wdlF, int evalI) {
                 && pieceCount[PAWN][c] > 6)
                 return {};
 
+            if (   pt == QUEEN
+                && pieceCount[pt][c] == 2)
+                promotedSquare[c] = msb(bb);
+
             int neg1Count = 0;
 
             for (int i = 0; i != maxPieces[pt]; i++) {
@@ -454,7 +458,7 @@ std::array<int8_t, 32> Position::molyFormat(float wdlF, int evalI) {
     }
 
     int usedBits = 0;
-    int8_t current = 0;
+    uint8_t current = 0;
 
     for (int idx2 = 0; idx2 < idx; idx2++) {
         int usableBits = 8 - usedBits;
@@ -477,7 +481,7 @@ std::array<int8_t, 32> Position::molyFormat(float wdlF, int evalI) {
     return out;
 }
 
-std::string Position::getData(const std::array<int8_t, 32> &mf) {
+std::string Position::getData(const std::array<uint8_t, 32> &mf) {
     std::string out;
 
     out += "Eval: ";
@@ -495,16 +499,67 @@ std::string Position::getData(const std::array<int8_t, 32> &mf) {
     std::array<int8_t, 32> pieceSquares;
     pieceSquares.fill(-1);
 
+    int inIdx = 4;
     int usedBits = 0;
-    int current = 0;
-    int idx = 0;
+    int data = 0;
+    int next = 126;
+    bool prevEmpty = false;
+
+    std::cout << "\n";
 
     for (int pt = KING; pt >= PAWN; pt--) {
         for (Color c : {BLACK, WHITE}) {
-            
+            int count = 0;
+
+            out += "\n";
+            out += pieceToChar(makePiece(pt, c));
+            out += ": ";
+
+            while (true) {
+                count++;
+
+                int sq;
+
+                if (next == 126) { 
+                    data |= int(mf[inIdx++]) << usedBits;
+
+                    sq = data & 0b1111111;
+
+                    usedBits = (usedBits + 8) % 7;
+
+                    if (!usedBits)
+                        next = (data >> 7) & 0b1111111;
+
+                } else {
+                    sq = next;
+                    next = 126;
+                }
+
+                data >>= 7;
+
+                if (    sq != 127
+                    && !prevEmpty) {
+                    out += std::to_string(sq);
+                    out += ", ";
+                }
+
+                if (   prevEmpty 
+                    && sq != 127) {
+
+                    out += "\n";
+                    out += pieceToChar(makePiece(QUEEN, c));
+                    out += ": ";
+                    out += std::to_string(sq);
+                }
+
+                if (   (sq == 127 && (pt != PAWN || prevEmpty))
+                    || count == maxPieces[pt])
+                    break;
+
+                prevEmpty = sq == 127;
+            }
         }
     }
-
 
     return out;
 }
