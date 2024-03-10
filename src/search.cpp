@@ -139,17 +139,18 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
     bool exact = false, check = checkers, ttHit = false, improving, whatAreYouDoing;
     Stack<Move> historyUpdates;
 
-    stack->quarterRed = 0;
-
     excluded = stack->excluded;
-    (stack+1)->excluded = NO_MOVE;
 
     if (!excluded)
         stack->staticEval = evaluate(pos);
     
     stack->plysInSearch = ROOT ? 0 : (stack-1)->plysInSearch + 1;
-    improving = stack->staticEval > (stack-2)->staticEval;
-    whatAreYouDoing = (stack->staticEval + (stack-1)->staticEval) > 0;
+    stack->quarterRed   = 0;
+    (stack+1)->excluded = NO_MOVE;
+
+    improving       = stack->staticEval > (stack-2)->staticEval;
+    whatAreYouDoing = stack->staticEval + (stack-1)->staticEval > 0;
+
     pvLength[stack->plysInSearch] = stack->plysInSearch;
 
     depth += check;
@@ -223,10 +224,14 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         && beta > -MAXMATE) {
 
         int reduction = std::min(depth, (4 + (stack->staticEval >= beta + 290) + (depth > 6)));
+
         pos.makeNullMove();
+
         stack->currMove = NULL_MOVE;
         stack->contHist = &continuationHistory[NO_PIECE][0];
+
         int nullScore = -search<NonPvNode>(-beta, -alpha, pos, depth - reduction, si, stack+1);
+
         pos.unmakeNullMove();
 
         if (nullScore >= beta && nullScore < MAXMATE)
@@ -246,13 +251,14 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         int  from    = extract<FROM>(currentMove);
         int  to      = extract<TO>(currentMove);
         bool capture = pos.isCapture(currentMove);
-        Piece pc = pos.pieceOn(from);
+        Piece pc     = pos.pieceOn(from);
 
         double red = lmrReduction(depth, moveCount, improving);
         int reductions = int(red);
-        stack->quarterRed = (red - reductions) * 4;
         int expectedDepth = std::max(depth - reductions, 1);
         int history = (*(stack-1)->contHist)[pc][to] + mainHistory[pos.sideToMove][from][to];
+        
+        stack->quarterRed = (red - reductions) * 4;
 
         if (   !capture
             && bestScore > -MAXMATE
@@ -286,7 +292,9 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
 
             stack->excluded = ttMove;
             stack->currMove = NO_MOVE;
+
             score = search<nt>(singBeta - 1, singBeta, pos, singDepth, si, stack);
+
             stack->excluded = NO_MOVE;
 
             if (score < singBeta)
@@ -300,15 +308,16 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         prefetchTTEntry(pos, pc, from, to, capture);
 
         pos.makeMove(currentMove);
+
         stack->currMove = currentMove;
         stack->contHist = &continuationHistory[pc][to];
+
         si.nodeCount++;
         moveCount++;
 
         history += (*(stack-2)->contHist)[pc][to];
 
         reductions -= PvNode;
-
         reductions -= history > 0 ? history / 4085 : history / 25329;
         reductions = std::max(reductions, 0);
 
@@ -320,7 +329,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
 
             if (PvNode && score > alpha && score < beta)
                 score = -search<PVNode>(-beta, -alpha, pos, depth - 1 + extensions, si, stack+1);
-        }else {
+        } else {
             if (!PvNode || moveCount > 1)
                 score = -search<NonPvNode>(-alpha - 1, -alpha, pos, depth - 1 + extensions, si, stack+1);
 
