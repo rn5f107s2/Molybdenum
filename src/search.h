@@ -20,6 +20,7 @@ struct SearchInfo {
     bool stop = false;
     Move bestRootMove = 0;
     searchTime st;
+    int rootMoveCount = 0;
 };
 
 struct SearchStack {

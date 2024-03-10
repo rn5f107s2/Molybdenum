@@ -288,7 +288,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             && !excluded) {
             
             int singDepth = depth / 2;
-            int singBeta  = ttScore - 18; 
+            int singBeta  = ttScore - 12 + std::min(si.rootMoveCount * 2, 12); 
 
             stack->excluded = ttMove;
             stack->currMove = NO_MOVE;
@@ -314,6 +314,9 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
 
         si.nodeCount++;
         moveCount++;
+
+        if constexpr (ROOT)
+            si.rootMoveCount = moveCount;
 
         history += (*(stack-2)->contHist)[pc][to];
 
