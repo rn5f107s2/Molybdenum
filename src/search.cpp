@@ -376,6 +376,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
 
     if (   !PvNode
         && ttDepth > depth
+        && bestMove == ttMove
         && ttBound == (ttScore >= bestScore ? LOWER : UPPER))
         bestScore = ttScore;
 
