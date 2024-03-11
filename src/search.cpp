@@ -263,7 +263,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         if (   !capture
             && bestScore > -MAXMATE
             && depth <= 4
-            && moveCount > 11 * depth - ((stack-1)->quarterRed * 10) / 4)
+            && moveCount > (3 + improving) * (11 * depth - ((stack-1)->quarterRed * 10) / 4) / 4)
             continue;
 
         if (   !PvNode
