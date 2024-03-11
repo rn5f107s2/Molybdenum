@@ -281,6 +281,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             continue;
 
         if (   depth >= 8
+            && !ROOT
             && ttHit
             && currentMove == ttMove
             && ttBound != UPPER
