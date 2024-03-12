@@ -289,7 +289,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             && !excluded) {
             
             int singDepth = depth / 2;
-            int singBeta  = ttScore - 12/* + std::min(si.rootMoveCount * 2, 12)*/;
+            int singBeta  = ttScore;
 
             stack->excluded = ttMove;
             stack->currMove = NO_MOVE;
