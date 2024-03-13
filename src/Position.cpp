@@ -336,8 +336,8 @@ std::string Position::fen(const std::array<Piece, 64> *mailbox, int plys, int mc
     std::string castling;
     int emptyCounter = 0;
     int epSquare = enPassantSquare ? lsb(enPassantSquare) : 0;
-    int plys50 = std::min(customBoard ? plys : plys50moveRule, 127);
-    int movCnt = std::min(customBoard ? mc   : movecount, 127);
+    int plys50 = customBoard ? plys : plys50moveRule;
+    int movCnt = customBoard ? mc   : movecount;
 
     for (int square = 63; square >= 0; square--) {
         if (pieceLocs[square] == NO_PIECE)
@@ -364,16 +364,16 @@ std::string Position::fen(const std::array<Piece, 64> *mailbox, int plys, int mc
     fen += " ";
     fen += (sideToMove || customBoard) ? "w " : "b ";
 
-    if (castlingRights & WHITE_CASTLE_KINGSIDE  && !customBoard && false) castling += "K";
-    if (castlingRights & WHITE_CASTLE_QUEENSIDE && !customBoard && false) castling += "Q";
-    if (castlingRights & BLACK_CASTLE_KINGSIDE  && !customBoard && false) castling += "k";
-    if (castlingRights & BLACK_CASTLE_QUEENSIDE && !customBoard && false) castling += "q";
+    if (castlingRights & WHITE_CASTLE_KINGSIDE  && !customBoard) castling += "K";
+    if (castlingRights & WHITE_CASTLE_QUEENSIDE && !customBoard) castling += "Q";
+    if (castlingRights & BLACK_CASTLE_KINGSIDE  && !customBoard) castling += "k";
+    if (castlingRights & BLACK_CASTLE_QUEENSIDE && !customBoard) castling += "q";
     if (castling.empty()) castling += "-";
 
     fen += castling;
     fen += " ";
 
-    if (enPassantSquare && !customBoard && false) {
+    if (enPassantSquare && !customBoard) {
         fen += char('a' + (fileOf(epSquare)));
         fen += char('1' + (rankOf(epSquare)));
         fen += " ";

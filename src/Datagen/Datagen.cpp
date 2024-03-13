@@ -18,17 +18,12 @@
         playGame(pos, filename, fenCount);
         gameCount++;
 
-        if (gameCount % 100 == 0) {
+        if (gameCount % 250 == 0) {
             int searchTime = int(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - lastTime).count());
-            //std::cout << gameCount << " Games done\n";
-            //std::cout << "at " << ((fenCount - lastFenCount) * 1000) / std::max(searchTime, 1) << " Fens per second\n";
+            std::cout << gameCount << " Games done\n";
+            std::cout << "at " << ((fenCount - lastFenCount) * 1000) / std::max(searchTime, 1) << " Fens per second\n";
             lastFenCount = fenCount;
             lastTime = std::chrono::steady_clock::now();
-
-            if (fenCount > 100000) {
-                std::cout << fenCount << " fens done\n";
-                break;
-            }
         }
     }
 }
@@ -121,15 +116,6 @@ void playGame(Position &pos, const std::string& filename, u64 &fenCount) {
         std::string fen = fens.pop();
         pos.setBoard(fen);
         std::array<uint8_t, 32> mf = pos.molyFormat(result, score, &lastIdx);
-
-
-        if (pos.sideToMove && lastIdx != -1) {
-            if (pos.getData(mf) != fen)
-                std::cout << "failed for FEN " << fen << "\n";
-        }
-
-        if (lastIdx == -1)
-            std::cout << pos.fen() << std::endl;
 
         for (int i = 0; i <= lastIdx; i++)
             output << mf[i];
