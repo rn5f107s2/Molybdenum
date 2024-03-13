@@ -66,10 +66,9 @@ void playGame(Position &pos, const std::string& filename, u64 &fenCount) {
     int adjCounter = 0;
     int wadjCounter = 0;
     int wadjReq = int(seedDataGen % 20) + 5;
-    std::string result;
+    int result;
     Stack<int> scores;
     Stack<std::string> fens;
-    Stack<Move> bestMoves;
     std::ofstream output;
     output.open(filename, std::ios::app);
 
@@ -83,13 +82,13 @@ void playGame(Position &pos, const std::string& filename, u64 &fenCount) {
 
         int score = startSearch(pos, st, MAXDEPTH, bestMove);
 
-        if (abs(score) > 300)
+        if (abs(score) > 600)
             wadjCounter++;
         else
             wadjCounter = 0;
 
         if (abs(score) >= MAXMATE || wadjCounter > wadjReq) {
-            result = (score > 0 == pos.sideToMove) ? "1.0" : "0.0";
+            result = (score > 0 == pos.sideToMove) ? 2 : 0;
             break;
         }
 
@@ -99,30 +98,31 @@ void playGame(Position &pos, const std::string& filename, u64 &fenCount) {
             adjCounter = 0;
 
         if (adjCounter > 7 || pos.plys50moveRule >= 100 || bestMove == NO_MOVE) {
-            result = "0.5";
+            result = 1;
             break;
         }
 
-        if (!pos.isCapture(bestMove) && extract<FLAG>(bestMove) != PROMOTION) {
-            fens.push(pos.fen());
-            scores.push(score);
-            bestMoves.push(bestMove);
-        }
+        fens.push(pos.fen());
+        scores.push(score);
+
         pos.makeMove(bestMove);
         pos.movecount++;
     }
 
     while (fens.getSize()) {
-        std::string fen = fens.pop();
-        std::string score = std::to_string(scores.pop());
-        std::string bestMove = moveToString(bestMoves.pop());
+        int lastIdx = 0;
 
-        fen += " | ";
-        fen += score;
-        fen += " | ";
-        fen += result;
-        fen += "\n";
-        output << fen;
+        int score = scores.pop();
+        std::string fen = fens.pop();
+        pos.setBoard(fen);
+        std::array<uint8_t, 32> mf = pos.molyFormat(result, score, &lastIdx);
+
+        if (lastIdx == -1)
+            std::cout << pos.fen() << std::endl;
+
+        for (int i = 0; i <= lastIdx; i++)
+            output << mf[i];
+
         fenCount++;
     }
 

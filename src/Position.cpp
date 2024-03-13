@@ -397,7 +397,8 @@ std::string Position::fen(const std::array<Piece, 64> *mailbox, int plys, int mc
 std::array<uint8_t, 32> Position::molyFormat(int wdlI, int evalI, int *lastIdx) {
 
     std::array<uint8_t, 32> out{};
-    int outIdx = *lastIdx = 0;
+    int outIdx = 0;
+    *lastIdx = -1;
 
     //eval should already bs stm relative
     int eval = std::clamp(evalI, -32768, 32767);
@@ -484,7 +485,7 @@ std::array<uint8_t, 32> Position::molyFormat(int wdlI, int evalI, int *lastIdx) 
         usedBits = (usedBits + 7) % 8;
     }
 
-    out[outIdx++] = current;
+    out[outIdx] = current;
     *lastIdx = outIdx;
     return out;
 }
