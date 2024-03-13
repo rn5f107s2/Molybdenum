@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cstring>
 #include <bitset>
+#include <fstream>
 
 #include "Position.h"
 #include "Transpositiontable.h"
@@ -496,7 +497,7 @@ std::string Position::getData(const std::array<uint8_t, 32> &mf) {
     pieceLocs.fill(NO_PIECE);
 
     out += "Eval: ";
-    out +=  std::to_string(mf[2] | (mf[3] << 8)); 
+    out +=  std::to_string(int16_t(mf[2] | (mf[3] << 8))); 
     out += "\n";
 
     int wdlI = mf[0] & 0b11;
@@ -509,7 +510,7 @@ std::string Position::getData(const std::array<uint8_t, 32> &mf) {
     std::array<int, 6> maxPieces = {8, 2, 2, 2, 1, 1};
 
     int fiftyMR = mf[1] >> 1;
-    int mc      = ((mf[0] | mf[1]) >> 2) & 0b1111111; 
+    int mc      = ((mf[0] >> 2) | (mf[1] << 6)) & 0b1111111; 
 
     int inIdx = 4;
     int usedBits = 0;
@@ -562,6 +563,8 @@ std::string Position::getData(const std::array<uint8_t, 32> &mf) {
 
                 prevEmpty = sq == 127;
             }
+
+            prevEmpty = false;
         }   
     }
 

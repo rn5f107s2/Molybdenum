@@ -25,6 +25,8 @@
             lastFenCount = fenCount;
             lastTime = std::chrono::steady_clock::now();
         }
+
+        break;
     }
 }
 
@@ -116,6 +118,9 @@ void playGame(Position &pos, const std::string& filename, u64 &fenCount) {
         std::string fen = fens.pop();
         pos.setBoard(fen);
         std::array<uint8_t, 32> mf = pos.molyFormat(result, score, &lastIdx);
+
+        std::cout << pos.getData(mf) << "\n";
+        std::cout << fen << "\n";
 
         if (lastIdx == -1)
             std::cout << pos.fen() << std::endl;
