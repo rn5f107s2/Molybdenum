@@ -336,8 +336,8 @@ std::string Position::fen(const std::array<Piece, 64> *mailbox, int plys, int mc
     std::string castling;
     int emptyCounter = 0;
     int epSquare = enPassantSquare ? lsb(enPassantSquare) : 0;
-    int plys50 = customBoard ? plys : plys50moveRule;
-    int movCnt = customBoard ? mc   : movecount;
+    int plys50 = std::min(customBoard ? plys : plys50moveRule, 127);
+    int movCnt = std::min(customBoard ? mc   : movecount, 127);
 
     for (int square = 63; square >= 0; square--) {
         if (pieceLocs[square] == NO_PIECE)
@@ -364,16 +364,16 @@ std::string Position::fen(const std::array<Piece, 64> *mailbox, int plys, int mc
     fen += " ";
     fen += (sideToMove || customBoard) ? "w " : "b ";
 
-    if (castlingRights & WHITE_CASTLE_KINGSIDE  && !customBoard) castling += "K";
-    if (castlingRights & WHITE_CASTLE_QUEENSIDE && !customBoard) castling += "Q";
-    if (castlingRights & BLACK_CASTLE_KINGSIDE  && !customBoard) castling += "k";
-    if (castlingRights & BLACK_CASTLE_QUEENSIDE && !customBoard) castling += "q";
+    if (castlingRights & WHITE_CASTLE_KINGSIDE  && !customBoard && false) castling += "K";
+    if (castlingRights & WHITE_CASTLE_QUEENSIDE && !customBoard && false) castling += "Q";
+    if (castlingRights & BLACK_CASTLE_KINGSIDE  && !customBoard && false) castling += "k";
+    if (castlingRights & BLACK_CASTLE_QUEENSIDE && !customBoard && false) castling += "q";
     if (castling.empty()) castling += "-";
 
     fen += castling;
     fen += " ";
 
-    if (enPassantSquare && !customBoard) {
+    if (enPassantSquare && !customBoard && false) {
         fen += char('a' + (fileOf(epSquare)));
         fen += char('1' + (rankOf(epSquare)));
         fen += " ";
@@ -471,7 +471,7 @@ std::array<uint8_t, 32> Position::molyFormat(int wdlI, int evalI, int *lastIdx) 
 
     for (int idx2 = 0; idx2 < idx; idx2++) {
         int usableBits = 8 - usedBits;
-        int8_t usableMask = (1ULL << usableBits) - 1;
+        int8_t usableMask = (1ULL << std::min(usableBits, 7)) - 1;
         int8_t nextMask   = ~usableMask & ~0x80;
 
         current |= (pieceBits[idx2] & usableMask) << usedBits;
@@ -496,16 +496,16 @@ std::string Position::getData(const std::array<uint8_t, 32> &mf) {
     std::array<Piece, 64> pieceLocs;
     pieceLocs.fill(NO_PIECE);
 
-    out += "Eval: ";
-    out +=  std::to_string(int16_t(mf[2] | (mf[3] << 8))); 
-    out += "\n";
+    //out += "Eval: ";
+    //out +=  std::to_string(int16_t(mf[2] | (mf[3] << 8))); 
+    //out += "\n";
 
     int wdlI = mf[0] & 0b11;
     std::string wdl = wdlI == 2 ? "1.0" : wdlI == 0 ? "0.0" : "0.5";
 
-    out += "WDL : ";
-    out += wdl;
-    out += "\n";
+    //out += "WDL : ";
+    //out += wdl;
+    //out += "\n";
 
     std::array<int, 6> maxPieces = {8, 2, 2, 2, 1, 1};
 
@@ -517,8 +517,6 @@ std::string Position::getData(const std::array<uint8_t, 32> &mf) {
     int data = 0;
     int next = 126;
     bool prevEmpty = false;
-
-    std::cout << "\n";
 
     for (int pt = KING; pt >= PAWN; pt--) {
         for (Color c : {WHITE, BLACK}) {
