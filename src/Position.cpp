@@ -279,7 +279,9 @@ void Position::printBoard() {
     std::cout << "key                 : " << key() << "\n";
     std::cout << "FEN                 : " << fen() << "\n";
 
-    std::array<uint8_t, 32> mf = molyFormat(0, 32000);
+    int a;
+
+    std::array<uint8_t, 32> mf = molyFormat(0, 32000, &a);
 
     std::cout << getData(mf) << "\n";
 }
@@ -392,10 +394,10 @@ std::string Position::fen(const std::array<Piece, 64> *mailbox, int plys, int mc
 // Next 2 bytes: stm relative eval
 // total non board stuff 4 bytes
 
-std::array<uint8_t, 32> Position::molyFormat(int wdlI, int evalI) {
+std::array<uint8_t, 32> Position::molyFormat(int wdlI, int evalI, int *lastIdx) {
 
     std::array<uint8_t, 32> out{};
-    int outIdx = 0;
+    int outIdx = *lastIdx = 0;
 
     //eval should already bs stm relative
     int eval = std::clamp(evalI, -32768, 32767);
@@ -483,6 +485,7 @@ std::array<uint8_t, 32> Position::molyFormat(int wdlI, int evalI) {
     }
 
     out[outIdx++] = current;
+    *lastIdx = outIdx;
     return out;
 }
 
