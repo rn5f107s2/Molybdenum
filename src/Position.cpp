@@ -459,8 +459,8 @@ std::array<uint8_t, 32> Position::molyFormat(int wdlI, int evalI, int *lastIdx) 
 
                 pieceBits[idx++] = square;
 
-                if (  (   pt != PAWN
-                       && square == -1)
+                if (   (   pt != PAWN
+                        && square == -1)
                     || neg1Count == 2)
                     break;
             }
