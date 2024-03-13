@@ -437,7 +437,7 @@ std::array<uint8_t, 32> Position::molyFormat(int wdlI, int evalI) {
             if (   pt == QUEEN 
                 && pieceCount[pt][c] == 2 
                 && pieceCount[PAWN][c] > 6)
-                return nullptr;
+                return {};
 
             if (   pt == QUEEN
                 && pieceCount[pt][c] == 2)
