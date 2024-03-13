@@ -279,7 +279,7 @@ void Position::printBoard() {
     std::cout << "key                 : " << key() << "\n";
     std::cout << "FEN                 : " << fen() << "\n";
 
-    std::array<uint8_t, 32> mf = molyFormat(0.0, 32000);
+    std::array<uint8_t, 32> mf = molyFormat(0, 32000);
 
     std::cout << getData(mf) << "\n";
 }
@@ -326,21 +326,25 @@ void Position::unmakeNullMove() {
     sideToMove = !sideToMove;
 }
 
-std::string Position::fen() {
+std::string Position::fen(const std::array<Piece, 64> *mailbox, int plys, int mc) {
+    bool customBoard = mailbox != nullptr;
+    std::array<Piece, 64> pieceLocs = !customBoard ? pieceLocations : *mailbox;  
     std::string fen;
     std::string castling;
     int emptyCounter = 0;
     int epSquare = enPassantSquare ? lsb(enPassantSquare) : 0;
+    int plys50 = customBoard ? plys : plys50moveRule;
+    int movCnt = customBoard ? mc   : movecount;
 
     for (int square = 63; square >= 0; square--) {
-        if (pieceLocations[square] == NO_PIECE)
+        if (pieceLocs[square] == NO_PIECE)
             emptyCounter++;
         else {
             if (emptyCounter)
                 fen += std::to_string(emptyCounter);
 
             emptyCounter = 0;
-            fen += pieceToChar(pieceLocations[square]);
+            fen += pieceToChar(pieceLocs[square]);
         }
 
         if (square % 8 == 0) {
@@ -355,18 +359,18 @@ std::string Position::fen() {
     }
 
     fen += " ";
-    fen += sideToMove ? "w " : "b ";
+    fen += (sideToMove || customBoard) ? "w " : "b ";
 
-    if (castlingRights & WHITE_CASTLE_KINGSIDE ) castling += "K";
-    if (castlingRights & WHITE_CASTLE_QUEENSIDE) castling += "Q";
-    if (castlingRights & BLACK_CASTLE_KINGSIDE ) castling += "k";
-    if (castlingRights & BLACK_CASTLE_QUEENSIDE) castling += "q";
+    if (castlingRights & WHITE_CASTLE_KINGSIDE  && !customBoard) castling += "K";
+    if (castlingRights & WHITE_CASTLE_QUEENSIDE && !customBoard) castling += "Q";
+    if (castlingRights & BLACK_CASTLE_KINGSIDE  && !customBoard) castling += "k";
+    if (castlingRights & BLACK_CASTLE_QUEENSIDE && !customBoard) castling += "q";
     if (castling.empty()) castling += "-";
 
     fen += castling;
     fen += " ";
 
-    if (enPassantSquare) {
+    if (enPassantSquare && !customBoard) {
         fen += char('a' + (fileOf(epSquare)));
         fen += char('1' + (rankOf(epSquare)));
         fen += " ";
@@ -374,28 +378,29 @@ std::string Position::fen() {
         fen += "- ";
     }
 
-    fen += std::to_string(plys50moveRule);
+    fen += std::to_string(plys50);
     fen += " ";
-    fen += std::to_string(movecount);
+    fen += std::to_string(movCnt);
 
     return fen;
 }
 
 
-// First 2 bits: wdl 11 = 1-0 10 == 1/2 - 1/2 00 = 0 - 1
+// First 2 bits: wdl 10 = 1-0 01 == 1/2 - 1/2 00 = 0 - 1
 // Next 7 bits: movecount
 // Next 7 bits: 50mr 
 // Next 2 bytes: stm relative eval
 // total non board stuff 4 bytes
 
-std::array<uint8_t, 32> Position::molyFormat(float wdlF, int evalI) {
+std::array<uint8_t, 32> Position::molyFormat(int wdlI, int evalI) {
 
     std::array<uint8_t, 32> out{};
     int outIdx = 0;
 
+    //eval should already bs stm relative
     int eval = std::clamp(evalI, -32768, 32767);
 
-    uint8_t wdl = wdlF == 1.0 ? 3 : wdlF == 0.5 ? 2 : 0;
+    uint8_t wdl = !sideToMove ? 2 - wdlI : wdlI;
     uint8_t mc = std::clamp(movecount, 0, 127);      //only keep track of movecounts up to 127
     uint8_t fiftyMR = std::clamp(plys50moveRule, 0, 127); //only keep track of 50mrs up to fifty, could be caused by faulty fens
 
@@ -422,8 +427,8 @@ std::array<uint8_t, 32> Position::molyFormat(float wdlF, int evalI) {
     pieceBits.fill(-1);
     
     for (int pt = KING; pt >= PAWN; pt--) {
-        for (int c = 0; c != 2; c++) {
-            u64 bb = getPieces(Color(c), PieceType(pt));
+        for (Color c : {sideToMove, !sideToMove}) {
+            u64 bb = getPieces(c, PieceType(pt));
             pieceCount[pt][c] = popcount(bb);
 
             if (pieceCount[pt][c] > (2 + 6 * (pt == PAWN)))
@@ -432,16 +437,16 @@ std::array<uint8_t, 32> Position::molyFormat(float wdlF, int evalI) {
             if (   pt == QUEEN 
                 && pieceCount[pt][c] == 2 
                 && pieceCount[PAWN][c] > 6)
-                return {};
+                return nullptr;
 
             if (   pt == QUEEN
                 && pieceCount[pt][c] == 2)
-                promotedSquare[c] = msb(bb);
+                promotedSquare[c] = msb(bb) ^ (sideToMove ? 0 : 56);
 
             int neg1Count = 0;
 
             for (int i = 0; i != maxPieces[pt]; i++) {
-                int square = bb ? popLSB(bb) : -1;
+                int square = bb ? (popLSB(bb) ^ (sideToMove ? 0 : 56)) : -1;
                 neg1Count += square == -1;
 
                 if (   pt == PAWN
@@ -483,21 +488,24 @@ std::array<uint8_t, 32> Position::molyFormat(float wdlF, int evalI) {
 
 std::string Position::getData(const std::array<uint8_t, 32> &mf) {
     std::string out;
+    std::array<Piece, 64> pieceLocs;
+    pieceLocs.fill(NO_PIECE);
 
     out += "Eval: ";
     out +=  std::to_string(mf[2] | (mf[3] << 8)); 
     out += "\n";
 
     int wdlI = mf[0] & 0b11;
-    std::string wdl = wdlI == 3 ? "1.0" : wdlI == 0 ? "0.0" : "0.5";
+    std::string wdl = wdlI == 2 ? "1.0" : wdlI == 0 ? "0.0" : "0.5";
 
     out += "WDL : ";
     out += wdl;
     out += "\n";
 
     std::array<int, 6> maxPieces = {8, 2, 2, 2, 1, 1};
-    std::array<int8_t, 32> pieceSquares;
-    pieceSquares.fill(-1);
+
+    int fiftyMR = mf[1] >> 1;
+    int mc      = ((mf[0] | mf[1]) >> 2) & 0b1111111; 
 
     int inIdx = 4;
     int usedBits = 0;
@@ -508,12 +516,8 @@ std::string Position::getData(const std::array<uint8_t, 32> &mf) {
     std::cout << "\n";
 
     for (int pt = KING; pt >= PAWN; pt--) {
-        for (Color c : {BLACK, WHITE}) {
+        for (Color c : {WHITE, BLACK}) {
             int count = 0;
-
-            out += "\n";
-            out += pieceToChar(makePiece(pt, c));
-            out += ": ";
 
             while (true) {
                 count++;
@@ -539,17 +543,13 @@ std::string Position::getData(const std::array<uint8_t, 32> &mf) {
 
                 if (    sq != 127
                     && !prevEmpty) {
-                    out += std::to_string(sq);
-                    out += ", ";
+                    pieceLocs[sq] = makePiece(pt, c);
                 }
 
                 if (   prevEmpty 
                     && sq != 127) {
 
-                    out += "\n";
-                    out += pieceToChar(makePiece(QUEEN, c));
-                    out += ": ";
-                    out += std::to_string(sq);
+                    pieceLocs[sq] = makePiece(QUEEN, c);
                 }
 
                 if (   (sq == 127 && (pt != PAWN || prevEmpty))
@@ -558,8 +558,10 @@ std::string Position::getData(const std::array<uint8_t, 32> &mf) {
 
                 prevEmpty = sq == 127;
             }
-        }
+        }   
     }
+
+    out += fen(&pieceLocs, fiftyMR, mc);
 
     return out;
 }

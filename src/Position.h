@@ -30,8 +30,8 @@ class Position {
         void unmakeNullMove();
         bool hasRepeated(int plysInSearch);
         bool isCapture(Move move);
-        std::string fen();
-        std::array<uint8_t, 32> molyFormat(float wdl, int eval);
+        std::string fen(const std::array<Piece, 64> *mailbox = nullptr, int plys = -1, int mc = -1);
+        std::array<uint8_t, 32> molyFormat(int wdl, int eval);
         std::string getData(const std::array<uint8_t, 32> &mf);
         template<Color c> u64 getPieces(PieceType pt);
         template<PieceType pt> u64 getPieces(Color c);
