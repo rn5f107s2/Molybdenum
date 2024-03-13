@@ -123,7 +123,7 @@ void playGame(Position &pos, const std::string& filename, u64 &fenCount) {
         std::array<uint8_t, 32> mf = pos.molyFormat(result, score, &lastIdx);
 
 
-        if (pos.sideToMove) {
+        if (pos.sideToMove && lastIdx != -1) {
             if (pos.getData(mf) != fen)
                 std::cout << "failed for FEN " << fen << "\n";
         }

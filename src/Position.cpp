@@ -459,8 +459,9 @@ std::array<uint8_t, 32> Position::molyFormat(int wdlI, int evalI, int *lastIdx) 
 
                 pieceBits[idx++] = square;
 
-                if (   (pt != PAWN || neg1Count == 2)
-                    &&  square == -1)
+                if (  (   pt != PAWN
+                       && square == -1)
+                    || neg1Count == 2)
                     break;
             }
         }
@@ -553,6 +554,7 @@ std::string Position::getData(const std::array<uint8_t, 32> &mf) {
                     && sq != 127) {
 
                     pieceLocs[sq] = makePiece(QUEEN, c);
+                    break;
                 }
 
                 if (   (sq == 127 && (pt != PAWN || prevEmpty))
