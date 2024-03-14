@@ -17,7 +17,7 @@ def startProcess(path, fileName):
     print("Starting process")
     subprocess.run(commands)
 
-def upload_file(file_path):
+def uploadFile(file_path):
     credentials = service_account.Credentials.from_service_account_file(
         SERVICE_ACCOUNT_FILE,
         scopes=['https://www.googleapis.com/auth/drive']
@@ -80,13 +80,21 @@ def main():
 
         sleep(3600)
 
-        commands = ['killall', "Datagen"]
-        process = subprocess.Popen(commands)
+        cattedName = datetime.today().strftime('%Y%m%d') + "_batch_" + str(batch) + ".bin"
+        catCommand = ["cat"] + fileList
+
+        with open(cattedName, "w") as cattedName:
+            subprocess.run(catCommand, stdout=cattedName)
+
+        killAllCommand = ['killall', "Datagen"]
+        process = subprocess.Popen(killAllCommand)
         process.wait()
         
         for f in fileList:
-            upload_file(f)
             os.remove(f)
+
+        uploadFile(datetime.today().strftime('%Y%m%d') + "_batch_" + str(batch) + ".bin")
+        os.remove(datetime.today().strftime('%Y%m%d') + "_batch_" + str(batch) + ".bin")
 
     
 
