@@ -87,8 +87,6 @@ def main():
         for f in fileList:
             upload_file(f)
             os.remove(f)
-        
-        break
 
     
 
