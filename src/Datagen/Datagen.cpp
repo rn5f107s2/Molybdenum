@@ -16,6 +16,7 @@
     while (true) {
         createExit(pos);
         playGame(pos, filename, fenCount);
+        break;
         gameCount++;
 
         if (gameCount % 250 == 0) {

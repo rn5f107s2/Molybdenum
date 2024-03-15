@@ -402,7 +402,7 @@ std::array<uint8_t, 32> Position::molyFormat(int wdlI, int evalI, int *lastIdx) 
     *lastIdx = -1;
 
     //eval should already bs stm relative
-    int eval = std::clamp(evalI, -32768, 32767);
+    int eval = std::clamp(evalI, -32768, 32767) * (!sideToMove ? -1 : 1);
 
     uint8_t wdl = !sideToMove ? 2 - wdlI : wdlI;
     uint8_t mc = std::clamp(movecount, 0, 127);      //only keep track of movecounts up to 127
