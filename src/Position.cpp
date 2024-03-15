@@ -364,16 +364,16 @@ std::string Position::fen(const std::array<Piece, 64> *mailbox, int plys, int mc
     fen += " ";
     fen += (sideToMove || customBoard) ? "w " : "b ";
 
-    //if (castlingRights & WHITE_CASTLE_KINGSIDE  && !customBoard) castling += "K";
-    //if (castlingRights & WHITE_CASTLE_QUEENSIDE && !customBoard) castling += "Q";
-    //if (castlingRights & BLACK_CASTLE_KINGSIDE  && !customBoard) castling += "k";
-    //if (castlingRights & BLACK_CASTLE_QUEENSIDE && !customBoard) castling += "q";
-    /*if (castling.empty())*/ castling += "-";
+    if (castlingRights & WHITE_CASTLE_KINGSIDE  && !customBoard) castling += "K";
+    if (castlingRights & WHITE_CASTLE_QUEENSIDE && !customBoard) castling += "Q";
+    if (castlingRights & BLACK_CASTLE_KINGSIDE  && !customBoard) castling += "k";
+    if (castlingRights & BLACK_CASTLE_QUEENSIDE && !customBoard) castling += "q";
+    if (castling.empty()) castling += "-";
 
     fen += castling;
     fen += " ";
 
-    if (enPassantSquare && !customBoard && false) {
+    if (enPassantSquare && !customBoard) {
         fen += char('a' + (fileOf(epSquare)));
         fen += char('1' + (rankOf(epSquare)));
         fen += " ";
