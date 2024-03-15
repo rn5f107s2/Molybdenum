@@ -336,8 +336,8 @@ std::string Position::fen(const std::array<Piece, 64> *mailbox, int plys, int mc
     std::string castling;
     int emptyCounter = 0;
     int epSquare = enPassantSquare ? lsb(enPassantSquare) : 0;
-    int plys50 = customBoard ? plys : plys50moveRule;
-    int movCnt = customBoard ? mc   : movecount;
+    int plys50 = std::min(customBoard ? plys : plys50moveRule, 127);
+    int movCnt = std::min(customBoard ? mc   : movecount, 127);
 
     for (int square = 63; square >= 0; square--) {
         if (pieceLocs[square] == NO_PIECE)
@@ -364,16 +364,16 @@ std::string Position::fen(const std::array<Piece, 64> *mailbox, int plys, int mc
     fen += " ";
     fen += (sideToMove || customBoard) ? "w " : "b ";
 
-    if (castlingRights & WHITE_CASTLE_KINGSIDE  && !customBoard) castling += "K";
-    if (castlingRights & WHITE_CASTLE_QUEENSIDE && !customBoard) castling += "Q";
-    if (castlingRights & BLACK_CASTLE_KINGSIDE  && !customBoard) castling += "k";
-    if (castlingRights & BLACK_CASTLE_QUEENSIDE && !customBoard) castling += "q";
-    if (castling.empty()) castling += "-";
+    //if (castlingRights & WHITE_CASTLE_KINGSIDE  && !customBoard) castling += "K";
+    //if (castlingRights & WHITE_CASTLE_QUEENSIDE && !customBoard) castling += "Q";
+    //if (castlingRights & BLACK_CASTLE_KINGSIDE  && !customBoard) castling += "k";
+    //if (castlingRights & BLACK_CASTLE_QUEENSIDE && !customBoard) castling += "q";
+    /*if (castling.empty())*/ castling += "-";
 
     fen += castling;
     fen += " ";
 
-    if (enPassantSquare && !customBoard) {
+    if (enPassantSquare && !customBoard && false) {
         fen += char('a' + (fileOf(epSquare)));
         fen += char('1' + (rankOf(epSquare)));
         fen += " ";
@@ -468,12 +468,15 @@ std::array<uint8_t, 32> Position::molyFormat(int wdlI, int evalI, int *lastIdx) 
     }
 
     int usedBits = 0;
+    bool allWritten = false;
     uint8_t current = 0;
 
     for (int idx2 = 0; idx2 < idx; idx2++) {
         int usableBits = 8 - usedBits;
         int8_t usableMask = (1ULL << std::min(usableBits, 7)) - 1;
         int8_t nextMask   = ~usableMask & ~0x80;
+
+        allWritten = usableBits == 7;
 
         current |= (pieceBits[idx2] & usableMask) << usedBits;
 
@@ -487,8 +490,10 @@ std::array<uint8_t, 32> Position::molyFormat(int wdlI, int evalI, int *lastIdx) 
         usedBits = (usedBits + 7) % 8;
     }
 
-    out[outIdx] = current;
-    *lastIdx = outIdx;
+    if (!allWritten)
+        out[outIdx] = current;
+
+    *lastIdx = outIdx - 1;
     return out;
 }
 
