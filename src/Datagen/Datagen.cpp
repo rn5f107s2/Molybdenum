@@ -16,6 +16,7 @@
     while (true) {
         createExit(pos);
         playGame(pos, filename, fenCount);
+        break;
         gameCount++;
 
         if (gameCount % 250 == 0) {
@@ -120,6 +121,9 @@ void playGame(Position &pos, const std::string& filename, u64 &fenCount) {
         for (int i = 0; i <= lastIdx; i++)
             output << mf[i];
 
+        std::cout << score << std::endl;
+        std::cout << result << std::endl;
+        std::cout << fen << std::endl;
         fenCount++;
     }
 
