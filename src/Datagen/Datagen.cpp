@@ -16,7 +16,7 @@
     while (true) {
         createExit(pos);
         playGame(pos, filename, fenCount);
-´       gameCount++;
+        gameCount++;
 
         if (gameCount % 250 == 0) {
             int searchTime = int(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - lastTime).count());

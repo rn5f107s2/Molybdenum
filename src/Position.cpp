@@ -491,7 +491,7 @@ std::array<uint8_t, 32> Position::molyFormat(int wdlI, int evalI, int *lastIdx) 
     }
 
     if (!allWritten)
-        out[outIdx] = current;
+        out[outIdx++] = current;
 
     *lastIdx = outIdx - 1;
     return out;
