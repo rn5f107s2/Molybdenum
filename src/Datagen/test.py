@@ -9,6 +9,7 @@ import google.auth
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 import os
+import socket
 
 SERVICE_ACCOUNT_FILE = 'CREDENTIALS.json'
 
@@ -23,6 +24,9 @@ def uploadFile(file_path):
         scopes=['https://www.googleapis.com/auth/drive']
     )
     
+    timeout_value = 180
+    socket.setdefaulttimeout(timeout_value)
+    
     drive_service = build('drive', 'v3', credentials=credentials)
 
     file_metadata = {
@@ -34,6 +38,8 @@ def uploadFile(file_path):
         media_body=file_path,
         fields='id'
     ).execute()
+    
+    socket.setdefaulttimeout(None)
         
     file_id = media.get('id')
     
