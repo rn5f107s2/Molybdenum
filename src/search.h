@@ -21,6 +21,7 @@ struct SearchInfo {
     Move bestRootMove = 0;
     searchTime st;
     int rootMoveCount = 0;
+    int selDepth = 0;
 };
 
 struct SearchStack {

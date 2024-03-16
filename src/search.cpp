@@ -61,6 +61,9 @@ int iterativeDeepening(Position  &pos, searchTime &st, int maxDepth, [[maybe_unu
         uciOutput += "info depth ";
         uciOutput += std::to_string(depth);
 
+        uciOutput += " seldepth ";
+        uciOutput += std::to_string(si.selDepth);
+
         uciOutput += " currmove ";
         uciOutput += moveToString(si.bestRootMove);
 
@@ -111,6 +114,8 @@ int aspirationWindow(int prevScore, Position &pos, SearchInfo &si, int depth) {
     stack[0].contHist = &continuationHistory[NO_PIECE][0];
     stack[1].contHist = &continuationHistory[NO_PIECE][0];
 
+    si.selDepth = 0;
+
     int score = search<Root>(alpha, beta, pos, depth, si, &stack[2]);
 
     while ((score >= beta || score <= alpha) && !stop<Hard>(si.st, si)) {
@@ -120,6 +125,8 @@ int aspirationWindow(int prevScore, Position &pos, SearchInfo &si, int depth) {
             beta = std::max(score + delta, INFINITE);
         else
             alpha = std::max(score - delta, -INFINITE);
+
+        si.selDepth = 0;
 
         score = search<Root>(alpha, beta, pos, depth, si, &stack[2]);
     }
@@ -143,6 +150,9 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
 
     if (!excluded)
         stack->staticEval = evaluate(pos);
+
+    if (stack->plysInSearch > si.selDepth)
+        si.selDepth = stack->plysInSearch;
     
     stack->plysInSearch = ROOT ? 0 : (stack-1)->plysInSearch + 1;
     stack->quarterRed   = 0;
