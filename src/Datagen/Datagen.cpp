@@ -3,6 +3,8 @@
 #ifdef DATAGEN
 #include <fstream>
 #include <iostream>
+#include <sstream>
+
 #include "Datagen.h"
 #include "../Position.h"
 
@@ -116,13 +118,13 @@ void playGame(Position &pos, const std::string& filename, u64 &fenCount) {
         std::string fen = fens.pop();
         pos.setBoard(fen);
         std::array<uint8_t, 32> mf = pos.molyFormat(result, score, &lastIdx);
+        std::stringstream out;
 
         for (int i = 0; i <= lastIdx; i++)
-            output << mf[i];
+            out << char(mf[i]);
 
-        std::cout << score << std::endl;
-        std::cout << result << std::endl;
-        std::cout << fen << std::endl;
+        output << out.rdbuf();
+
         fenCount++;
     }
 
