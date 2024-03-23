@@ -332,6 +332,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         history += (*(stack-2)->contHist)[pc][to];
 
         reductions -= PvNode;
+        reductions -= ROOT;
         reductions -= history > 0 ? history / 4085 : history / 25329;
         reductions = std::max(reductions, 0);
 
