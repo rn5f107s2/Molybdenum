@@ -78,7 +78,7 @@ void playGame(Position &pos, const std::string& filename, u64 &fenCount) {
     while (true) {
         Move bestMove;
         searchTime st;
-        st.nodeLimit = 5000;
+        st.nodeLimit = 25000;
         st.limit = Nodes;
 
         int score = startSearch(pos, st, MAXDEPTH, bestMove);
