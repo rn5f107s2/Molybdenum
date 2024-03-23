@@ -336,7 +336,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         reductions = std::max(reductions, 0);
 
         if (depth > 1 && moveCount > 2) {
-            int searchAlpha = ROOT ? -alpha - std::min(moveCount, 15) : -alpha - 1;
+            int searchAlpha = ROOT ? -alpha - std::min(moveCount, 3) : -alpha - 1;
 
             score = -search<NonPvNode>(searchAlpha, searchAlpha + 1, pos, depth - 1 - reductions + extensions, si, stack+1);
 
