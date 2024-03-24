@@ -4,9 +4,9 @@ MOLY_DIR=src
 CXX=clang++
 
 DEFAULT_EXE = $(OBJ_DIR)/Molybdenum
-DATAGEN_EXE = $(OBJ_DIR)/Datagen
+DATAGEN_EXE = $(OBJ_DIR)/Molybdenum
 
-all: $(DEFAULT_EXE)
+all: $(DATAGEN_EXE)
 
 datagen: $(DATAGEN_EXE)
 
@@ -26,10 +26,10 @@ OBJECTS := $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SOURCES))
 DG_OBJECTS := $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%_dg.o, $(SOURCES)) $(OBJ_DIR)/Datagen.o
 
 $(OBJ_DIR)/%_dg.o: $(SRC_DIR)/%.cpp
-	$(CXX) -I$(SRC_DIR) $(CXXFLAGS) -DDATAGEN -c $< -o $@
+	$(CXX) -I$(SRC_DIR) $(CXXFLAGS) -DGENFENS -c $< -o $@
 
 $(OBJ_DIR)/Datagen.o: $(SRC_DIR)/Datagen/Datagen.cpp
-	$(CXX) -I$(SRC_DIR) $(CXXFLAGS) -DDATAGEN -c $< -o $@
+	$(CXX) -I$(SRC_DIR) $(CXXFLAGS) -DGENFENS -c $< -o $@
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 	$(CXX) -I$(SRC_DIR) $(CXXFLAGS) -c $< -o $@
@@ -49,6 +49,7 @@ $(DEFAULT_EXE): $(OBJECTS)
 
 $(DATAGEN_EXE): $(DG_OBJECTS)
 	$(CXX) $(LDFLAGS) $(DG_OBJECTS) -o $(DATAGEN_EXE)
+	@if [ $(EXE) != $(DATAGEN_EXE) ]; then cp $(DATAGEN_EXE) $(EXE); fi
 
 .PHONY: clean
 clean:

@@ -1,10 +1,13 @@
 #include "../search.h"
+#include "Datagen.h"
 
-#ifdef DATAGEN
+#if  defined(DATAGEN) || defined(GENFENS)
 #include <fstream>
 #include <iostream>
 #include "Datagen.h"
 #include "../Position.h"
+
+u64 seedDataGen = 0;
 
 [[noreturn]] void start(Position &pos, const std::string& filename) {
     init();
@@ -26,6 +29,20 @@
             lastTime = std::chrono::steady_clock::now();
         }
     }
+}
+
+void genFens(u64 seed, int limit, Position &pos) {
+    int count = 0;
+    seedDataGen = seed;
+
+    while (count++ < limit) {
+        createExit(pos);
+
+        if (!seedDataGen)
+            init();
+
+        std::cout << "info string genfens " << pos.fen() << std::endl;
+    }    
 }
 
 void createExit(Position &pos) {
@@ -59,7 +76,9 @@ bool verifyExit(Position &pos) {
     searchTime st;
     st.limit = Nodes; st.nodeLimit = 2500;
 
-    return abs(startSearch(pos, st)) < 150;
+    int score = abs(startSearch(pos, st));
+
+    return score < 150;
 }
 
 void playGame(Position &pos, const std::string& filename, u64 &fenCount) {

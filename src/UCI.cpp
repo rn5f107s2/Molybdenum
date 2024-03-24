@@ -24,7 +24,7 @@ TuneOptions tuneOptions;
 const std::string name = "Molybdenum";
 const std::string version = "3";
 
-void uciCommunication(const std::string& in) {
+void uciCommunication(const std::string &in) {
     Position internalBoard;
 
 #ifdef DATAGEN
@@ -38,6 +38,28 @@ void uciCommunication(const std::string& in) {
 #endif
 
     loadDefaultNet();
+
+#ifdef GENFENS
+    if (contains(in, "genfens")) {
+        int count = -1;
+        u64 seed  = std::rand();
+
+        int begin = in.find("genfens") + 8;
+        int end   = in.find("seed"); 
+
+        count = std::stoi(in.substr(begin, end));
+
+        begin = end + 5;
+        end   = in.find("book"); 
+
+        seed = std::stoull(in.substr(begin, end));
+
+        genFens(seed, count, internalBoard);
+        return;
+    }
+
+#endif
+
     internalBoard.setBoard("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     std::string input;
     options.init();
@@ -258,4 +280,8 @@ void uciLoop(const std::string& input, Position &internalBoard) {
         std::cout << benchNodes << " Nodes" << "\n";
         std::cout << nps << " nps\n";
     }
+
+#ifdef GENFENS
+
+#endif
 }

@@ -1,6 +1,7 @@
 #include "search.h"
+#include "UCI.h"
 
-#ifdef DATAGEN
+#if defined(DATAGEN) || defined(GENFENS)
 #ifndef MOLYBDENUM_DATAGEN_H
 #define MOLYBDENUM_DATAGEN_H
 
@@ -8,9 +9,9 @@
 #include "../Constants.h"
 #include "../Position.h"
 
-static u64 seedDataGen = 0;
+extern u64 seedDataGen;
 
-static void init() {
+inline void init() {
     auto now = std::chrono::system_clock::now();
     auto now_ms = std::chrono::time_point_cast<std::chrono::milliseconds>(now);
     auto epoch = now_ms.time_since_epoch();
@@ -20,6 +21,7 @@ static void init() {
 
 bool verifyExit(Position &pos);
 void createExit(Position &pos);
+void genFens(u64 seed, int limit, Position &pos);
 void playGame(Position &pos, const std::string& filename, u64 &fenCount);
 
 [[noreturn]] void start(Position &pos, const std::string& filename);
