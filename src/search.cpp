@@ -391,8 +391,14 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             historyUpdates.push(currentMove);
     }
 
-    if (ROOT && exact)
+    if (ROOT && exact) {
         si.bestRootMove = bestMove;
+
+        if (bestMove != killers[stack->plysInSearch][0]) {
+            killers[0][1] = killers[stack->plysInSearch][0];
+            killers[0][0] = bestMove;
+        }
+    }
 
     if (bestScore == -INFINITE)
         return excluded ? alpha : checkers ? (-MATE + stack->plysInSearch) : DRAW;
