@@ -6,7 +6,7 @@ CXX=clang++
 DEFAULT_EXE = $(OBJ_DIR)/Molybdenum
 DATAGEN_EXE = $(OBJ_DIR)/Datagen
 
-all: $(DEFAULT_EXE)
+all: $(DATAGEN_EXE)
 
 datagen: $(DATAGEN_EXE)
 
@@ -49,6 +49,7 @@ $(DEFAULT_EXE): $(OBJECTS)
 
 $(DATAGEN_EXE): $(DG_OBJECTS)
 	$(CXX) $(LDFLAGS) $(DG_OBJECTS) -o $(DATAGEN_EXE)
+	@if [ $(EXE) != $(DATAGEN_EXE) ]; then cp $(DATAGEN_EXE) $(EXE); fi
 
 .PHONY: clean
 clean:
