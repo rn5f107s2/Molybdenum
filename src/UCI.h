@@ -4,7 +4,7 @@
 #include "Move.h"
 #include "Position.h"
 
-void uciCommunication(const std::string& in);
+void uciCommunication(const std::string &in);
 void uciLoop(const std::string& input, Position &internalBoard);
 
 inline bool contains(const std::string& input, const std::string& searchedTerm) {

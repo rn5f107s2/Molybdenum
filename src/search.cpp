@@ -55,7 +55,8 @@ int iterativeDeepening(Position  &pos, searchTime &st, int maxDepth, [[maybe_unu
         if (stop<Hard>(st, si))
             break;
 
-#ifndef DATAGEN
+
+#if !(defined(DATAGEN) || defined(GENFENS))
         std::string uciOutput;
         auto searchTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - si.st.searchStart).count();
         uciOutput += "info depth ";
@@ -90,13 +91,22 @@ int iterativeDeepening(Position  &pos, searchTime &st, int maxDepth, [[maybe_unu
             break;
     }
 
-    benchNodes += si.nodeCount;
-    std::cout << "bestmove " << moveToString(si.bestRootMove) << std::endl;
 #else
     prevScore = score;
     }
     bestMove = si.bestRootMove;
 #endif
+
+    benchNodes += si.nodeCount;
+
+#ifdef GENFENS
+    std::cout << "info depth 1 score cp " << prevScore << std::endl;
+#endif
+
+#ifndef DATAGEN
+    std::cout << "bestmove " << moveToString(si.bestRootMove) << std::endl;
+#endif
+
     return prevScore;
 }
 
