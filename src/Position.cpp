@@ -204,12 +204,11 @@ void Position::unmakeMove(Move move) {
     if (flag == CASTLING) {
         int rookFrom = from > to ? to - 1 : to + 2;
         int rookTo   = from > to ? to + 1 : to - 1;
-        Piece rook     = pieceLocations[rookTo];
+        Piece rook   = pieceLocations[rookTo];
 
         pieceLocations[rookTo  ] = NO_PIECE;
         pieceLocations[rookFrom] = rook;
         bitBoards[rook] ^= (1ULL << rookFrom) | (1ULL << rookTo);
-        moveFeature(rook, rookTo, rookFrom);
     }
 
     if (flag == ENPASSANT) {
