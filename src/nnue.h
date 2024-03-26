@@ -58,7 +58,7 @@ int index(int pc, int sq) {
 template<Toggle STATE, bool FIRST = false> inline
 void toggleFeature(int piece, int square) {
     int indexWhite = index<WHITE>(piece, square);
-    int16_t indexBlack = index<BLACK>(piece, square);
+    int indexBlack = index<BLACK>(piece, square);
 
     for (int n = 0; n != L1_SIZE; n++) {
         int updateW = net.weights0[indexWhite * L1_SIZE + n] * (!STATE ? -1 : 1);
