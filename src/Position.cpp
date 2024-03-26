@@ -113,7 +113,7 @@ void Position::makeMove(Move move) {
     pieceLocations[from] = NO_PIECE;
     bitBoards[movedPiece] ^= 1ULL << from;
     updateKey(movedPiece,  from, key);
-    toggleFeature<Off>(movedPiece, from);
+    toggleFeature<Off, true>(movedPiece, from);
 
     if (flag == PROMOTION) {
         movedPiece = makePromoPiece(extract<PROMOTIONTYPE>(move), sideToMove);
@@ -177,7 +177,7 @@ void Position::makeMove(Move move) {
 void Position::unmakeMove(Move move) {
     int from   = extract<FROM>(move);
     int to     = extract<TO  >(move);
-    int flag = extract<FLAG>(move);
+    int flag   = extract<FLAG>(move);
     Piece movingPiece = pieceLocations[to];
     Piece capturedPiece = capturedHistory.pop();
 

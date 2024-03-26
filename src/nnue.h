@@ -32,6 +32,8 @@ struct Net {
     std::array<int16_t, OUTPUT_SIZE> bias1{};
     std::array<std::array<int16_t, L1_SIZE>, 2> accumulator{};
     Stack<std::array<std::array<int16_t, L1_SIZE>, 2>> accumulatorStack;
+    std::array<std::array<std::array<int16_t, L1_SIZE>, 2>, 6000> accDiffStack;
+    int accDiffStackHead = 0;
 };
 
 extern Net net;
@@ -53,14 +55,24 @@ int index(int pc, int sq) {
     return piece * 64 + square;
 }
 
-template<Toggle STATE> inline
+template<Toggle STATE, bool FIRST = false> inline
 void toggleFeature(int piece, int square) {
     int indexWhite = index<WHITE>(piece, square);
-    int indexBlack = index<BLACK>(piece, square);
+    int16_t indexBlack = index<BLACK>(piece, square);
 
-    for (int l = 0; l != L1_SIZE; l++) {
-        net.accumulator[WHITE][l] += net.weights0[indexWhite * L1_SIZE + l] * (!STATE ? -1 : 1);
-        net.accumulator[BLACK][l] += net.weights0[indexBlack * L1_SIZE + l] * (!STATE ? -1 : 1);
+    for (int n = 0; n != L1_SIZE; n++) {
+        int updateW = net.weights0[indexWhite * L1_SIZE + n] * (!STATE ? -1 : 1);
+        int updateB = net.weights0[indexBlack * L1_SIZE + n] * (!STATE ? -1 : 1);
+
+        if constexpr (FIRST)
+            net.accDiffStack[net.accDiffStackHead][WHITE][n] = 
+            net.accDiffStack[net.accDiffStackHead][BLACK][n] = 0;
+
+        net.accDiffStack[net.accDiffStackHead][WHITE][n] += updateW;
+        net.accDiffStack[net.accDiffStackHead][BLACK][n] += updateB;
+
+        net.accumulator[WHITE][n] += updateW;
+        net.accumulator[BLACK][n] += updateB;
     }
 }
 
@@ -70,12 +82,16 @@ inline void moveFeature(int piece, int from, int to) {
 }
 
 inline void pushAccToStack() {
-    net.accumulatorStack.push(net.accumulator);
+    net.accDiffStackHead++;
 }
 
 inline void popAccStack() {
-    net.accumulatorStack.pop();
-    net.accumulator = net.accumulatorStack.top();
+    net.accDiffStackHead--;
+    
+    for (int n = 0; n != L1_SIZE; n++) {
+        net.accumulator[WHITE][n] -= net.accDiffStack[net.accDiffStackHead][WHITE][n];
+        net.accumulator[BLACK][n] -= net.accDiffStack[net.accDiffStackHead][BLACK][n];
+    }
 }
 
 

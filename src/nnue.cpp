@@ -47,6 +47,9 @@ void initAccumulator(std::array<u64, 13> &bitboards) {
     memcpy(&net.accumulator[WHITE], &net.bias0[0], sizeof(int16_t) * L1_SIZE);
     memcpy(&net.accumulator[BLACK], &net.bias0[0], sizeof(int16_t) * L1_SIZE);
 
+    net.accDiffStack.fill({{{0}}});
+    net.accDiffStackHead = 0;
+
     for (int pc = WHITE_PAWN; pc != NO_PIECE; pc++) {
         u64 pieceBB = bitboards[pc];
 
