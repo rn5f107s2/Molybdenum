@@ -105,11 +105,6 @@ int aspirationWindow(int prevScore, Position &pos, SearchInfo &si, int depth) {
     int alpha = -INFINITE;
     int beta  =  INFINITE;
 
-    if (depth >= 2) {
-        alpha = std::max(-INFINITE, prevScore - delta);
-        beta  = std::min( INFINITE, prevScore + delta);
-    }
-
     std::array<SearchStack, STACKSIZE> stack;
     stack[0].contHist = &continuationHistory[NO_PIECE][0];
     stack[1].contHist = &continuationHistory[NO_PIECE][0];
@@ -117,19 +112,6 @@ int aspirationWindow(int prevScore, Position &pos, SearchInfo &si, int depth) {
     si.selDepth = 0;
 
     int score = search<Root>(alpha, beta, pos, depth, si, &stack[2]);
-
-    while ((score >= beta || score <= alpha) && !stop<Hard>(si.st, si)) {
-        delta *= 1.23;
-
-        if (score >= beta)
-            beta = std::max(score + delta, INFINITE);
-        else
-            alpha = std::max(score - delta, -INFINITE);
-
-        si.selDepth = 0;
-
-        score = search<Root>(alpha, beta, pos, depth, si, &stack[2]);
-    }
 
     return score;
 }
@@ -217,37 +199,6 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             || (ttBound == UPPER && ttScore <= alpha)))
         return ttScore;
 
-    if (   !PvNode
-        && !check
-        && !excluded
-        && depth < 10
-        && stack->staticEval - (100 * depth - 164 * improving - 43 * whatAreYouDoing) >= beta
-        && stack->staticEval >= beta)
-        return stack->staticEval;
-
-    if (   !PvNode
-        && !check
-        && !excluded
-        && depth >= 2
-        && (stack-1)->currMove != NULL_MOVE
-        && stack->staticEval >= beta
-        && beta > -MAXMATE) {
-
-        int reduction = std::min(depth, (4 + (stack->staticEval >= beta + 290) + (depth > 6)));
-
-        pos.makeNullMove();
-
-        stack->currMove = NULL_MOVE;
-        stack->contHist = &continuationHistory[NO_PIECE][0];
-
-        int nullScore = -search<NonPvNode>(-beta, -alpha, pos, depth - reduction, si, stack+1);
-
-        pos.unmakeNullMove();
-
-        if (nullScore >= beta && nullScore < MAXMATE)
-            return nullScore;
-    }
-
     Movepicker mp = Movepicker<false>(&pos, ttMove, 
                                             &killers[stack->plysInSearch], 
                                             &mainHistory[pos.sideToMove], 
@@ -269,52 +220,6 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         int history = (*(stack-1)->contHist)[pc][to] + mainHistory[pos.sideToMove][from][to];
         
         stack->quarterRed = (red - reductions) * 4;
-
-        if (   !capture
-            && bestScore > -MAXMATE
-            && depth <= 4
-            && moveCount > (3 + improving) * (11 * depth - ((stack-1)->quarterRed * 10) / 4) / 4)
-            continue;
-
-        if (   !PvNode
-            && !capture
-            && bestScore > -MAXMATE
-            && depth <= 7
-            && stack->staticEval + 192 + 212 * expectedDepth  - (198 * stack->quarterRed) / 4 <= alpha)
-            continue;
-
-        if (   !PvNode
-            && bestScore > -MAXMATE
-            && !capture
-            && depth <= 6
-            && history < -6011 * expectedDepth - (-6305 * stack->quarterRed) / 4)
-            continue;
-
-        if (   depth >= 8
-            && !ROOT
-            && ttHit
-            && currentMove == ttMove
-            && ttBound != UPPER
-            && ttDepth >= depth - 3
-            && !excluded) {
-            
-            int singDepth = depth / 2;
-            int singBeta  = ttScore - 12 + std::min(si.rootMoveCount * 2, 12); 
-
-            stack->excluded = ttMove;
-            stack->currMove = NO_MOVE;
-
-            score = search<nt>(singBeta - 1, singBeta, pos, singDepth, si, stack);
-
-            stack->excluded = NO_MOVE;
-
-            if (score < singBeta)
-                extensions = 1;
-
-            if (   score > singBeta
-                && stack->currMove) 
-                mp.setPrioMove(stack->currMove);
-        }
 
         prefetchTTEntry(pos, pc, from, to, capture);
 
@@ -460,14 +365,6 @@ int qsearch(int alpha, int beta, Position &pos, SearchInfo &si, SearchStack *sta
         int to       = extract<TO  >(currentMove);
         int pc       = pos.pieceOn(from);
         int captured = pos.pieceOn(to);
-
-        if (   captured != NO_PIECE
-            && staticEval + PieceValuesSEE[captured] + 147 <= alpha)
-            continue;
-
-        if (   captured != NO_PIECE
-            && !see(pos, -108, currentMove))
-            continue;
 
         prefetchTTEntry(pos, pc, from, to, captured != NO_PIECE);
 
