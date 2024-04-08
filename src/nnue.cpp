@@ -18,7 +18,7 @@
 #undef PUSHED_MACRO
 #endif
 
-#define defaultNetPath "src/Nets/legacy_34e1ed5-epoch40.bin"
+#define defaultNetPath "src/Nets/main_fbb9446-40.bin"
 
 INCBIN(network, defaultNetPath);
 const Weights defaultWeights = *reinterpret_cast<const Weights*>(gnetworkData);
