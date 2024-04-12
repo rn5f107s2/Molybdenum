@@ -18,7 +18,7 @@
 #undef PUSHED_MACRO
 #endif
 
-#define defaultNetPath "src/Nets/legacy12t-epoch40.bin"
+#define defaultNetPath "src/Nets/legacy12TNotDivisible-epoch40.bin"
 
 INCBIN(network, defaultNetPath);
 const Weights defaultWeights = *reinterpret_cast<const Weights*>(gnetworkData);
