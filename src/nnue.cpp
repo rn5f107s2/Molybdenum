@@ -18,7 +18,7 @@
 #undef PUSHED_MACRO
 #endif
 
-#define defaultNetPath "src/Nets/20240327.nnue"
+#define defaultNetPath "src/Nets/legacy12TScrelu-epoch40.bin"
 
 INCBIN(network, defaultNetPath);
 const Weights defaultWeights = *reinterpret_cast<const Weights*>(gnetworkData);
@@ -68,5 +68,5 @@ int calculate(Color c) {
          output += relu(net.accumulator[!c][n]) * net.weights1[n + L1_SIZE];
     }
 
-    return (output + net.bias1[0]) * 400 / 16320;
+    return (output + net.bias1[0]) * 400 / 4161600;
 }

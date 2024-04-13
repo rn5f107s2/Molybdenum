@@ -41,8 +41,9 @@ void initAccumulator(std::array<u64, 13> &bitboards);
 int calculate(Color c);
 void loadDefaultNet();
 
-inline int16_t relu(int16_t input) {
-    return std::clamp(input, int16_t(0), int16_t(255));
+inline int relu(int16_t input) {
+    int clamped = std::clamp(input, int16_t(0), int16_t(255));
+    return clamped * clamped;
 }
 
 template<Color C> inline
