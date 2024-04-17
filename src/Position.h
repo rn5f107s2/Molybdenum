@@ -33,11 +33,14 @@ class Position {
         std::string fen();
         template<Color c> u64 getPieces(PieceType pt);
         template<PieceType pt> u64 getPieces(Color c);
+        template<PieceType pt, Color c> u64 getPieces();
         inline u64 getPieces(Color c, PieceType pt);
         inline u64 getPieces(PieceType pt);
         inline Piece pieceOn(int sq);
         inline u64 getOccupied();
         template<Color c> u64 getOccupied();
+        inline int bucketIndex();
+
     private:
         Stack<Piece>  capturedHistory;
         Stack<int>  plys50mrHistory;
@@ -45,6 +48,17 @@ class Position {
         Stack<u64> enPassantHistory;
         Stack<u64> keyHistory;
 };
+
+inline int Position::bucketIndex() {
+    u64 wBishops = getPieces<BISHOP, WHITE>();
+    u64 bBishops = getPieces<BISHOP, BLACK>();
+
+    return   wBishops
+          && bBishops
+          && !multipleBits(wBishops) 
+          && !multipleBits(bBishops)
+          && ((wBishops & 0x55aa55aa55aa55aa) != (bBishops & 0x55aa55aa55aa55aa));
+}
 
 template<Color c> inline
 u64 Position::getPieces(PieceType pt) {
@@ -54,6 +68,12 @@ u64 Position::getPieces(PieceType pt) {
 
 template<PieceType pt> inline
 u64 Position::getPieces(Color c) {
+    int idx = pt + (6 * !c);
+    return bitBoards[idx];
+}
+
+template<PieceType pt, Color c> inline
+u64 Position::getPieces() {
     int idx = pt + (6 * !c);
     return bitBoards[idx];
 }
