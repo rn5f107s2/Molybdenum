@@ -14,6 +14,7 @@ enum Toggle {
 
 static const int INPUT_SIZE = 12 * 64;
 static const int L1_SIZE = 256;
+static const int OUTPUT_BUCKETS = 2;
 static const int OUTPUT_SIZE = 1;
 static const int NET_SIZE = 3;
 static const std::array<int, NET_SIZE> LAYER_SIZE = {INPUT_SIZE, L1_SIZE, OUTPUT_SIZE};
@@ -21,14 +22,14 @@ static const std::array<int, NET_SIZE> LAYER_SIZE = {INPUT_SIZE, L1_SIZE, OUTPUT
 struct Weights {
     std::array<int16_t , L1_SIZE * INPUT_SIZE> weights0{};
     std::array<int16_t, L1_SIZE> bias0{};
-    std::array<int16_t, L1_SIZE * OUTPUT_SIZE * 2> weights1{};
+    std::array<std::array<int16_t, OUTPUT_BUCKETS>, L1_SIZE * OUTPUT_SIZE * 2> weights1{};
     std::array<int16_t, OUTPUT_SIZE> bias1{};
 };
 
 struct Net {
     std::array<int16_t , L1_SIZE * INPUT_SIZE> weights0{};
     std::array<int16_t, L1_SIZE> bias0{};
-    std::array<int16_t, L1_SIZE * OUTPUT_SIZE * 2> weights1{};
+    std::array<std::array<int16_t, OUTPUT_BUCKETS>, L1_SIZE * OUTPUT_SIZE * 2> weights1{};
     std::array<int16_t, OUTPUT_SIZE> bias1{};
     std::array<std::array<int16_t, L1_SIZE>, 2> accumulator{};
     Stack<std::array<std::array<int16_t, L1_SIZE>, 2>> accumulatorStack;
@@ -38,7 +39,7 @@ extern Net net;
 
 void readNetwork(const std::string &filename);
 void initAccumulator(std::array<u64, 13> &bitboards);
-int calculate(Color c);
+int calculate(Color c, int bucketIndex);
 void loadDefaultNet();
 
 inline int relu(int16_t input) {
