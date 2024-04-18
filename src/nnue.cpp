@@ -18,11 +18,7 @@
 #undef PUSHED_MACRO
 #endif
 
-<<<<<<< HEAD
-#define defaultNetPath "src/Nets/moly_20240501.nnue"
-=======
 #define defaultNetPath "src/Nets/moly_20240417-40.bin"
->>>>>>> e48c8e8 (Seems slow)
 
 INCBIN(network, defaultNetPath);
 const Weights defaultWeights = *reinterpret_cast<const Weights*>(gnetworkData);
