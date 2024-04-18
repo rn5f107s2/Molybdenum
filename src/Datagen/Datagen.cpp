@@ -33,7 +33,9 @@ void createExit(Position &pos) {
     int exitDepth = int(seedDataGen % 4) + 6;
 
     while (!valid) {
-        pos.setBoard("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+        std::string defaultFen = (seedDataGen & 1) ? "rn1qkbnr/pppppppp/8/8/8/8/PPPPPPPP/RN1QKBNR w KQkq - 0 1" : "rnbqk1nr/pppppppp/8/8/8/8/PPPPPPPP/RNBQK1NR w KQkq - 0 1";
+        
+        pos.setBoard(defaultFen);
         for (int i = 0; i <= exitDepth; i++) {
             MoveList legalMoves;
             u64 ksq = pos.getPieces(pos.sideToMove, KING);
