@@ -22,7 +22,7 @@ TuneOptions tuneOptions;
 #endif
 
 const std::string name = "Molybdenum";
-const std::string version = "3";
+const std::string version = "3.1";
 
 void uciCommunication(const std::string& in) {
     Position internalBoard;
