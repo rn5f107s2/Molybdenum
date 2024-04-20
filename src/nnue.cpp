@@ -37,8 +37,8 @@ void readNetwork(const std::string &filename) {
 
     stream.read(reinterpret_cast<char *>(&net.weights0), sizeof(net.weights0[0]) * net.weights0.size());
     stream.read(reinterpret_cast<char *>(&net.bias0), sizeof(net.bias0[0]) * net.bias0.size());
-    stream.read(reinterpret_cast<char *>(&net.weights1), sizeof(net.weights1[0]) * net.weights1.size() * OUTPUT_BUCKETS);
-    stream.read(reinterpret_cast<char *>(&net.bias1), sizeof(net.bias1[0]) * net.bias1.size());
+    stream.read(reinterpret_cast<char *>(&net.weights1), sizeof(net.weights1[0][0]) * net.weights1.size() * OUTPUT_BUCKETS);
+    stream.read(reinterpret_cast<char *>(&net.bias1), sizeof(net.bias1[0][0]) * net.bias1.size() * OUTPUT_BUCKETS);
 }
 
 void initAccumulator(std::array<u64, 13> &bitboards) {
@@ -68,5 +68,5 @@ int calculate(Color c, int bucketIndex) {
          output += relu(net.accumulator[!c][n]) * net.weights1[n + L1_SIZE][bucketIndex];
     }
 
-    return ((output / 255) + net.bias1[0]) * 400 / (64 * 255);
+    return ((output / 255) + net.bias1[0][bucketIndex]) * 400 / (64 * 255);
 }
