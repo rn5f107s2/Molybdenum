@@ -294,6 +294,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             && !ROOT
             && ttHit
             && currentMove == ttMove
+            && moveCount == 0
             && ttBound != UPPER
             && ttDepth >= depth - 3
             && !excluded) {
@@ -311,9 +312,23 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             if (score < singBeta)
                 extensions = 1;
 
-            if (   score > singBeta
-                && stack->currMove) 
+            if (   stack->currMove 
+                && score > singBeta) {
                 mp.setPrioMove(stack->currMove);
+                
+                if (ttScore <= alpha && ttBound == LOWER) {
+                    mp.setPrioMove(ttMove);
+
+                    currentMove = stack->currMove;
+
+                    from    = extract<FROM>(currentMove);
+                    to      = extract<TO>(currentMove);
+                    capture = pos.isCapture(currentMove);
+                    pc = pos.pieceOn(from);
+
+                    history = (*(stack-1)->contHist)[pc][to] + mainHistory[pos.sideToMove][from][to];
+                }
+            }
         }
 
         prefetchTTEntry(pos, pc, from, to, capture);
