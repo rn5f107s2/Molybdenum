@@ -316,7 +316,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
                 && score > singBeta) {
                 mp.setPrioMove(stack->currMove);
                 
-                if (ttScore <= alpha && ttBound == LOWER) {
+                if (ttScore <= alpha && ttBound == LOWER && score > ttScore && score >= beta) {
                     mp.setPrioMove(ttMove);
 
                     currentMove = stack->currMove;
