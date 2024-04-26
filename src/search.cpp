@@ -314,10 +314,11 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
 
             if (   stack->currMove 
                 && score > singBeta) {
-                mp.setPrioMove(stack->currMove);
                 
-                if (ttScore <= alpha && ttBound == LOWER && score > ttScore && score >= beta) {
-                    mp.setPrioMove(ttMove);
+                if (   ttScore <= alpha 
+                    && ttBound == LOWER 
+                    && score > ttScore 
+                    && score >= beta) {
 
                     currentMove = stack->currMove;
 
@@ -327,6 +328,8 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
                     pc = pos.pieceOn(from);
 
                     history = (*(stack-1)->contHist)[pc][to] + mainHistory[pos.sideToMove][from][to];
+                } else {
+                    mp.setPrioMove(stack->currMove);
                 }
             }
         }
