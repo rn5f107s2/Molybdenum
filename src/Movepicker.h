@@ -31,6 +31,7 @@ class Movepicker {
         PieceToHist *contHist2{};
         Move ttMove = NO_MOVE;
         Move prioMove = NO_MOVE;
+        Move ignoredMove = NO_MOVE;
         MoveList ml{};
         Position *pos;
         ScoredMove *currentMove = nullptr;
@@ -134,13 +135,26 @@ class Movepicker {
             if (currentMove == endMoveList)
                 return NO_MOVE;
 
-            Move next = sortNext();
-            return (next == prioMove) ? sortNext() : next; 
+            while (currentMove != endMoveList)
+            {
+                Move next = sortNext();
+
+                if (next == prioMove || next == ignoredMove)
+                    continue;
+
+                return next;
+            }
+            
+            return NO_MOVE; 
         }
 
         inline void setPrioMove(Move pm) {
             prioMove = pm;
             searchedPrio = false;
+        }
+
+        inline void ignoreMove(Move im) {
+            ignoredMove = im;
         }
         
 };

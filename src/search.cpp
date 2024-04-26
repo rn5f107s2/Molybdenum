@@ -318,13 +318,14 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
                 
                 if (ttScore <= alpha && ttBound == LOWER) {
                     mp.setPrioMove(ttMove);
+                    mp.ignoreMove(stack->currMove);
 
                     currentMove = stack->currMove;
 
                     from    = extract<FROM>(currentMove);
                     to      = extract<TO>(currentMove);
                     capture = pos.isCapture(currentMove);
-                    pc = pos.pieceOn(from);
+                    pc      = pos.pieceOn(from);
 
                     history = (*(stack-1)->contHist)[pc][to] + mainHistory[pos.sideToMove][from][to];
                 }
