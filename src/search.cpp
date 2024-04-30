@@ -311,9 +311,15 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             if (score < singBeta)
                 extensions = 1;
 
-            if (   score > singBeta
-                && stack->currMove) 
-                mp.setPrioMove(stack->currMove);
+            if (score > singBeta)
+            {
+                if (stack->currMove)
+                    mp.setPrioMove(stack->currMove);
+
+                if (   ttScore <= alpha
+                    && ttDepth > depth)
+                    continue;
+            }
         }
 
         prefetchTTEntry(pos, pc, from, to, capture);
