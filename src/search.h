@@ -22,6 +22,7 @@ struct SearchInfo {
     searchTime st;
     int rootMoveCount = 0;
     int selDepth = 0;
+    int rootDepth = 0;
 };
 
 struct SearchStack {

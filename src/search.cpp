@@ -114,7 +114,8 @@ int aspirationWindow(int prevScore, Position &pos, SearchInfo &si, int depth) {
     stack[0].contHist = &continuationHistory[NO_PIECE][0];
     stack[1].contHist = &continuationHistory[NO_PIECE][0];
 
-    si.selDepth = 0;
+    si.selDepth  = 0;
+    si.rootDepth = depth;
 
     int score = search<Root>(alpha, beta, pos, depth, si, &stack[2]);
 
@@ -299,7 +300,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             && !excluded) {
             
             int singDepth = depth / 2;
-            int singBeta  = ttScore - 12 + std::min(si.rootMoveCount * 2, 12); 
+            int singBeta  = ttScore - 12 + std::min(si.rootMoveCount * 2, 12) - std::max(stack->plysInSearch - si.rootDepth, 0); 
 
             stack->excluded = ttMove;
             stack->currMove = NO_MOVE;
