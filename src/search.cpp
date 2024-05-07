@@ -194,6 +194,16 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
     u64 key = pos.key();
     TTEntry* tte = TT.probe(key);
 
+    if (   PVNode 
+        && depth > 4
+        && tte->key != key
+        && !excluded) {
+
+        search<NonPvNode>(alpha - 1, alpha, pos, depth - 3, si, stack);
+
+        tte = TT.probe(key);
+    }
+
     if (   tte->key == key 
         && !excluded) {
         ttBound = tte->bound;
