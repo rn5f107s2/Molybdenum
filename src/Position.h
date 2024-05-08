@@ -57,7 +57,7 @@ inline int Position::bucketIndex() {
           && bBishops
           && !multipleBits(wBishops) 
           && !multipleBits(bBishops)
-          && ((wBishops & 0x55aa55aa55aa55aa) != (bBishops & 0x55aa55aa55aa55aa));
+          && (bool(wBishops & 0x55aa55aa55aa55aa) != bool(bBishops & 0x55aa55aa55aa55aa));
 }
 
 template<Color c> inline
