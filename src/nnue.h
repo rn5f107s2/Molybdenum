@@ -19,10 +19,10 @@ static const int NET_SIZE = 3;
 static const std::array<int, NET_SIZE> LAYER_SIZE = {INPUT_SIZE, L1_SIZE, OUTPUT_SIZE};
 
 struct Weights {
-    std::array<int16_t , L1_SIZE * INPUT_SIZE> weights0{};
-    std::array<int16_t, L1_SIZE> bias0{};
-    std::array<int16_t, L1_SIZE * OUTPUT_SIZE * 2> weights1{};
-    std::array<int16_t, OUTPUT_SIZE> bias1{};
+    std::array<float , L1_SIZE * INPUT_SIZE> weights0{};
+    std::array<float, L1_SIZE> bias0{};
+    std::array<float, L1_SIZE * OUTPUT_SIZE * 2> weights1{};
+    std::array<float, OUTPUT_SIZE> bias1{};
 };
 
 struct Net {
