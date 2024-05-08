@@ -29,16 +29,16 @@ Net net;
 
 void loadDefaultNet() {
     for (int i = 0; i < INPUT_SIZE * L1_SIZE; i++)
-        net.weights0[i] = int16_t(double(defaultWeights.weights0[i]) * double(255));
+        net.weights0[i] = std::round(double(defaultWeights.weights0[i]) * double(255));
 
     for (int i = 0; i < L1_SIZE; i++)
-        net.bias0[i] = int16_t(double(defaultWeights.bias0[i]) * double(255));
+        net.bias0[i] = std::round(double(defaultWeights.bias0[i]) * double(255));
 
     for (int i = 0; i < L1_SIZE * 2; i++)
-        net.weights1[i] = int16_t(double(defaultWeights.weights1[i]) * double(64));
+        net.weights1[i] = std::round(double(defaultWeights.weights1[i]) * double(64));
 
     for (int i = 0; i < OUTPUT_SIZE; i++)
-        net.bias1[i] = int16_t(double(defaultWeights.bias1[i]) * double(255 * 64));
+        net.bias1[i] = std::round(double(defaultWeights.bias1[i]) * double(255 * 64));
 }
 
 void readNetwork(const std::string &filename) {
