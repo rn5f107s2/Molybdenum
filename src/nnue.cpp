@@ -29,31 +29,23 @@ const Weights defaultWeights = *reinterpret_cast<const Weights*>(gnetworkData);
 Net net;
 
 void loadDefaultNet() {
-    //for (int i = 0; i < INPUT_SIZE * L1_SIZE; i++)
-    //    net.weights0[i] = int16_t(double(defaultWeights.weights0[i]) * double(255));
+    for (int i = 0; i < INPUT_SIZE * L1_SIZE; i++)
+        net.weights0[i] = int16_t(double(defaultWeights.weights0[i]) * double(255));
 
-    //for (int i = 0; i < L1_SIZE; i++)
-    //    net.bias0[i] = int16_t(double(defaultWeights.bias0[i]) * double(255));
+    for (int i = 0; i < L1_SIZE; i++)
+        net.bias0[i] = int16_t(double(defaultWeights.bias0[i]) * double(255));
 
-    //for (int i = 0; i < L1_SIZE * L2_SIZE * 2; i++)
-        //net.weights1[i] = int16_t(double(defaultWeights.weights1[i]) * double(64));
+    for (int i = 0; i < L1_SIZE * L2_SIZE * 2; i++)
+        net.weights1[i] = int16_t(double(defaultWeights.weights1[i]) * double(64));
 
-    net.weights0 = defaultWeights.weights0;
-    net.bias0    = defaultWeights.bias0;
-    net.weights1 = defaultWeights.weights1;
-    net.bias1    = defaultWeights.bias1;
-    net.weights2 = defaultWeights.weights2;
-    net.bias2    = defaultWeights.bias2;
+    for (int i = 0; i < L2_SIZE; i++)
+        net.bias1[i] = int16_t(double(defaultWeights.bias1[i]) * double(255 * 64));
 
-    //for (int i = 0; i < L2_SIZE; i++)
-        //net.bias1[i] = int16_t(double(defaultWeights.bias1[i]) * double(255 * 64));
+    for (int i = 0; i < OUTPUT_SIZE * L2_SIZE; i++)
+        net.weights2[i] = double(defaultWeights.weights2[i]);
 
-
-    //for (int i = 0; i < OUTPUT_SIZE * L2_SIZE; i++)
-        //net.weights2[i] = int16_t(double(defaultWeights.weights2[i]) * double(64));
-
-    //for (int i = 0; i < OUTPUT_SIZE; i++)
-        //net.bias2[i] = int16_t(double(defaultWeights.bias2[i]) * double(64));
+    for (int i = 0; i < OUTPUT_SIZE; i++)
+        net.bias2[i] = double(defaultWeights.bias2[i]);
 }
 
 void readNetwork(const std::string &filename) {
@@ -68,8 +60,8 @@ void readNetwork(const std::string &filename) {
 void initAccumulator(std::array<u64, 13> &bitboards) {
     net.accumulatorStack.clear();
 
-    memcpy(&net.accumulator[WHITE], &net.bias0[0], sizeof(float) * L1_SIZE);
-    memcpy(&net.accumulator[BLACK], &net.bias0[0], sizeof(float) * L1_SIZE);
+    memcpy(&net.accumulator[WHITE], &net.bias0[0], sizeof(int16_t) * L1_SIZE);
+    memcpy(&net.accumulator[BLACK], &net.bias0[0], sizeof(int16_t) * L1_SIZE);
 
     for (int pc = WHITE_PAWN; pc != NO_PIECE; pc++) {
         u64 pieceBB = bitboards[pc];
@@ -85,7 +77,7 @@ void initAccumulator(std::array<u64, 13> &bitboards) {
 }
 
 int calculate(Color c) {
-    std::array<float, L2_SIZE> l1Out = net.bias1;
+    std::array<int16_t, L2_SIZE> l1Out = net.bias1;
 
     for (int n = 0; n != L1_SIZE; n++) {
         for (int n2 = 0; n2 != L2_SIZE; n2++) {
@@ -97,7 +89,8 @@ int calculate(Color c) {
     float output = 0;
 
     for (int n2 = 0; n2 != L2_SIZE; n2++) {
-        output += relu(l1Out[n2]) * net.weights2[n2];
+        output += relu(float(l1Out[n2]) / (255 * 255 * 64)) * net.weights2[n2];
+        std::cout << float(l1Out[n2]) / (255 * 255 * 64) << std::endl;
     }
 
     return (output + net.bias2[0]) * 400;
