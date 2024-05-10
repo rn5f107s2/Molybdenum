@@ -36,10 +36,10 @@ void loadDefaultNet() {
         net.bias0[i] = int16_t(double(defaultWeights.bias0[i]) * double(255));
 
     for (int i = 0; i < L1_SIZE * L2_SIZE * 2; i++)
-        net.weights1[i] = int16_t(double(defaultWeights.weights1[i]) * double(64));
+        net.weights1[i] = double(defaultWeights.weights1[i]);
 
     for (int i = 0; i < L2_SIZE; i++)
-        net.bias1[i] = int16_t(double(defaultWeights.bias1[i]) * double(255 * 64));
+        net.bias1[i] = double(defaultWeights.bias1[i]);
 
     for (int i = 0; i < OUTPUT_SIZE * L2_SIZE; i++)
         net.weights2[i] = double(defaultWeights.weights2[i]);
@@ -77,20 +77,19 @@ void initAccumulator(std::array<u64, 13> &bitboards) {
 }
 
 int calculate(Color c) {
-    std::array<int16_t, L2_SIZE> l1Out = net.bias1;
+    std::array<float, L2_SIZE> l1Out = net.bias1;
 
     for (int n = 0; n != L1_SIZE; n++) {
         for (int n2 = 0; n2 != L2_SIZE; n2++) {
-            l1Out[n2] += relu(net.accumulator[ c][n]) * net.weights1[n * L2_SIZE + n2                    ];
-            l1Out[n2] += relu(net.accumulator[!c][n]) * net.weights1[n * L2_SIZE + n2 + L1_SIZE * L2_SIZE];
+            l1Out[n2] += relu(float(net.accumulator[ c][n]) / 255) * net.weights1[n * L2_SIZE + n2                    ];
+            l1Out[n2] += relu(float(net.accumulator[!c][n]) / 255) * net.weights1[n * L2_SIZE + n2 + L1_SIZE * L2_SIZE];
         }
     }
 
     float output = 0;
 
     for (int n2 = 0; n2 != L2_SIZE; n2++) {
-        output += relu(float(l1Out[n2]) / (255 * 255 * 64)) * net.weights2[n2];
-        std::cout << float(l1Out[n2]) / (255 * 255 * 64) << std::endl;
+        output += relu(float(l1Out[n2])) * net.weights2[n2];
     }
 
     return (output + net.bias2[0]) * 400;
