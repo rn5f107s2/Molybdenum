@@ -41,7 +41,7 @@ void loadDefaultNet() {
     net.weights0 = defaultWeights.weights0;
     net.bias0    = defaultWeights.bias0;
     net.weights1 = defaultWeights.weights1;
-    net.weights1 = defaultWeights.weights1;
+    net.bias1    = defaultWeights.bias1;
     net.weights2 = defaultWeights.weights2;
     net.bias2    = defaultWeights.bias2;
 
@@ -98,7 +98,6 @@ int calculate(Color c) {
 
     for (int n2 = 0; n2 != L2_SIZE; n2++) {
         output += relu(l1Out[n2]) * net.weights2[n2];
-        std::cout << l1Out[n2] << std::endl;
     }
 
     return (output + net.bias2[0]) * 400;
