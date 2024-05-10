@@ -68,8 +68,8 @@ void readNetwork(const std::string &filename) {
 void initAccumulator(std::array<u64, 13> &bitboards) {
     net.accumulatorStack.clear();
 
-    memcpy(&net.accumulator[WHITE], &net.bias0[0], sizeof(int16_t) * L1_SIZE);
-    memcpy(&net.accumulator[BLACK], &net.bias0[0], sizeof(int16_t) * L1_SIZE);
+    memcpy(&net.accumulator[WHITE], &net.bias0[0], sizeof(float) * L1_SIZE);
+    memcpy(&net.accumulator[BLACK], &net.bias0[0], sizeof(float) * L1_SIZE);
 
     for (int pc = WHITE_PAWN; pc != NO_PIECE; pc++) {
         u64 pieceBB = bitboards[pc];
@@ -89,17 +89,17 @@ int calculate(Color c) {
 
     for (int n = 0; n != L1_SIZE; n++) {
         for (int n2 = 0; n2 != L2_SIZE; n2++) {
-            l1Out[n2] += relu(net.accumulator[ c][n]) * net.weights1[n2 * L2_SIZE + n          ];
-            l1Out[n2] += relu(net.accumulator[!c][n]) * net.weights1[n2 * L2_SIZE + n + L1_SIZE];
+            l1Out[n2] += relu(net.accumulator[ c][n]) * net.weights1[n * L2_SIZE + n2                    ];
+            l1Out[n2] += relu(net.accumulator[!c][n]) * net.weights1[n * L2_SIZE + n2 + L1_SIZE * L2_SIZE];
         }
     }
 
     float output = 0;
 
     for (int n2 = 0; n2 != L2_SIZE; n2++) {
-        std::cout << l1Out[n2] << std::endl;
         output += relu(l1Out[n2]) * net.weights2[n2];
+        std::cout << l1Out[n2] << std::endl;
     }
 
-    return (output + net.bias2[0]);
+    return (output + net.bias2[0]) * 400;
 }

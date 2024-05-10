@@ -35,8 +35,8 @@ struct Net {
     std::array<float, L2_SIZE> bias1{};
     std::array<float, L2_SIZE * OUTPUT_SIZE> weights2{};
     std::array<float, OUTPUT_SIZE> bias2{};
-    std::array<std::array<int16_t, L1_SIZE>, 2> accumulator{};
-    Stack<std::array<std::array<int16_t, L1_SIZE>, 2>> accumulatorStack;
+    std::array<std::array<float, L1_SIZE>, 2> accumulator{};
+    Stack<std::array<std::array<float, L1_SIZE>, 2>> accumulatorStack;
 };
 
 extern Net net;
@@ -51,8 +51,8 @@ void loadDefaultNet();
 //    return clamped * clamped;
 //}
 
-inline int relu(float input) {
-    int clamped = std::clamp(input, 0.0f, 1.0f);
+inline float relu(float input) {
+    float clamped = std::clamp(input, 0.0f, 1.0f);
     return clamped * clamped;
 }
 
