@@ -72,6 +72,7 @@ void uciLoop(const std::string& input, Position &internalBoard) {
         std::cout << "id name " << name << " " << version << "\n";
         std::cout << "id author rn5f107s2\n";
         options.printOptions();
+        std::cout << "option name Evalfile type string default none" << std::endl;
 
 #ifdef TUNE
         tuneOptions.printOptions();
@@ -223,18 +224,25 @@ void uciLoop(const std::string& input, Position &internalBoard) {
     if (contains(input, "setoption")) {
         std::string optionName = input.substr(input.find("name ") + 5);
         int nameEnd = int(optionName.find("value "));
-        int value = std::stoi(optionName.substr(nameEnd + 6));
+        std::string value = optionName.substr(nameEnd + 6);
         optionName = optionName.substr(0, optionName.size() - optionName.substr(nameEnd).size() - 1);
 
-        bool found = options.setOption(optionName, value);
+        if (!contains(input, "evalfile")) {
+            bool found = options.setOption(optionName, std::stoi(value));
 
 #ifdef TUNE
-        found |= tuneOptions.setOption(optionName, value);
-        tuneOptions.init();
+            found |= tuneOptions.setOption(optionName, value);
+            tuneOptions.init();
 #endif
 
-        if (!found)
-            std::cout << "No such option: " << optionName << "\n";
+            if (!found)
+                std::cout << "No such option: " << optionName << "\n";
+        } else {
+            if (value == "none")
+                loadDefaultNet();
+            else
+                readNetwork(value);
+        }
     }
 
     if (contains(input, "bench")) {
