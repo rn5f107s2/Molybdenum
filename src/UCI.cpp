@@ -72,7 +72,7 @@ void uciLoop(const std::string& input, Position &internalBoard) {
         std::cout << "id name " << name << " " << version << "\n";
         std::cout << "id author rn5f107s2\n";
         options.printOptions();
-        std::cout << "option name Evalfile type string default none" << std::endl;
+        std::cout << "option name EvalFile type string default none" << std::endl;
 
 #ifdef TUNE
         tuneOptions.printOptions();
@@ -227,7 +227,7 @@ void uciLoop(const std::string& input, Position &internalBoard) {
         std::string value = optionName.substr(nameEnd + 6);
         optionName = optionName.substr(0, optionName.size() - optionName.substr(nameEnd).size() - 1);
 
-        if (!contains(input, "evalfile")) {
+        if (!contains(input, "EvalFile")) {
             bool found = options.setOption(optionName, std::stoi(value));
 
 #ifdef TUNE
