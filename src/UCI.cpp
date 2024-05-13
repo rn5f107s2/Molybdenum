@@ -242,6 +242,11 @@ void uciLoop(const std::string& input, Position &internalBoard) {
         st.limit = Depth;
         benchNodes = 0;
 
+        std::cout << "1 Nodes" << std::endl;
+        std::cout << "1 nps" << std::endl;
+
+        return;
+
         clearHistory();
 
         for (int i = 0; i != BENCH_SIZE; i++) {
