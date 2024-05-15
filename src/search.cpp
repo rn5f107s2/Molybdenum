@@ -254,6 +254,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
                                             &*(stack-1)->contHist, 
                                             &*(stack-2)->contHist, checkers);
     while ((currentMove = mp.pickMove())) {
+        extensions = depth + moveCount <= 13 ? extensions : 0;
     
         if (currentMove == excluded)
             continue;
