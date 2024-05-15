@@ -32,8 +32,9 @@ TTEntry *TranspositionTable::probe(u64 key) {
     return &tt[idx];
 }
 
-void TranspositionTable::save(TTEntry *tte, u64 key, int score, TTBound bound, Move move, int depth, int plysInSearch) {
+void TranspositionTable::save(TTEntry *tte, u64 key, int score, TTBound bound, Move move, int depth, int plysInSearch, bool force) {
     if (   tte->key == key
+        && !force
         && depth + bound < tte->depth + tte->bound - 3)
         return;
 

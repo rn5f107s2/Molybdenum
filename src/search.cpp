@@ -301,19 +301,26 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             int singDepth = depth / 2;
             int singBeta  = ttScore - 12 + std::min(si.rootMoveCount * 2, 12); 
 
-            stack->excluded = ttMove;
-            stack->currMove = NO_MOVE;
+            stack->excluded  = ttMove;
+            stack->currMove  = NO_MOVE;
+            stack->forceSave = ttScore <= alpha; 
 
             score = search<nt>(singBeta - 1, singBeta, pos, singDepth, si, stack);
 
-            stack->excluded = NO_MOVE;
+            stack->excluded   = NO_MOVE;
+            stack->forceSave  = false; //?
 
             if (score < singBeta)
                 extensions = 1;
 
-            if (   score > singBeta
-                && stack->currMove) 
-                mp.setPrioMove(stack->currMove);
+            if (   score > singBeta)
+            {
+                if (stack->currMove)
+                    mp.setPrioMove(stack->currMove);
+
+                if (ttScore <= alpha)
+                    return search<nt>(alpha, beta, pos, depth, si, stack);
+            }
         }
 
         prefetchTTEntry(pos, pc, from, to, capture);
@@ -374,7 +381,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
                         }
                     }
 
-                    TT.save(tte, key, bestScore, LOWER, bestMove, depth, stack->plysInSearch);
+                    TT.save(tte, key, bestScore, LOWER, bestMove, depth, stack->plysInSearch, stack->forceSave);
                     return bestScore;
                 }
 
@@ -403,7 +410,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         bestScore = ttScore;
 
     if (!excluded)
-        TT.save(tte, key, bestScore, exact ? EXACT : UPPER, bestMove, depth, stack->plysInSearch);
+        TT.save(tte, key, bestScore, exact ? EXACT : UPPER, bestMove, depth, stack->plysInSearch, false);
 
     return bestScore;
 }
