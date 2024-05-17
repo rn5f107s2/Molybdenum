@@ -3,6 +3,8 @@
 
 #include <string>
 #include <array>
+
+#include "nnue.h"
 #include "Constants.h"
 #include "BitStuff.h"
 #include "Move.h"
@@ -50,14 +52,7 @@ class Position {
 };
 
 inline int Position::bucketIndex() {
-    u64 wBishops = getPieces<BISHOP, WHITE>();
-    u64 bBishops = getPieces<BISHOP, BLACK>();
-
-    return   wBishops
-          && bBishops
-          && !multipleBits(wBishops) 
-          && !multipleBits(bBishops)
-          && (bool(wBishops & 0x55aa55aa55aa55aa) != bool(bBishops & 0x55aa55aa55aa55aa));
+    return (__builtin_popcountll(getOccupied()) - 2) / OUTPUT_BUCKETS;
 }
 
 template<Color c> inline
