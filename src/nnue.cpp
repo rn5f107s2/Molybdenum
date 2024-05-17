@@ -64,8 +64,8 @@ int calculate(Color c, int bucketIndex) {
     int output = 0;
 
     for (int n = 0; n != L1_SIZE; n++) {
-         output += relu(net.accumulator[ c][n]) * net.weights1[n          ][bucketIndex];
-         output += relu(net.accumulator[!c][n]) * net.weights1[n + L1_SIZE][bucketIndex];
+         output += relu(net.accumulator[ c][n]) * net.weights1[n          ][8 - bucketIndex];
+         output += relu(net.accumulator[!c][n]) * net.weights1[n + L1_SIZE][8 - bucketIndex];
     }
 
     return ((output / 255) + net.bias1[0][bucketIndex]) * 400 / (64 * 255);
