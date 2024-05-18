@@ -105,7 +105,7 @@ void playGame(Position &pos, const std::string& filename, u64 &fenCount) {
 
         if (!pos.isCapture(bestMove) && extract<FLAG>(bestMove) != PROMOTION) {
             fens.push(pos.fen());
-            scores.push(score);
+            scores.push(score * (pos.sideToMove ? 1 : -1));
             bestMoves.push(bestMove);
         }
         pos.makeMove(bestMove);
