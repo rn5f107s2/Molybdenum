@@ -29,6 +29,7 @@ enum NodeType {
 template<NodeType NT>
 int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, SearchStack *stack);
 int qsearch(int alpha, int beta, Position &pos, SearchInfo &si, SearchStack *stack);
+void updateKillers(SearchStack *stack, Move bestMove);
 
 int startSearch(Position &pos, searchTime &st, int maxDepth, Move &bestMove) {
     return iterativeDeepening(pos, st, maxDepth,bestMove);
@@ -358,6 +359,9 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             return DRAW;
 
         if (score > bestScore) {
+            if (ROOT && score > alpha && bestMove)
+                updateKillers(stack, bestMove);
+
             bestScore = score;
             bestMove = currentMove;
 
@@ -365,16 +369,11 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
                 alpha = score;
                 exact = true;
 
-                if (ROOT || (score >= beta && !pos.isCapture(bestMove))) {
-                    if (bestMove != killers[stack->plysInSearch][0]) {
-                        killers[stack->plysInSearch][1] = killers[stack->plysInSearch][0];
-                        killers[stack->plysInSearch][0] = bestMove;
-                    }
-                }
-
                 if (score >= beta) {
-                    if (!pos.isCapture(bestMove))
+                    if (!pos.isCapture(bestMove)) {
                         updateHistory(mainHistory[pos.sideToMove], *(stack-1)->contHist, *(stack-2)->contHist, bestMove, historyUpdates, depth, pos, (stack-1)->currMove && (stack-1)->currMove != NULL_MOVE, (stack-2)->currMove && (stack-2)->currMove != NULL_MOVE);
+                        updateKillers(stack, bestMove);   
+                    }
 
                     TT.save(tte, key, bestScore, LOWER, bestMove, depth, stack->plysInSearch);
                     return bestScore;
@@ -493,4 +492,11 @@ int qsearch(int alpha, int beta, Position &pos, SearchInfo &si, SearchStack *sta
     }
 
     return bestScore;
+}
+
+void updateKillers(SearchStack *stack, Move bestMove) {
+    if (bestMove != killers[stack->plysInSearch][0]) {
+        killers[stack->plysInSearch][1] = killers[stack->plysInSearch][0];
+        killers[stack->plysInSearch][0] = bestMove;
+    }
 }
