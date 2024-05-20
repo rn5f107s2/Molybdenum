@@ -252,7 +252,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
                                             &killers[stack->plysInSearch], 
                                             &mainHistory[pos.sideToMove], 
                                             &*(stack-1)->contHist, 
-                                            &*(stack-2)->contHist, checkers);
+                                            &*(stack-2)->contHist, checkers, ROOT);
     while ((currentMove = mp.pickMove())) {
         extensions = depth + moveCount <= 13 ? extensions : 0;
     
@@ -365,15 +365,16 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
                 alpha = score;
                 exact = true;
 
-                if (score >= beta) {
-                    if (!pos.isCapture(bestMove)) {
-                        updateHistory(mainHistory[pos.sideToMove], *(stack-1)->contHist, *(stack-2)->contHist, bestMove, historyUpdates, depth, pos, (stack-1)->currMove && (stack-1)->currMove != NULL_MOVE, (stack-2)->currMove && (stack-2)->currMove != NULL_MOVE);
-
-                        if (bestMove != killers[stack->plysInSearch][0]) {
-                            killers[stack->plysInSearch][1] = killers[stack->plysInSearch][0];
-                            killers[stack->plysInSearch][0] = bestMove;
-                        }
+                if (ROOT || (score >= beta && !pos.isCapture(bestMove))) {
+                    if (bestMove != killers[stack->plysInSearch][0]) {
+                        killers[stack->plysInSearch][1] = killers[stack->plysInSearch][0];
+                        killers[stack->plysInSearch][0] = bestMove;
                     }
+                }
+
+                if (score >= beta) {
+                    if (!pos.isCapture(bestMove))
+                        updateHistory(mainHistory[pos.sideToMove], *(stack-1)->contHist, *(stack-2)->contHist, bestMove, historyUpdates, depth, pos, (stack-1)->currMove && (stack-1)->currMove != NULL_MOVE, (stack-2)->currMove && (stack-2)->currMove != NULL_MOVE);
 
                     TT.save(tte, key, bestScore, LOWER, bestMove, depth, stack->plysInSearch);
                     return bestScore;

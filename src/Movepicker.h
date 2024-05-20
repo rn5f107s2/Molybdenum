@@ -36,6 +36,7 @@ class Movepicker {
         ScoredMove *currentMove = nullptr;
         ScoredMove *endMoveList = nullptr;
         bool scored = false;
+        bool root   = false;
         bool searchedPrio = true;
 
     public:
@@ -44,14 +45,17 @@ class Movepicker {
                       FromToHist  *main  = &emptyMain, 
                       PieceToHist *cont1 = &emptyCont, 
                       PieceToHist *cont2 = &emptyCont, 
-                      u64 checkers = 0ULL) 
+                      u64 checkers = 0ULL,
+                      bool r       = false) 
         {
             ttMove = ttm; 
             killers = k; 
             mainHist = main; 
             contHist1 = cont1; 
             contHist2 = cont2;
-            pos = p;
+            pos  = p;
+            root = r;
+
 
             generateMoves<qsearch>(*pos, ml, checkers);
 
@@ -79,9 +83,9 @@ class Movepicker {
                 if (move == ttMove)
                     *score = 10000000;
                 else if (move == killers[0][0])
-                    *score = 900000;
+                    *score = 900000 + 10 * root;
                 else if (move == killers[0][1])
-                    *score = 800000;
+                    *score = 800000 + 10 * root;
 
                 *score += mainHist [0][from][to];
                 *score += contHist1[0][pc][to];
