@@ -233,6 +233,10 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         && stack->staticEval >= beta
         && beta > -MAXMATE) {
 
+        u64 prefetchKey = key;
+        updateKey(prefetchKey);
+        __builtin_prefetch(TT.probe(prefetchKey));
+
         int reduction = std::min(depth, (4 + (stack->staticEval >= beta + 290) + (depth > 6)));
 
         pos.makeNullMove();
