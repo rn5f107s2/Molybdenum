@@ -21,6 +21,50 @@ class Stack {
         int size = 0;
 };
 
+struct MaterialKey {
+    private:
+        std::array<int, 6> max     = {8, 2, 2, 2, 1, 0x72};
+        std::array<int, 6> offsets = {1, 9, 27, 81, 243};
+        std::array<std::array<int, 6>, 2> count{};
+
+    public:
+        int id(Color c) {
+            int sum = 0;
+
+            for (int pc = PAWN; pc < KING; pc++)
+                sum += std::min(count[c][pc], max[pc]) * offsets[pc];
+
+            return sum;
+        }
+
+        int binary(Color c) {
+            int num = 0;
+            int currBit = 1;
+
+            for (int pc = PAWN; pc < KING; pc++)
+                for(int i = 0; i < max[pc]; i++) {
+                    if (count[c][pc] >= i)
+                        num |= currBit;
+                    currBit <<= 1;
+                }
+
+            return num;
+        }
+
+        void addPiece(PieceType pc, Color c) {
+            count[c][pc]++;
+        }
+
+        void removePiece(PieceType pc, Color c) {
+            count[c][pc]--;
+        }
+
+        void clear() {
+            for (auto &ar : count)
+                ar.fill(0);
+        }
+};
+
 template<typename T>
 int Stack<T>::getSize() {
     return size;

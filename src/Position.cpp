@@ -65,6 +65,7 @@ void Position::setBoard(std::string fen) {
 
         Piece piece = charIntToPiece(charAsInt);
         phase += gamePhaseValues[typeOf(piece)];
+        matKey.addPiece(PieceType(typeOf(piece)), colorOf(piece));
         bitBoards[piece] ^= bitToSet;
         pieceLocations[lsb(bitToSet)] = piece;
         bitToSet = bitToSet >> 1;
@@ -116,12 +117,15 @@ void Position::makeMove(Move move) {
     toggleFeature<Off>(movedPiece, from);
 
     if (flag == PROMOTION) {
+        matKey.removePiece(PAWN, sideToMove);
+        matKey.addPiece(PieceType(extract<PROMOTIONTYPE>(move) + 1), sideToMove);
         movedPiece = makePromoPiece(extract<PROMOTIONTYPE>(move), sideToMove);
         phase += gamePhaseValues[typeOf(movedPiece)];
         plys50moveRule = 0;
     }
 
     if (flag == ENPASSANT) {
+        matKey.removePiece(PAWN, !sideToMove);
         int capturedPawn = movedPiece == WHITE_PAWN ? BLACK_PAWN : WHITE_PAWN;
         u64 captureSquare = movePawn(enPassantSquare, !sideToMove);
         bitBoards[capturedPawn] ^= captureSquare;
@@ -157,6 +161,7 @@ void Position::makeMove(Move move) {
     castlingRights &= ~(castlingMask[from] | castlingMask[to]);
 
     if (capturedPiece != NO_PIECE) {
+        matKey.removePiece(PieceType(typeOf(capturedPiece)), !sideToMove);
         bitBoards[capturedPiece] ^= 1ULL << to;
         phase -= gamePhaseValues[typeOf(capturedPiece)];
         toggleFeature<Off>(capturedPiece, to);
@@ -190,11 +195,15 @@ void Position::unmakeMove(Move move) {
     bitBoards[movingPiece] ^= 1ULL << to;
     bitBoards[capturedPiece] ^= 1ULL << to;
 
-    if (capturedPiece != NO_PIECE)
+    if (capturedPiece != NO_PIECE) {
         phase += gamePhaseValues[typeOf(capturedPiece)];
+        matKey.addPiece(PieceType(typeOf(capturedPiece)), sideToMove);
+    }
 
     if (flag == PROMOTION) {
         phase -= gamePhaseValues[typeOf(movingPiece)];
+        matKey.removePiece(PieceType(typeOf(movingPiece)), !sideToMove);
+        matKey.addPiece(PAWN, !sideToMove);
         movingPiece = sideToMove ? BLACK_PAWN : WHITE_PAWN;
     }
 
@@ -214,6 +223,7 @@ void Position::unmakeMove(Move move) {
     if (flag == ENPASSANT) {
         Piece capturedPawn = movingPiece == WHITE_PAWN ? BLACK_PAWN : WHITE_PAWN;
         u64 captureSquare = movePawn(enPassantSquare, sideToMove);
+        matKey.addPiece(PAWN, sideToMove);
         bitBoards[capturedPawn] ^= captureSquare;
         pieceLocations[lsb(captureSquare)] = capturedPawn;
     }
@@ -229,6 +239,7 @@ void Position::clearBoard() {
     memset(&bitBoards, 0ULL, bitBoards.size() * sizeof(decltype(bitBoards)::value_type));
 
     phase = 0;
+    matKey.clear();
     enPassantHistory.clear();
     castlingHistory.clear();
     capturedHistory.clear();
