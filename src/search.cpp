@@ -298,6 +298,8 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             && ttBound != UPPER
             && ttDepth >= depth - 3
             && !excluded) {
+
+            __builtin_prefetch(TT.probe(key));
             
             int singDepth = depth / 2;
             int singBeta  = ttScore - 12 + std::min(si.rootMoveCount * 2, 12); 
