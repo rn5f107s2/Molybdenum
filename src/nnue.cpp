@@ -64,8 +64,14 @@ int calculate(Color c) {
     int output = 0;
 
     for (int n = 0; n != L1_SIZE; n++) {
-         output += relu(net.accumulator[ c][n]) * net.weights1[n          ];
-         output += relu(net.accumulator[!c][n]) * net.weights1[n + L1_SIZE];
+         uint8_t clampedW = std::clamp(net.accumulator[ c][n], int16_t(0), int16_t(255));
+         uint8_t clampedB = std::clamp(net.accumulator[!c][n], int16_t(0), int16_t(255));
+
+         int8_t  weightW = net.weights1[n          ];
+         int8_t  weightB = net.weights1[n + L1_SIZE];
+         
+         output += clampedW * weightW * clampedW;
+         output += clampedB * weightB * clampedB;
     }
 
     return (output + net.bias1[0]) * 400 / 4161600;
