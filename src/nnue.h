@@ -28,7 +28,7 @@ struct Weights {
 struct Net {
     std::array<int16_t , L1_SIZE * INPUT_SIZE> weights0{};
     std::array<int16_t, L1_SIZE> bias0{};
-    std::array<int16_t, L1_SIZE * OUTPUT_SIZE * 2> weights1{};
+    std::array<int8_t, L1_SIZE * OUTPUT_SIZE * 2> weights1{};
     std::array<int16_t, OUTPUT_SIZE> bias1{};
     std::array<std::array<int16_t, L1_SIZE>, 2> accumulator{};
     Stack<std::array<std::array<int16_t, L1_SIZE>, 2>> accumulatorStack;

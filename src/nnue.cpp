@@ -27,7 +27,10 @@ Net net;
 
 void loadDefaultNet() {
     net.weights0 = defaultWeights.weights0;
-    net.weights1 = defaultWeights.weights1;
+    
+    for (int i = 0; i < L1_SIZE * 2; i++)
+        net.weights1[i] = defaultWeights.weights1[i];
+
     net.bias0 = defaultWeights.bias0;
     net.bias1 = defaultWeights.bias1;
 }
@@ -70,8 +73,8 @@ int calculate(Color c) {
          int8_t  weightW = net.weights1[n          ];
          int8_t  weightB = net.weights1[n + L1_SIZE];
          
-         output += clampedW * weightW * clampedW;
-         output += clampedB * weightB * clampedB;
+         output += (clampedW * weightW) * clampedW;
+         output += (clampedB * weightB) * clampedB;
     }
 
     return (output + net.bias1[0]) * 400 / 4161600;
