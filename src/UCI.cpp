@@ -14,6 +14,7 @@
 #include "bench.h"
 #include "nnue.h"
 #include "Datagen/Datagen.h"
+#include "Tuner/tuner.h"
 
 UCIOptions options;
 
@@ -26,6 +27,7 @@ const std::string version = "3.1";
 
 void uciCommunication(const std::string& in) {
     Position internalBoard;
+    //initScaleValue(in, internalBoard);
 
 #ifdef DATAGEN
     if (in.empty()) {

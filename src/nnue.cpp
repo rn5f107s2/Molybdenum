@@ -19,9 +19,13 @@
 #endif
 
 #define defaultNetPath "src/Nets/moly_20240526.nnue"
+#define defaultScalePath "src/Nets/moly_scale.bin"
 
+INCBIN(scale, defaultScalePath);
 INCBIN(network, defaultNetPath);
+
 const Weights defaultWeights = *reinterpret_cast<const Weights*>(gnetworkData);
+const Scale   defaultScale   = *reinterpret_cast<const Scale  *>(gscaleData);
 
 Net net;
 

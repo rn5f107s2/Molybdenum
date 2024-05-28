@@ -12,6 +12,12 @@ enum Toggle {
     Off, On
 };
 
+struct Scale {
+    public:
+        std::array<int16_t, 486 * 486> weights;
+};
+
+
 static const int INPUT_SIZE = 12 * 64;
 static const int L1_SIZE = 256;
 static const int OUTPUT_SIZE = 1;
@@ -35,6 +41,7 @@ struct Net {
 };
 
 extern Net net;
+extern const Scale defaultScale;
 
 void readNetwork(const std::string &filename);
 void initAccumulator(std::array<u64, 13> &bitboards);

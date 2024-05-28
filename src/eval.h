@@ -5,7 +5,11 @@
 #include "nnue.h"
 
 inline int evaluate(Position &pos) {
-    return calculate(pos.sideToMove) / 3;
+    int nnue = calculate(pos.sideToMove) / 3;
+
+    int adjustment = (defaultScale.weights[pos.matKey.id(pos.sideToMove) * 486 + pos.matKey.id(!pos.sideToMove)] * nnue) / 1024;
+
+    return nnue - adjustment;
 }
 
 #endif //MOLYBDENUM_EVAL_H
