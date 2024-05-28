@@ -346,6 +346,9 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             if (!PvNode && score > alpha && reductions > 0)
                 score = -search<NonPvNode>(-alpha - 1, -alpha, pos, depth - 1 + extensions, si, stack+1);
 
+            if (PvNode && score > alpha && reductions > 0)
+                score = -search<NonPvNode>(-alpha - 1, -alpha, pos, depth - 1 + extensions, si, stack+1);
+
             if (PvNode && score > alpha && score < beta)
                 score = -search<PVNode>(-beta, -alpha, pos, depth - 1 + extensions, si, stack+1);
         } else {
