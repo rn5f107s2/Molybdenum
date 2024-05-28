@@ -46,6 +46,10 @@ void initScaleValue(const std::string &filename, Position &pos) {
     for (int i = 0; i < 486; i++) {
         for (int j = 0; j < 486; j++) {
             int16_t val = int16_t((QUANT / 4) * (double(totalExpected[i][j]) / double(std::max(occurences[i][j], int64_t(1)))));
+
+            if (occurences[i][j] < 1000)
+                val = 0;
+
             out.write(reinterpret_cast<char*>(&val), sizeof(val));
         }
     }
