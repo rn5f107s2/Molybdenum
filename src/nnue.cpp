@@ -68,5 +68,5 @@ int calculate(Color c) {
          output += relu(net.accumulator[!c][n]) * net.weights1[n + L1_SIZE];
     }
 
-    return (output + net.bias1[0]) * 400 / 4161600;
+    return ((output / 255) + net.bias1[0]) * 400 / (64 * 255);
 }
