@@ -148,18 +148,12 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
 
     excluded = stack->excluded;
 
-    if (!excluded)
-        stack->staticEval = evaluate(pos);
-
     if (stack->plysInSearch > si.selDepth)
         si.selDepth = stack->plysInSearch;
     
     stack->plysInSearch = ROOT ? 0 : (stack-1)->plysInSearch + 1;
     stack->quarterRed   = 0;
     (stack+1)->excluded = NO_MOVE;
-
-    improving       = stack->staticEval > (stack-2)->staticEval;
-    whatAreYouDoing = stack->staticEval + (stack-1)->staticEval > 0;
 
     pvLength[stack->plysInSearch] = stack->plysInSearch;
 
@@ -216,6 +210,12 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             || (ttBound == LOWER && ttScore >= beta)
             || (ttBound == UPPER && ttScore <= alpha)))
         return ttScore;
+
+    if (!excluded)
+        stack->staticEval = evaluate(pos);
+
+    improving       = stack->staticEval > (stack-2)->staticEval;
+    whatAreYouDoing = stack->staticEval + (stack-1)->staticEval > 0;
 
     if (   !PvNode
         && !check
