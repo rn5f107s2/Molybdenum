@@ -39,7 +39,7 @@ class Position {
         inline Piece pieceOn(int sq);
         inline u64 getOccupied();
         template<Color c> u64 getOccupied();
-        inline int bucketIndex();
+        inline int bucketIndex(Color c);
 
     private:
         Stack<Piece>  capturedHistory;
@@ -49,15 +49,12 @@ class Position {
         Stack<u64> keyHistory;
 };
 
-inline int Position::bucketIndex() {
-    u64 wBishops = getPieces<BISHOP, WHITE>();
-    u64 bBishops = getPieces<BISHOP, BLACK>();
+inline int Position::bucketIndex(Color c) {
+    u64 stmMinors = getPieces<KNIGHT>(c) | getPieces<BISHOP>(c);
+    u64 stmRooks  = getPieces<ROOK>(c);
+    u64 stmQueens = getPieces<QUEEN>(c);
 
-    return   wBishops
-          && bBishops
-          && !multipleBits(wBishops) 
-          && !multipleBits(bBishops)
-          && (bool(wBishops & 0x55aa55aa55aa55aa) != bool(bBishops & 0x55aa55aa55aa55aa));
+    return bool(stmMinors) + 2 * bool(stmRooks) + 4 * bool(stmQueens);
 }
 
 template<Color c> inline
