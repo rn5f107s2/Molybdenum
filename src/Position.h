@@ -52,7 +52,7 @@ class Position {
 };
 
 inline int Position::bucketIndex() {
-    return (__builtin_popcountll(getOccupied()) - 2) / OUTPUT_BUCKETS;
+    return (__builtin_popcountll(getOccupied()) - 2) / 4;
 }
 
 template<Color c> inline
