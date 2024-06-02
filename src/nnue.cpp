@@ -60,13 +60,13 @@ void initAccumulator(std::array<u64, 13> &bitboards) {
     pushAccToStack();
 }
 
-int calculate(Color c, int bucketIndex) {
+int calculate(Color c, int bi1, int bi2) {
     int output = 0;
 
     for (int n = 0; n != L1_SIZE; n++) {
-         output += relu(net.accumulator[ c][n]) * net.weights1[n          ][bucketIndex];
-         output += relu(net.accumulator[!c][n]) * net.weights1[n + L1_SIZE][bucketIndex];
+         output += relu(net.accumulator[ c][n]) * net.weights1[n          ][bi1];
+         output += relu(net.accumulator[!c][n]) * net.weights1[n + L1_SIZE][bi2];
     }
 
-    return ((output / 255) + net.bias1[0][bucketIndex]) * 400 / (255 * 64);
+    return ((output / 255) + net.bias1[0][bi1]) * 400 / (255 * 64);
 }

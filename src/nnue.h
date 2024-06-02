@@ -39,7 +39,7 @@ extern Net net;
 
 void readNetwork(const std::string &filename);
 void initAccumulator(std::array<u64, 13> &bitboards);
-int calculate(Color c, int bucketIndex);
+int calculate(Color c, int bucketIndex, int);
 void loadDefaultNet();
 
 inline int relu(int16_t input) {
