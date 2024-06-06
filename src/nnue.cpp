@@ -18,7 +18,7 @@
 #undef PUSHED_MACRO
 #endif
 
-#define defaultNetPath "src/Nets/moly_20240606_ctempt.nnue"
+#define defaultNetPath "src/Nets/moly_20240606_ctempt2.nnue"
 
 INCBIN(network, defaultNetPath);
 const Weights defaultWeights = *reinterpret_cast<const Weights*>(gnetworkData);
