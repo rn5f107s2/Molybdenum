@@ -217,7 +217,7 @@ void uciLoop(const std::string& input, Position &internalBoard) {
     }
 
     if (contains(input, "eval")) {
-        std::cout << evaluate(internalBoard) << "\n";
+        std::cout << evaluate(internalBoard, false) << "\n";
     }
 
     if (contains(input, "setoption")) {

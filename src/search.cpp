@@ -160,7 +160,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
     depth += check;
 
     if (stack->plysInSearch >= MAXDEPTH)
-        return stack->staticEval;
+        return evaluate(pos, stack->plysInSearch & 1);
 
     if (depth <= 0)
         return qsearch(alpha, beta, pos, si, stack);
@@ -212,7 +212,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         return ttScore;
 
     if (!excluded)
-        stack->staticEval = evaluate(pos);
+        stack->staticEval = evaluate(pos, stack->plysInSearch & 1);
 
     improving       = stack->staticEval > (stack-2)->staticEval;
     whatAreYouDoing = stack->staticEval + (stack-1)->staticEval > 0;
@@ -429,7 +429,7 @@ int qsearch(int alpha, int beta, Position &pos, SearchInfo &si, SearchStack *sta
     stack->plysInSearch = (stack-1)->plysInSearch + 1;
 
     if (stack->plysInSearch >= MAXDEPTH)
-        return evaluate(pos);
+        return evaluate(pos, stack->plysInSearch & 1);
 
     int ttScore = 0, ttBound = UPPER;
     bool ttHit = false;
@@ -457,7 +457,7 @@ int qsearch(int alpha, int beta, Position &pos, SearchInfo &si, SearchStack *sta
             || (ttBound == UPPER && ttScore <= alpha)))
             return ttScore;
 
-    int bestScore = staticEval = evaluate(pos);    
+    int bestScore = staticEval = evaluate(pos, stack->plysInSearch & 1);    
 
     if (bestScore >= beta)
         return bestScore;
