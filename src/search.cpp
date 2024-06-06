@@ -343,11 +343,10 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         if (depth > 1 && moveCount > 2) {
             score = -search<NonPvNode>(-alpha - 1, -alpha, pos, depth - 1 - reductions + extensions, si, stack+1);
 
-            if (!PvNode && score > alpha && reductions > 0)
-                score = -search<NonPvNode>(-alpha - 1, -alpha, pos, depth - 1 + extensions, si, stack+1);
-
-            if (PvNode && score > alpha && reductions > 0)
-                score = -search<NonPvNode>(-alpha - 1, -alpha, pos, depth - 1 + extensions, si, stack+1);
+            if (score > alpha && reductions > 0) {
+                bool nightmare = bestScore < alpha - 100 && moveCount > 3;
+                score = -search<NonPvNode>(-alpha - 1, -alpha, pos, depth - 1 + extensions + nightmare, si, stack+1);
+            }
 
             if (PvNode && score > alpha && score < beta)
                 score = -search<PVNode>(-beta, -alpha, pos, depth - 1 + extensions, si, stack+1);
