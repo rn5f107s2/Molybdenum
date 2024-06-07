@@ -341,12 +341,17 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         reductions = std::max(reductions, 0);
 
         if (depth > 1 && moveCount > 2) {
-            score = -search<NonPvNode>(-alpha - 1, -alpha, pos, depth - 1 - reductions + extensions, si, stack+1);
+            int searchAlpha = -alpha;
+
+            if (ROOT && depth > 9)
+                searchAlpha -= depth - 9;
+
+            score = -search<NonPvNode>(searchAlpha - 1, searchAlpha, pos, depth - 1 - reductions + extensions, si, stack+1);
 
             if (!PvNode && score > alpha && reductions > 0)
                 score = -search<NonPvNode>(-alpha - 1, -alpha, pos, depth - 1 + extensions, si, stack+1);
 
-            if (PvNode && score > alpha && reductions > 0)
+            if (PvNode && score > searchAlpha && reductions > 0)
                 score = -search<NonPvNode>(-alpha - 1, -alpha, pos, depth - 1 + extensions, si, stack+1);
 
             if (PvNode && score > alpha && score < beta)
