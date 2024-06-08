@@ -221,7 +221,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         && !check
         && !excluded
         && depth < 10
-        && stack->staticEval - (100 * depth - 164 * improving - 43 * whatAreYouDoing) >= beta
+        && stack->staticEval - (100 * depth - 164 * improving - 43 * whatAreYouDoing - si.rootMoveCount) >= beta
         && stack->staticEval >= beta)
         return stack->staticEval;
 
