@@ -18,9 +18,11 @@
 #undef PUSHED_MACRO
 #endif
 
-#define defaultNetPath "src/Nets/moly_20240526.nnue"
+#ifndef EVALFILE
+#define EVALFILE // silence syntax highlighting
+#endif
 
-INCBIN(network, defaultNetPath);
+INCBIN(network, EVALFILE);
 const Weights defaultWeights = *reinterpret_cast<const Weights*>(gnetworkData);
 
 Net net;
