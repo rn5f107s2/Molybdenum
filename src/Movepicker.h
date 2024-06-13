@@ -83,9 +83,9 @@ class Movepicker {
                 if (move == ttMove)
                     *score = 10000000;
                 else if (move == killers[0][0])
-                    *score = 900000 * 10 * root;
+                    *score = 900000 * (9 * root + 1);
                 else if (move == killers[0][1])
-                    *score = 800000 * 10 * root;
+                    *score = 800000 * (9 * root + 1);
 
                 *score += mainHist [0][from][to];
                 *score += contHist1[0][pc][to];
