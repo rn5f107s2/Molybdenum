@@ -8,12 +8,6 @@
 #include <chrono>
 #include <algorithm>
 
-std::array<std::array<Move, 2>, STACKSIZE> killers;
-SideFromToHist mainHistory;
-ContHist continuationHistory;
-std::array<std::array<Move, MAXDEPTH>, MAXDEPTH> pvMoves;
-std::array<int, MAXDEPTH> pvLength;
-
 u64 benchNodes = 0;
 
 #include "tune.h"
@@ -22,19 +16,12 @@ u64 benchNodes = 0;
 Tune tune;
 #endif
 
-enum NodeType {
-    Root, PVNode, NonPvNode
-};
 
-template<NodeType NT>
-int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, SearchStack *stack);
-int qsearch(int alpha, int beta, Position &pos, SearchInfo &si, SearchStack *stack);
-
-int startSearch(Position &pos, searchTime &st, int maxDepth, Move &bestMove) {
+int SearchState::startSearch(Position &pos, searchTime &st, int maxDepth, Move &bestMove) {
     return iterativeDeepening(pos, st, maxDepth,bestMove);
 }
 
-void clearHistory() {
+void SearchState::clearHistory() {
     TT.clear();
     memset(&mainHistory, 0, sizeof(mainHistory[0]) * mainHistory.size());
     memset(&continuationHistory, 0, sizeof(continuationHistory[0]) * continuationHistory.size());
@@ -43,7 +30,7 @@ void clearHistory() {
     memset(&killers, 0, sizeof(killers[0]) * killers.size());
 }
 
-int iterativeDeepening(Position  &pos, searchTime &st, int maxDepth, [[maybe_unused]] Move &bestMove) {
+int SearchState::iterativeDeepening(Position  &pos, searchTime &st, int maxDepth, [[maybe_unused]] Move &bestMove) {
     int score = 0;
     int prevScore = 0;
     SearchInfo si;
@@ -100,7 +87,7 @@ int iterativeDeepening(Position  &pos, searchTime &st, int maxDepth, [[maybe_unu
     return prevScore;
 }
 
-int aspirationWindow(int prevScore, Position &pos, SearchInfo &si, int depth) {
+int SearchState::aspirationWindow(int prevScore, Position &pos, SearchInfo &si, int depth) {
     int delta = std::clamp(79 - depth * depth, 23, 34);
     int alpha = -INFINITE;
     int beta  =  INFINITE;
@@ -135,7 +122,7 @@ int aspirationWindow(int prevScore, Position &pos, SearchInfo &si, int depth) {
 }
 
 template<NodeType nt>
-int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, SearchStack *stack) {
+int SearchState::search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, SearchStack *stack) {
     constexpr bool ROOT = nt == Root;
     constexpr bool PvNode = nt == PVNode || ROOT;
 
@@ -416,7 +403,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
     return bestScore;
 }
 
-int qsearch(int alpha, int beta, Position &pos, SearchInfo &si, SearchStack *stack) {
+int SearchState::qsearch(int alpha, int beta, Position &pos, SearchInfo &si, SearchStack *stack) {
 
 #ifdef TUNE
     std::array<int, 13> PieceValuesSEE = {tune.SEEPawn, tune.SEEKnight, tune.SEEBishop, tune.SEERook, tune.SEEQueen, 0, tune.SEEPawn, tune.SEEKnight, tune.SEEBishop, tune.SEERook, tune.SEEQueen, 0, 0};

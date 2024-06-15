@@ -26,6 +26,7 @@ const std::string version = "3.1";
 
 void uciCommunication(const std::string& in) {
     Position internalBoard;
+    SearchState state;
 
 #ifdef DATAGEN
     if (in.empty()) {
@@ -37,7 +38,7 @@ void uciCommunication(const std::string& in) {
     }
 #endif
 
-    loadDefaultNet();
+    internalBoard.net.loadDefaultNet();
     internalBoard.setBoard("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     std::string input;
     options.init();
@@ -48,7 +49,7 @@ void uciCommunication(const std::string& in) {
 #endif
 
     if (!in.empty()) {
-        uciLoop(in, internalBoard);
+        uciLoop(in, internalBoard, state);
         return;
     }
 
@@ -58,13 +59,13 @@ void uciCommunication(const std::string& in) {
         if (contains(input, "quit"))
             return;
 
-        uciLoop(input, internalBoard);
+        uciLoop(input, internalBoard, state);
     }
 }
 
-void uciLoop(const std::string& input, Position &internalBoard) {
+void uciLoop(const std::string& input, Position &internalBoard, SearchState &state) {
     if (contains(input, "ucinewgame")) {
-        clearHistory();
+        state.clearHistory();
         return;
     }
 
@@ -93,6 +94,7 @@ void uciLoop(const std::string& input, Position &internalBoard) {
             fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
         else
             fen = extractFEN(input);
+
         internalBoard.setBoard(fen);
 
         if (contains(input, "moves")) {
@@ -118,6 +120,7 @@ void uciLoop(const std::string& input, Position &internalBoard) {
                 toSquare   = lsb(to);
 
                 internalBoard.makeMove(internalBoard.fromToToMove(fromSquare, toSquare, promotionPiece, flag));
+                internalBoard.net.initAccumulator(internalBoard.bitBoards);
 
                 if (moves.find(' ') == std::string ::npos)
                     break;
@@ -212,7 +215,7 @@ void uciLoop(const std::string& input, Position &internalBoard) {
             st.thinkingTime[Hard] = st.thinkingTime[Soft] = std::chrono::milliseconds(std::stoi(input.substr(start, end)) - moveOverHead);
         }
 
-        startSearch(internalBoard, st, depth);
+        state.startSearch(internalBoard, st, depth);
         return;
     }
 
@@ -242,12 +245,12 @@ void uciLoop(const std::string& input, Position &internalBoard) {
         st.limit = Depth;
         benchNodes = 0;
 
-        clearHistory();
+        state.clearHistory();
 
         for (int i = 0; i != BENCH_SIZE; i++) {
             internalBoard.setBoard(positions[i]);
-            startSearch(internalBoard, st, BENCH_DEPTH + 1);
-            clearHistory();
+            state.startSearch(internalBoard, st, BENCH_DEPTH + 1);
+            state.clearHistory();
             std::cout << "\n";
         }
 
