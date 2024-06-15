@@ -25,21 +25,25 @@ struct Weights {
     std::array<int16_t, OUTPUT_SIZE> bias1{};
 };
 
-struct Net {
+class Net {
+public:
     std::array<int16_t , L1_SIZE * INPUT_SIZE> weights0{};
     std::array<int16_t, L1_SIZE> bias0{};
     std::array<int16_t, L1_SIZE * OUTPUT_SIZE * 2> weights1{};
     std::array<int16_t, OUTPUT_SIZE> bias1{};
     std::array<std::array<int16_t, L1_SIZE>, 2> accumulator{};
     Stack<std::array<std::array<int16_t, L1_SIZE>, 2>> accumulatorStack;
+
+    void initAccumulator(std::array<u64, 13> &bitboards);
+    int calculate(Color c);
+    void loadDefaultNet();
+
+    template<Toggle STATE> inline
+    void toggleFeature(int piece, int square);
+    inline void moveFeature(int piece, int from, int to);
+    inline void pushAccToStack();
+    inline void popAccStack();
 };
-
-extern Net net;
-
-void readNetwork(const std::string &filename);
-void initAccumulator(std::array<u64, 13> &bitboards);
-int calculate(Color c);
-void loadDefaultNet();
 
 inline int relu(int16_t input) {
     int clamped = std::clamp(input, int16_t(0), int16_t(255));
@@ -55,28 +59,28 @@ int index(int pc, int sq) {
 }
 
 template<Toggle STATE> inline
-void toggleFeature(int piece, int square) {
+void Net::toggleFeature(int piece, int square) {
     int indexWhite = index<WHITE>(piece, square);
     int indexBlack = index<BLACK>(piece, square);
 
     for (int l = 0; l != L1_SIZE; l++) {
-        net.accumulator[WHITE][l] += net.weights0[indexWhite * L1_SIZE + l] * (!STATE ? -1 : 1);
-        net.accumulator[BLACK][l] += net.weights0[indexBlack * L1_SIZE + l] * (!STATE ? -1 : 1);
+        accumulator[WHITE][l] += weights0[indexWhite * L1_SIZE + l] * (!STATE ? -1 : 1);
+        accumulator[BLACK][l] += weights0[indexBlack * L1_SIZE + l] * (!STATE ? -1 : 1);
     }
 }
 
-inline void moveFeature(int piece, int from, int to) {
+inline void Net::moveFeature(int piece, int from, int to) {
     toggleFeature<Off>(piece, from);
     toggleFeature<On >(piece, to);
 }
 
-inline void pushAccToStack() {
-    net.accumulatorStack.push(net.accumulator);
+inline void Net::pushAccToStack() {
+    accumulatorStack.push(accumulator);
 }
 
-inline void popAccStack() {
-    net.accumulatorStack.pop();
-    net.accumulator = net.accumulatorStack.top();
+inline void Net::popAccStack() {
+    accumulatorStack.pop();
+    accumulator = accumulatorStack.top();
 }
 
 

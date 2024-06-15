@@ -37,7 +37,7 @@ void uciCommunication(const std::string& in) {
     }
 #endif
 
-    loadDefaultNet();
+    internalBoard.net.loadDefaultNet();
     internalBoard.setBoard("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     std::string input;
     options.init();

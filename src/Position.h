@@ -8,9 +8,11 @@
 #include "Move.h"
 #include "Utility.h"
 #include "Transpositiontable.h"
+#include "nnue.h"
 
 class Position {
     public:
+        Net net;
         void setBoard(std::string fen);
         void clearBoard();
         void printBoard();

@@ -27,27 +27,18 @@ const Weights defaultWeights = *reinterpret_cast<const Weights*>(gnetworkData);
 
 Net net;
 
-void loadDefaultNet() {
-    net.weights0 = defaultWeights.weights0;
-    net.weights1 = defaultWeights.weights1;
-    net.bias0 = defaultWeights.bias0;
-    net.bias1 = defaultWeights.bias1;
+void Net::loadDefaultNet() {
+    weights0 = defaultWeights.weights0;
+    weights1 = defaultWeights.weights1;
+    bias0 = defaultWeights.bias0;
+    bias1 = defaultWeights.bias1;
 }
 
-void readNetwork(const std::string &filename) {
-    std::ifstream stream{filename, std::ios::binary};
+void Net::initAccumulator(std::array<u64, 13> &bitboards) {
+    accumulatorStack.clear();
 
-    stream.read(reinterpret_cast<char *>(&net.weights0), sizeof(net.weights0[0]) * net.weights0.size());
-    stream.read(reinterpret_cast<char *>(&net.bias0), sizeof(net.bias0[0]) * net.bias0.size());
-    stream.read(reinterpret_cast<char *>(&net.weights1), sizeof(net.weights1[0]) * net.weights1.size());
-    stream.read(reinterpret_cast<char *>(&net.bias1), sizeof(net.bias1[0]) * net.bias1.size());
-}
-
-void initAccumulator(std::array<u64, 13> &bitboards) {
-    net.accumulatorStack.clear();
-
-    memcpy(&net.accumulator[WHITE], &net.bias0[0], sizeof(int16_t) * L1_SIZE);
-    memcpy(&net.accumulator[BLACK], &net.bias0[0], sizeof(int16_t) * L1_SIZE);
+    memcpy(&accumulator[WHITE], &bias0[0], sizeof(int16_t) * L1_SIZE);
+    memcpy(&accumulator[BLACK], &bias0[0], sizeof(int16_t) * L1_SIZE);
 
     for (int pc = WHITE_PAWN; pc != NO_PIECE; pc++) {
         u64 pieceBB = bitboards[pc];
@@ -62,13 +53,13 @@ void initAccumulator(std::array<u64, 13> &bitboards) {
     pushAccToStack();
 }
 
-int calculate(Color c) {
+int Net::calculate(Color c) {
     int output = 0;
 
     for (int n = 0; n != L1_SIZE; n++) {
-         output += relu(net.accumulator[ c][n]) * net.weights1[n          ];
-         output += relu(net.accumulator[!c][n]) * net.weights1[n + L1_SIZE];
+         output += relu(accumulator[ c][n]) * weights1[n          ];
+         output += relu(accumulator[!c][n]) * weights1[n + L1_SIZE];
     }
 
-    return ((output / 255) + net.bias1[0]) * 133 / (64 * 255);
+    return ((output / 255) + bias1[0]) * 133 / (64 * 255);
 }
