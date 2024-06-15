@@ -1,6 +1,7 @@
 #include <string>
 #include <iostream>
 #include <chrono>
+#include <thread>
 
 #include "tune.h"
 #include "UCI.h"
@@ -23,6 +24,10 @@ TuneOptions tuneOptions;
 
 const std::string name = "Molybdenum";
 const std::string version = "3.1";
+
+void foo(SearchState state, Position pos, searchTime st, int d) {
+    state.startSearch(pos, st, d);
+}
 
 void uciCommunication(const std::string& in) {
     Position internalBoard;
@@ -213,7 +218,15 @@ void uciLoop(const std::string& input, Position &internalBoard, SearchState &sta
             st.thinkingTime[Hard] = st.thinkingTime[Soft] = std::chrono::milliseconds(std::stoi(input.substr(start, end)) - moveOverHead);
         }
 
+        SearchState state2;
+        Position board2 = internalBoard;
+        
+        std::thread t1(foo, state2, board2, st, depth);
+
         state.startSearch(internalBoard, st, depth);
+
+        t1.join();
+
         return;
     }
 
