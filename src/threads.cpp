@@ -14,9 +14,9 @@ void foo(SearchState state, Position pos, searchTime st, int d) {
 }
 
 void ThreadPool::start(Position pos, searchTime st, int depth) {
-    int id = 0;
+    int id = 1;
 
-    for (int i = 0; i < threadCount; i++) {
+    for (int i = 1; i < threadCount; i++) {
         SearchState state;
         Position p = pos;
 

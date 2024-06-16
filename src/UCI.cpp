@@ -18,6 +18,7 @@
 #include "threads.h"
 
 UCIOptions options;
+SearchState state;
 
 #ifdef TUNE
 TuneOptions tuneOptions;
@@ -28,7 +29,6 @@ const std::string version = "3.1";
 
 void uciCommunication(const std::string& in) {
     Position internalBoard;
-    SearchState state;
 
 #ifdef DATAGEN
     if (in.empty()) {
@@ -227,9 +227,8 @@ void uciLoop(const std::string& input, Position &internalBoard, SearchState &sta
         //std::thread t2(foo, state3, board3, st, depth);
 
         threads.start(internalBoard, st, depth);
+        state.startSearch(internalBoard, st, depth);
         threads.join();
-
-        //state.startSearch(internalBoard, st, depth);
 
         //t1.join();
         //t2.join();
