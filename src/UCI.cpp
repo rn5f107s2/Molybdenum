@@ -99,6 +99,7 @@ void uciLoop(const std::string& input, Position &internalBoard, SearchState &sta
             fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
         else
             fen = extractFEN(input);
+
         internalBoard.setBoard(fen);
 
         if (contains(input, "moves")) {
@@ -124,12 +125,14 @@ void uciLoop(const std::string& input, Position &internalBoard, SearchState &sta
                 toSquare   = lsb(to);
 
                 internalBoard.makeMove(internalBoard.fromToToMove(fromSquare, toSquare, promotionPiece, flag));
+                internalBoard.net.initAccumulator(internalBoard.bitBoards);
 
                 if (moves.find(' ') == std::string ::npos)
                     break;
                 moves = moves.substr(moves.find(' ') + 1);
             }
         }
+        //internalBoard.net.initAccumulator(internalBoard.bitBoards);
     }
 
     if (input == "d") {
@@ -218,14 +221,18 @@ void uciLoop(const std::string& input, Position &internalBoard, SearchState &sta
             st.thinkingTime[Hard] = st.thinkingTime[Soft] = std::chrono::milliseconds(std::stoi(input.substr(start, end)) - moveOverHead);
         }
 
-        SearchState state2;
-        Position board2 = internalBoard;
+        //SearchState state2;
+        //SearchState state3;
+        //Position board2 = internalBoard;
+        //Position board3 = internalBoard;
         
-        std::thread t1(foo, state2, board2, st, depth);
+        //std::thread t1(foo, state2, board2, st, depth);
+        //std::thread t2(foo, state3, board3, st, depth);
 
         state.startSearch(internalBoard, st, depth);
 
-        t1.join();
+        //t1.join();
+        //t2.join();
 
         return;
     }

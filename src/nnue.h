@@ -32,7 +32,7 @@ public:
     std::array<int16_t, L1_SIZE * OUTPUT_SIZE * 2> weights1{};
     std::array<int16_t, OUTPUT_SIZE> bias1{};
     std::array<std::array<int16_t, L1_SIZE>, 2> accumulator{};
-    Stack<std::array<std::array<int16_t, L1_SIZE>, 2>> accumulatorStack;
+    Stack<std::array<std::array<int16_t, L1_SIZE>, 2>, MAXDEPTH> accumulatorStack;
 
     void initAccumulator(std::array<u64, 13> &bitboards);
     int calculate(Color c);
@@ -45,7 +45,7 @@ public:
     inline void popAccStack();
 };
 
-inline int relu(int16_t input) {
+inline int screlu(int16_t input) {
     int clamped = std::clamp(input, int16_t(0), int16_t(255));
     return clamped * clamped;
 }

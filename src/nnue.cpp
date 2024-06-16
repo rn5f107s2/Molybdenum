@@ -57,8 +57,8 @@ int Net::calculate(Color c) {
     int output = 0;
 
     for (int n = 0; n != L1_SIZE; n++) {
-         output += relu(accumulator[ c][n]) * weights1[n          ];
-         output += relu(accumulator[!c][n]) * weights1[n + L1_SIZE];
+         output += screlu(accumulator[ c][n]) * weights1[n          ];
+         output += screlu(accumulator[!c][n]) * weights1[n + L1_SIZE];
     }
 
     return ((output / 255) + bias1[0]) * 133 / (64 * 255);
