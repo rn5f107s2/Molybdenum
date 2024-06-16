@@ -42,6 +42,9 @@ int SearchState::iterativeDeepening(Position  &pos, searchTime &st, int maxDepth
         if (stop<Hard>(st, si))
             break;
 
+        if (id)
+            continue;
+
 #ifndef DATAGEN
         std::string uciOutput;
         auto searchTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - si.st.searchStart).count();
@@ -78,7 +81,9 @@ int SearchState::iterativeDeepening(Position  &pos, searchTime &st, int maxDepth
     }
 
     benchNodes += si.nodeCount;
-    std::cout << "bestmove " << moveToString(si.bestRootMove) << std::endl;
+    
+    if (!id)
+        std::cout << "bestmove " << moveToString(si.bestRootMove) << std::endl;
 #else
     prevScore = score;
     }

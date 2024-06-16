@@ -49,6 +49,8 @@ class SearchState {
 
 public:
 
+    int id = 0;
+
     void clearHistory();
     int startSearch(Position &pos, searchTime &st, int maxDepth, Move &bestMove = emptyMove);
     int iterativeDeepening(Position  &pos, searchTime &st, int maxDepth, [[maybe_unused]] Move &bestMove);

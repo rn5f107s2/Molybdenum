@@ -15,6 +15,7 @@
 #include "bench.h"
 #include "nnue.h"
 #include "Datagen/Datagen.h"
+#include "threads.h"
 
 UCIOptions options;
 
@@ -24,10 +25,6 @@ TuneOptions tuneOptions;
 
 const std::string name = "Molybdenum";
 const std::string version = "3.1";
-
-void foo(SearchState state, Position pos, searchTime st, int d) {
-    state.startSearch(pos, st, d);
-}
 
 void uciCommunication(const std::string& in) {
     Position internalBoard;
@@ -229,7 +226,10 @@ void uciLoop(const std::string& input, Position &internalBoard, SearchState &sta
         //std::thread t1(foo, state2, board2, st, depth);
         //std::thread t2(foo, state3, board3, st, depth);
 
-        state.startSearch(internalBoard, st, depth);
+        threads.start(internalBoard, st, depth);
+        threads.join();
+
+        //state.startSearch(internalBoard, st, depth);
 
         //t1.join();
         //t2.join();
