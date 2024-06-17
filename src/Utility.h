@@ -7,7 +7,7 @@
 
 constexpr int MAX_STACK_SIZE = 6000; //Longer then the longest possible chess game
 
-template<typename T>
+template<typename T, int SIZE = MAX_STACK_SIZE>
 class Stack {
     public:
         T top();
@@ -17,38 +17,38 @@ class Stack {
         void clear();
         int getSize();
     private:
-        std::array<T, MAX_STACK_SIZE> stack;
+        std::array<T, SIZE> stack;
         int size = 0;
 };
 
-template<typename T>
-int Stack<T>::getSize() {
+template<typename T, int SIZE>
+int Stack<T, SIZE>::getSize() {
     return size;
 }
 
-template<typename T>
-void Stack<T>::clear() {
+template<typename T, int SIZE>
+void Stack<T, SIZE>::clear() {
     size = 0;
 }
 
-template<typename T>
-void Stack<T>::push(T t) {
+template<typename T, int SIZE>
+void Stack<T, SIZE>::push(T t) {
     stack[size] = t;
     size++;
 }
 
-template<typename T>
-T& Stack<T>::at(int idx) {
+template<typename T, int SIZE>
+T& Stack<T, SIZE>::at(int idx) {
     return stack[idx];
 }
 
-template<typename T>
-T Stack<T>::pop() {
+template<typename T, int SIZE>
+T Stack<T, SIZE>::pop() {
     return stack[--size];
 }
 
-template<typename T>
-T Stack<T>::top() {
+template<typename T, int SIZE>
+T Stack<T, SIZE>::top() {
     return stack[size - 1];
 }
 

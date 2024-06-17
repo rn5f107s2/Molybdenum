@@ -33,13 +33,31 @@ struct SearchStack {
     PieceToHist *contHist = nullptr;
 };
 
+enum NodeType {
+    Root, PVNode, NonPvNode
+};
+
 extern u64 benchNodes;
 static Move emptyMove = NO_MOVE;
 
-int startSearch(Position &pos, searchTime &st, int maxDepth = MAXDEPTH, Move &bm = emptyMove);
-int iterativeDeepening(Position  &pos, searchTime &st, int maxDepth = MAXDEPTH, Move &bm = emptyMove);
-int aspirationWindow(int prevScore, Position &pos, SearchInfo &si, int depth);
-void clearHistory();
+class SearchState {
+    std::array<std::array<Move, 2>, STACKSIZE> killers;
+    SideFromToHist mainHistory;
+    ContHist continuationHistory;
+    std::array<std::array<Move, MAXDEPTH>, MAXDEPTH> pvMoves;
+    std::array<int, MAXDEPTH> pvLength;
+
+public:
+
+    void clearHistory();
+    int startSearch(Position &pos, searchTime &st, int maxDepth, Move &bestMove = emptyMove);
+    int iterativeDeepening(Position  &pos, searchTime &st, int maxDepth, [[maybe_unused]] Move &bestMove);
+    int aspirationWindow(int prevScore, Position &pos, SearchInfo &si, int depth);
+    int qsearch(int alpha, int beta, Position &pos, SearchInfo &si, SearchStack *stack);
+
+    template<NodeType nt>
+    int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, SearchStack *stack);
+};
 
 inline std::array<double, 256> initReductions() {
     std::array<double, 256> R{};

@@ -3,9 +3,10 @@
 
 #include "Move.h"
 #include "Position.h"
+#include "search.h"
 
 void uciCommunication(const std::string& in);
-void uciLoop(const std::string& input, Position &internalBoard);
+void uciLoop(const std::string& input, Position &internalBoard, SearchState &state);
 
 inline bool contains(const std::string& input, const std::string& searchedTerm) {
     return input.find(searchedTerm) != std::string::npos;

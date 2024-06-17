@@ -5,7 +5,7 @@
 #include "nnue.h"
 
 inline int evaluate(Position &pos) {
-    return calculate(pos.sideToMove);
+    return pos.net.calculate(pos.sideToMove);
 }
 
 #endif //MOLYBDENUM_EVAL_H
