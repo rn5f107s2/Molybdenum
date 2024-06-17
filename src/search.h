@@ -8,6 +8,7 @@
 #include "Movegen.h"
 #include <chrono>
 #include <cmath>
+#include <atomic>
 
 #include "tune.h"
 
@@ -16,12 +17,32 @@ extern Tune tune;
 #endif
 
 struct SearchInfo {
-    u64 nodeCount = 0;
-    bool stop = false;
-    Move bestRootMove = 0;
+public:
+    std::atomic<u64> nodeCount;
+    std::atomic<bool> stop;
+    Move bestRootMove;
     searchTime st;
-    int rootMoveCount = 0;
-    int selDepth = 0;
+    int rootMoveCount;
+    int selDepth;
+    int id;
+
+    SearchInfo([[maybe_unused]] const SearchInfo &st) {
+        reset();
+    }
+
+    SearchInfo() {
+        reset();
+    }
+
+    void reset() {
+        nodeCount.store(0, std::memory_order_relaxed);
+        stop.store(0, std::memory_order_relaxed);
+
+        bestRootMove  = NO_MOVE;
+        rootMoveCount = 0;
+        selDepth      = 0;
+        id            = 0;
+    }
 };
 
 struct SearchStack {
@@ -50,6 +71,7 @@ class SearchState {
 public:
 
     int id = 0;
+    SearchInfo si;
 
     void clearHistory();
     int startSearch(Position &pos, searchTime &st, int maxDepth, Move &bestMove = emptyMove);

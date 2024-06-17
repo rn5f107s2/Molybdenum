@@ -1,29 +1,23 @@
 #ifndef THREADS_H_INCLUDED
 #define THREADS_H_INCLUDED
 
-#include <thread>
-#include <vector>
-
 #include "search.h"
-#include "Position.h"
-#include "timemanagement.h"
 
-class ThreadPool {
-    std::vector<std::thread> threads;
+#include <thread>
 
-    int threadCount = 1;
+class Thread {
+    std::thread thread;
+    SearchState state;
 
 public:
-    void join();
     void start(Position pos, searchTime st, int depth);
+    void stop();
+    void join();
+    u64 nodes();
 
-    void setCount(int count) {
-        threadCount = count;
+    Thread(int id) {
+        state.id = id;
     }
 };
-
-extern ThreadPool threads;
-
-void setCount(int count);
 
 #endif

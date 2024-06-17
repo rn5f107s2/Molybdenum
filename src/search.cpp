@@ -5,6 +5,8 @@
 #include "Constants.h"
 #include "Movepicker.h"
 #include "searchUtil.h"
+#include "threadpool.h"
+
 #include <chrono>
 #include <algorithm>
 
@@ -33,7 +35,7 @@ void SearchState::clearHistory() {
 int SearchState::iterativeDeepening(Position  &pos, searchTime &st, int maxDepth, [[maybe_unused]] Move &bestMove) {
     int score = 0;
     int prevScore = 0;
-    SearchInfo si;
+    si.reset();
     si.st = st;
 
     for (int depth = 1; depth != maxDepth; depth++) {
@@ -61,14 +63,16 @@ int SearchState::iterativeDeepening(Position  &pos, searchTime &st, int maxDepth
         uciOutput += abs(score) > MAXMATE ? "mate " : "cp ";
         uciOutput += std::to_string(abs(score) > MAXMATE ? mateInPlies(score) : score);
 
+        u64 nodeCount = threads.nodes();
+
         uciOutput += " nodes ";
-        uciOutput += std::to_string(si.nodeCount);
+        uciOutput += std::to_string(nodeCount);
 
         uciOutput += " time ";
         uciOutput += std::to_string(searchTime);
 
         uciOutput += " nps ";
-        uciOutput += std::to_string((si.nodeCount / std::max(int(searchTime), 1)) * 1000);
+        uciOutput += std::to_string((nodeCount / std::max(int(searchTime), 1)) * 1000);
 
         uciOutput += " pv ";
         for (int i = 0; i < pvLength[0]; i++)
@@ -76,8 +80,11 @@ int SearchState::iterativeDeepening(Position  &pos, searchTime &st, int maxDepth
 
         std::cout << uciOutput << std::endl;
 
-        if (stop<Soft>(st, si))
+        if (stop<Soft>(st, si)) {
+            threads.stop();
+            threads.join();
             break;
+        }
     }
 
     benchNodes += si.nodeCount;
@@ -161,7 +168,7 @@ int SearchState::search(int alpha, int beta, Position &pos, int depth, SearchInf
         && stop<Hard>(si.st, si))
         si.stop = true;
 
-    if (si.stop && !(ROOT && depth == (1 + check)))
+    if (si.stop.load(std::memory_order_relaxed) && !(ROOT && depth == (1 + check)))
         return DRAW;
 
     if constexpr (!ROOT) {
@@ -320,7 +327,7 @@ int SearchState::search(int alpha, int beta, Position &pos, int depth, SearchInf
         stack->currMove = currentMove;
         stack->contHist = &continuationHistory[pc][to];
 
-        si.nodeCount++;
+        si.nodeCount.fetch_add(1, std::memory_order_relaxed);
         moveCount++;
 
         if constexpr (ROOT)
@@ -352,7 +359,7 @@ int SearchState::search(int alpha, int beta, Position &pos, int depth, SearchInf
 
         pos.unmakeMove(currentMove);
 
-        if (si.stop && !(ROOT && depth == (1 + check)))
+        if (si.stop.load(std::memory_order_relaxed) && !(ROOT && depth == (1 + check)))
             return DRAW;
 
         if (score > bestScore) {
@@ -472,7 +479,7 @@ int SearchState::qsearch(int alpha, int beta, Position &pos, SearchInfo &si, Sea
         prefetchTTEntry(pos, pc, from, to, captured != NO_PIECE);
 
         pos.makeMove(currentMove);
-        si.nodeCount++;
+        si.nodeCount.fetch_add(1, std::memory_order_relaxed);
 
         int score = -qsearch(-beta, -alpha, pos, si, stack+1);
 

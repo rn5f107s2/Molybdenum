@@ -15,7 +15,7 @@
 #include "bench.h"
 #include "nnue.h"
 #include "Datagen/Datagen.h"
-#include "threads.h"
+#include "threadpool.h"
 
 UCIOptions options;
 SearchState state;
@@ -218,21 +218,8 @@ void uciLoop(const std::string& input, Position &internalBoard, SearchState &sta
             st.thinkingTime[Hard] = st.thinkingTime[Soft] = std::chrono::milliseconds(std::stoi(input.substr(start, end)) - moveOverHead);
         }
 
-        //SearchState state2;
-        //SearchState state3;
-        //Position board2 = internalBoard;
-        //Position board3 = internalBoard;
-        
-        //std::thread t1(foo, state2, board2, st, depth);
-        //std::thread t2(foo, state3, board3, st, depth);
-
         threads.start(internalBoard, st, depth);
-        state.startSearch(internalBoard, st, depth);
         threads.join();
-
-        //t1.join();
-        //t2.join();
-
         return;
     }
 
@@ -266,7 +253,8 @@ void uciLoop(const std::string& input, Position &internalBoard, SearchState &sta
 
         for (int i = 0; i != BENCH_SIZE; i++) {
             internalBoard.setBoard(positions[i]);
-            state.startSearch(internalBoard, st, BENCH_DEPTH + 1);
+            threads.start(internalBoard, st, BENCH_DEPTH + 1);
+            threads.join();
             state.clearHistory();
             std::cout << "\n";
         }

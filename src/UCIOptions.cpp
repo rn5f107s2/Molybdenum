@@ -1,7 +1,7 @@
 #include "UCIOptions.h"
 #include "Transpositiontable.h"
 #include "timemanagement.h"
-#include "threads.h"
+#include "threadpool.h"
 
 bool UCIOptions::setOption(const std::string& name, int value) {
     UCIOptionSpin *option = findOptionSpin(name);
@@ -19,7 +19,7 @@ bool UCIOptions::setOption(const std::string& name, int value) {
 
 void UCIOptions::init() {
     spinOptions.push(UCIOptionSpin("Hash", 1, 1024, 16, &resizeTT));
-    spinOptions.push(UCIOptionSpin("Threads", 1, 4, 1, &setCount));
+    spinOptions.push(UCIOptionSpin("Threads", 1, 16, 1, &setCount));
     spinOptions.push(UCIOptionSpin("Move Overhead", 0, 2000, 10, &setOverhead));
 }
 
