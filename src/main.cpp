@@ -7,6 +7,7 @@
 
 int main(int argc, char** argv) {
     TT.setSize(16);
-    uciCommunication(argc > 1 ? argv[1] : "");
+    UCI uci;
+    uci.start(argc, argv);
     return 0;
 }

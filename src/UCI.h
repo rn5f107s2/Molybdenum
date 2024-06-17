@@ -4,20 +4,85 @@
 #include "Move.h"
 #include "Position.h"
 #include "search.h"
+#include "tune.h"
+#include "UCIOptions.h"
 
-void uciCommunication(const std::string& in);
-void uciLoop(const std::string& input, Position &internalBoard, SearchState &state);
+#include <unordered_map>
+#include <vector>
+#include <sstream>
+
+class UCI {
+
+private:
+    SearchState state;
+    Position    internalBoard;
+    UCIOptions  options;
+    std::unordered_map<std::string, void(UCI::*)(const std::string&)> commands;
+
+    const std::string name       = "Molybdenum";
+    const std::string version    = "3.1";
+    const std::string defaultFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
+#ifdef TUNE
+    TuneOptions tuneOptions;
+#endif
+
+public:
+    UCI() {
+        internalBoard.net.loadDefaultNet();
+        internalBoard.setBoard(defaultFEN);
+
+        commands["d"] = &UCI::d;
+        commands["go"] = &UCI::go;
+        commands["uci"] = &UCI::uci;
+        commands["eval"] = &UCI::eval;
+        commands["bench"] = &UCI::bench;
+        commands["isready"] = &UCI::isready;
+        commands["goPerft"] = &UCI::goPerft;
+        commands["position"] = &UCI::position;
+        commands["setoption"] = &UCI::setoption;
+        commands["ucinewgame"] = &UCI::ucinewgame;
+
+
+        options.init();
+        state.clearHistory();
+
+#ifdef TUNE
+        tuneOptions.init();
+        tuneOptions.printSPSAConfig();
+#endif
+    }
+
+    void d(const std::string &args);
+    void go(const std::string &time);
+    void uci(const std::string &args);
+    void eval(const std::string &args);
+    void bench(const std::string &args);
+    void goPerft(const std::string &args);
+    void isready(const std::string &args);
+    void position(const std::string &args);
+    void setoption(const std::string &args);
+    void ucinewgame(const std::string &args);
+
+    void start(int argc, char** argv);
+    void loop();
+    void handleInput(const std::string &in);
+};
+
+inline std::vector<std::string> split(const std::string &s, char delim = ' ') {
+    std::stringstream stream(s);
+    std::vector<std::string> out;
+    std::string sample;
+
+    out.reserve(10);
+
+    while (std::getline(stream, sample, delim)) { out.push_back(sample); }
+
+    return out;
+}
 
 inline bool contains(const std::string& input, const std::string& searchedTerm) {
     return input.find(searchedTerm) != std::string::npos;
-}
-
-inline std::string extractFEN(const std::string& input) {
-    std::string fen;
-    int startPoint = (int) input.find("fen ") + 4;
-    int endPoint = contains(input, "moves") ? (int) input.find("moves") - 14 : (int) input.length();
-
-    return input.substr(startPoint, endPoint);
 }
 
 #endif //MOLYBDENUM_UCI_H

@@ -17,7 +17,7 @@ Tune tune;
 #endif
 
 
-int SearchState::startSearch(Position &pos, searchTime &st, int maxDepth, Move &bestMove) {
+int SearchState::startSearch(Position &pos, SearchTime &st, int maxDepth, Move &bestMove) {
     return iterativeDeepening(pos, st, maxDepth,bestMove);
 }
 
@@ -30,7 +30,7 @@ void SearchState::clearHistory() {
     memset(&killers, 0, sizeof(killers[0]) * killers.size());
 }
 
-int SearchState::iterativeDeepening(Position  &pos, searchTime &st, int maxDepth, [[maybe_unused]] Move &bestMove) {
+int SearchState::iterativeDeepening(Position  &pos, SearchTime &st, int maxDepth, [[maybe_unused]] Move &bestMove) {
     int score = 0;
     int prevScore = 0;
     SearchInfo si;

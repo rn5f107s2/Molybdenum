@@ -14,14 +14,14 @@ enum LimitType {
     Hard, Soft
 };
 
-struct searchTime{
+struct SearchTime{
     std::array<std::chrono::milliseconds, 2> thinkingTime = {std::chrono::milliseconds::max(), std::chrono::milliseconds::max()};
     std::chrono::time_point<std::chrono::steady_clock> searchStart = std::chrono::steady_clock::now();
     uint64_t nodeLimit = 18446744073709551615ull;
     SearchLimit limit = Time;
-};
 
-searchTime calcThinkingTime(int timeLeft, int increment, int movesToGo = 6000);
+    void calcThinkingTime(int timeLeft, int increment, int movesToGo = 6000);
+};
 
 inline void setOverhead(int value) {
     moveOverHead = value;
