@@ -74,7 +74,8 @@ public:
     SearchInfo si;
 
     void clearHistory();
-    int startSearch(Position &pos, searchTime &st, int maxDepth, Move &bestMove = emptyMove);
+    int startSearch(Position& pos, searchTime& st, int maxDepth);
+    int startSearchWithBestMove(Position &pos, searchTime &st, int maxDepth, Move &bestMove);
     int iterativeDeepening(Position  &pos, searchTime &st, int maxDepth, [[maybe_unused]] Move &bestMove);
     int aspirationWindow(int prevScore, Position &pos, SearchInfo &si, int depth);
     int qsearch(int alpha, int beta, Position &pos, SearchInfo &si, SearchStack *stack);

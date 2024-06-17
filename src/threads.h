@@ -10,7 +10,7 @@ class Thread {
     SearchState state;
 
 public:
-    void start(Position pos, searchTime st, int depth);
+    void start(Position& pos, searchTime& st, int depth);
     void stop();
     void join();
     u64 nodes();
