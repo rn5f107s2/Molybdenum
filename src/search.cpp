@@ -19,7 +19,11 @@ Tune tune;
 #endif
 
 
-int SearchState::startSearch(Position &pos, searchTime &st, int maxDepth, Move &bestMove) {
+int SearchState::startSearch(Position& pos, searchTime &st, int maxDepth) {
+    return startSearchWithBestMove(pos, st, maxDepth, emptyMove);
+}
+
+int SearchState::startSearchWithBestMove(Position &pos, searchTime &st, int maxDepth, Move &bestMove) {
     return iterativeDeepening(pos, st, maxDepth,bestMove);
 }
 
