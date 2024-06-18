@@ -6,6 +6,8 @@
 #include "PSQT.h"
 #include "searchUtil.h"
 #include "Movegen.h"
+
+#include <atomic>
 #include <chrono>
 #include <cmath>
 
@@ -15,13 +17,32 @@
 extern Tune tune;
 #endif
 
+class Thread;
+
 struct SearchInfo {
-    u64 nodeCount = 0;
-    bool stop = false;
     Move bestRootMove = 0;
     SearchTime st;
     int rootMoveCount = 0;
     int selDepth = 0;
+
+public:
+    std::atomic_uint64_t nodeCount = 0;
+    std::atomic_bool stop = false;
+
+    SearchInfo([[maybe_unused]] const SearchInfo &si) {
+        clear();
+    }
+
+    SearchInfo() {}
+
+    void clear() {
+        bestRootMove  = NO_MOVE;
+        rootMoveCount = 0;
+        selDepth      = 0;
+
+        nodeCount.store(0, std::memory_order_relaxed);
+        stop.store(false, std::memory_order_relaxed);
+    }
 };
 
 struct SearchStack {
@@ -57,6 +78,9 @@ public:
 
     template<NodeType nt>
     int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, SearchStack *stack);
+
+    Thread* thread;
+    SearchInfo si;
 };
 
 inline std::array<double, 256> initReductions() {

@@ -5,6 +5,8 @@
 #include "Constants.h"
 #include "Movepicker.h"
 #include "searchUtil.h"
+#include "thread.h"
+
 #include <chrono>
 #include <algorithm>
 
@@ -18,7 +20,9 @@ Tune tune;
 
 
 int SearchState::startSearch(Position &pos, SearchTime &st, int maxDepth, Move &bestMove) {
-    return iterativeDeepening(pos, st, maxDepth,bestMove);
+    int score = iterativeDeepening(pos, st, maxDepth, bestMove);
+    thread->detach();
+    return score;
 }
 
 void SearchState::clearHistory() {
@@ -33,14 +37,17 @@ void SearchState::clearHistory() {
 int SearchState::iterativeDeepening(Position  &pos, SearchTime &st, int maxDepth, [[maybe_unused]] Move &bestMove) {
     int score = 0;
     int prevScore = 0;
-    SearchInfo si;
+    si.clear();
     si.st = st;
 
     for (int depth = 1; depth != maxDepth; depth++) {
         score = aspirationWindow(score, pos, si, depth);
 
-        if (stop<Hard>(st, si))
+        if (si.stop.load(std::memory_order_relaxed))
             break;
+
+        if (thread->id())
+            continue;
 
 #ifndef DATAGEN
         std::string uciOutput;
@@ -58,14 +65,16 @@ int SearchState::iterativeDeepening(Position  &pos, SearchTime &st, int maxDepth
         uciOutput += abs(score) > MAXMATE ? "mate " : "cp ";
         uciOutput += std::to_string(abs(score) > MAXMATE ? mateInPlies(score) : score);
 
+        u64 nodeCount = thread->threads->nodes();
+
         uciOutput += " nodes ";
-        uciOutput += std::to_string(si.nodeCount);
+        uciOutput += std::to_string(nodeCount);
 
         uciOutput += " time ";
         uciOutput += std::to_string(searchTime);
 
         uciOutput += " nps ";
-        uciOutput += std::to_string((si.nodeCount / std::max(int(searchTime), 1)) * 1000);
+        uciOutput += std::to_string((nodeCount / std::max(int(searchTime), 1)) * 1000);
 
         uciOutput += " pv ";
         for (int i = 0; i < pvLength[0]; i++)
@@ -73,12 +82,21 @@ int SearchState::iterativeDeepening(Position  &pos, SearchTime &st, int maxDepth
 
         std::cout << uciOutput << std::endl;
 
-        if (stop<Soft>(st, si))
+        if (stop<Soft>(st, si)) {
+            thread->threads->stop();
             break;
+        }
     }
 
-    benchNodes += si.nodeCount;
-    std::cout << "bestmove " << moveToString(si.bestRootMove) << std::endl;
+    thread->searching.store(false, std::memory_order_relaxed);
+
+    if (!thread->id()) {
+        while (!thread->threads->done()) {}
+        std::cout << "bestmove " << moveToString(si.bestRootMove) << std::endl;
+    }
+
+    benchNodes += si.nodeCount.load(std::memory_order_relaxed);
+
 #else
     prevScore = score;
     }
@@ -152,11 +170,11 @@ int SearchState::search(int alpha, int beta, Position &pos, int depth, SearchInf
     if (depth <= 0)
         return qsearch(alpha, beta, pos, si, stack);
 
-    if (   !(si.nodeCount & 1023)
+    if (   !(si.nodeCount.load(std::memory_order_relaxed) & 1023)
         && stop<Hard>(si.st, si))
-        si.stop = true;
+        thread->threads->stop();
 
-    if (si.stop && !(ROOT && depth == (1 + check)))
+    if (si.stop.load(std::memory_order_relaxed) && !(ROOT && depth == (1 + check)))
         return DRAW;
 
     if constexpr (!ROOT) {
@@ -315,7 +333,7 @@ int SearchState::search(int alpha, int beta, Position &pos, int depth, SearchInf
         stack->currMove = currentMove;
         stack->contHist = &continuationHistory[pc][to];
 
-        si.nodeCount++;
+        si.nodeCount.fetch_add(1, std::memory_order_relaxed);
         moveCount++;
 
         if constexpr (ROOT)
@@ -347,7 +365,7 @@ int SearchState::search(int alpha, int beta, Position &pos, int depth, SearchInf
 
         pos.unmakeMove(currentMove);
 
-        if (si.stop && !(ROOT && depth == (1 + check)))
+        if (si.stop.load(std::memory_order_relaxed) && !(ROOT && depth == (1 + check)))
             return DRAW;
 
         if (score > bestScore) {
@@ -467,7 +485,7 @@ int SearchState::qsearch(int alpha, int beta, Position &pos, SearchInfo &si, Sea
         prefetchTTEntry(pos, pc, from, to, captured != NO_PIECE);
 
         pos.makeMove(currentMove);
-        si.nodeCount++;
+        si.nodeCount.fetch_add(1, std::memory_order_relaxed);
 
         int score = -qsearch(-beta, -alpha, pos, si, stack+1);
 
