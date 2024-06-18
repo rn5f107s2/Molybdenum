@@ -19,7 +19,7 @@ struct SearchInfo {
     u64 nodeCount = 0;
     bool stop = false;
     Move bestRootMove = 0;
-    searchTime st;
+    SearchTime st;
     int rootMoveCount = 0;
     int selDepth = 0;
 };
@@ -50,8 +50,8 @@ class SearchState {
 public:
 
     void clearHistory();
-    int startSearch(Position &pos, searchTime &st, int maxDepth, Move &bestMove = emptyMove);
-    int iterativeDeepening(Position  &pos, searchTime &st, int maxDepth, [[maybe_unused]] Move &bestMove);
+    int startSearch(Position &pos, SearchTime &st, int maxDepth, Move &bestMove = emptyMove);
+    int iterativeDeepening(Position  &pos, SearchTime &st, int maxDepth, [[maybe_unused]] Move &bestMove);
     int aspirationWindow(int prevScore, Position &pos, SearchInfo &si, int depth);
     int qsearch(int alpha, int beta, Position &pos, SearchInfo &si, SearchStack *stack);
 
@@ -81,7 +81,7 @@ inline int mateInPlies(int score) {
 }
 
 template<LimitType LT> inline
-bool stop(searchTime &st, SearchInfo &si) {
+bool stop(SearchTime &st, SearchInfo &si) {
     return    (std::chrono::steady_clock::now() > (si.st.searchStart + si.st.thinkingTime[LT]) && st.limit == Time)
               || (st.limit == Nodes && si.nodeCount >= st.nodeLimit);
 }

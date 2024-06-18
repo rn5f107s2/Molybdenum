@@ -1,6 +1,8 @@
 #include <string>
 #include <iostream>
 #include <chrono>
+#include <sstream>
+#include <vector>
 
 #include "tune.h"
 #include "UCI.h"
@@ -15,61 +17,19 @@
 #include "nnue.h"
 #include "Datagen/Datagen.h"
 
-UCIOptions options;
-
-#ifdef TUNE
-TuneOptions tuneOptions;
-#endif
 
 const std::string name = "Molybdenum";
 const std::string version = "3.1";
 
-void uciCommunication(const std::string& in) {
-    Position internalBoard;
-    SearchState state;
-
-#ifdef DATAGEN
-    if (in.empty()) {
-        std::cerr << "No Outputfile provided\n";
-        return;
-    } else {
-        loadDefaultNet();
-        start(internalBoard, in);
-    }
-#endif
-
-    internalBoard.net.loadDefaultNet();
-    internalBoard.setBoard("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-    std::string input;
-    options.init();
-
-#ifdef TUNE
-    tuneOptions.init();
-    tuneOptions.printSPSAConfig();
-#endif
-
-    if (!in.empty()) {
-        uciLoop(in, internalBoard, state);
-        return;
-    }
-
-    while (true) {
-        std::getline(std::cin, input);
-
-        if (contains(input, "quit"))
-            return;
-
-        uciLoop(input, internalBoard, state);
-    }
+void UCI::d([[maybe_unused]] const std::string &args) {
+    internalBoard.printBoard();
 }
 
-void uciLoop(const std::string& input, Position &internalBoard, SearchState &state) {
-    if (contains(input, "ucinewgame")) {
-        state.clearHistory();
-        return;
-    }
+void UCI::eval([[maybe_unused]] const std::string &args) {
+    std::cout << evaluate(internalBoard) << std::endl;
+}
 
-    if (contains(input, "uci")) {
+void UCI::uci([[maybe_unused]] const std::string &args) {
         std::cout << "id name " << name << " " << version << "\n";
         std::cout << "id author rn5f107s2\n";
         options.printOptions();
@@ -79,186 +39,173 @@ void uciLoop(const std::string& input, Position &internalBoard, SearchState &sta
         tuneOptions.init();
 #endif
 
-        std::cout << "uciok\n";
+        std::cout << "uciok" << std::endl;
         return;
+}
+
+void UCI::isready([[maybe_unused]] const std::string &args) {
+    std::cout << "readyok" << std::endl;
+}
+
+void UCI::ucinewgame([[maybe_unused]] const std::string &args) {
+    state.clearHistory();
+}
+
+void UCI::goPerft([[maybe_unused]] const std::string &args) {
+    int depth = std::stoi(args);
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+
+    u64 nodeCount = startPerft(depth, internalBoard, true);
+
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds> (end - begin).count();
+
+    std::cout << "______________\n";
+    std::cout << "Nodes searched: " << nodeCount << "\n";
+    std::cout << "Took: " << milliseconds << " milliseconds" << "\n";
+    std::cout << "Speed: " << (nodeCount / (milliseconds + 1)) / 1000 << " mnps" << std::endl;
+    return;
+}
+
+void UCI::bench([[maybe_unused]] const std::string &args) {
+    SearchTime st;
+    st.limit = Depth;
+    benchNodes = 0;
+
+    state.clearHistory();
+
+    for (int i = 0; i != BENCH_SIZE; i++) {
+        internalBoard.setBoard(positions[i]);
+        state.startSearch(internalBoard, st, BENCH_DEPTH + 1);
+        state.clearHistory();
+        std::cout << "\n";
     }
 
-    if (contains(input, "isready"))
-        std::cout << "readyok\n";
+    auto milliseconds = int(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - st.searchStart).count());
+    auto nps = (benchNodes * 1000) / (milliseconds + 1);
 
+    std::cout << "_____________" << "\n";
+    std::cout << benchNodes << " Nodes" << "\n";
+    std::cout << nps << " nps" << std::endl;
+}
 
-    if (contains(input, "position")) {
-        std::string fen;
+void UCI::setoption([[maybe_unused]] const std::string &args) {
+    std::vector<std::string> splitArgs = split(args);
 
-        if (contains(input, "startpos"))
-            fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-        else
-            fen = extractFEN(input);
-
-        internalBoard.setBoard(fen);
-
-        if (contains(input, "moves")) {
-            size_t start = input.find("moves") + 6;
-            std::string moves = input.substr(start, input.length());
-
-            while (!moves.empty()) {
-                int promotionPiece = PROMO_KNIGHT;
-                int fromSquare;
-                int toSquare;
-                int flag = NORMAL;
-                std::string move = moves.substr(0, moves.find(' '));
-
-                if (move.length() == 5) {
-                    promotionPiece = charIntToPiece(toupper(move.at(4)) - '0') - 1;
-                    flag = PROMOTION;
-                }
-
-                u64 from = stringToSquare(move.substr(0, 2));
-                u64 to   = stringToSquare(move.substr(2, 2));
-
-                fromSquare = lsb(from);
-                toSquare   = lsb(to);
-
-                internalBoard.makeMove(internalBoard.fromToToMove(fromSquare, toSquare, promotionPiece, flag));
-                internalBoard.net.initAccumulator(internalBoard.bitBoards);
-
-                if (moves.find(' ') == std::string ::npos)
-                    break;
-                moves = moves.substr(moves.find(' ') + 1);
-            }
-        }
-    }
-
-    if (input == "d") {
-        internalBoard.printBoard();
-        return;
-    }
-
-    if (contains(input, "go perft")) {
-        std::string depthS = input.substr(9);
-        int depthI = std::stoi(depthS);
-
-        std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-
-        u64 nodeCount = startPerft(depthI, internalBoard, true);
-
-        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-        auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds> (end - begin).count();
-
-        std::cout << "______________\n";
-        std::cout << "Nodes searched: " << nodeCount << "\n";
-        std::cout << "Took: " << milliseconds << " milliseconds" << "\n";
-        std::cout << "Speed: " << (nodeCount / (milliseconds + 1)) / 1000 << " mnps\n";
-        return;
-    }
-
-    if (contains(input, "go")) {
-        int wtime = 0;
-        int btime = 0;
-        int winc = 0;
-        int binc = 0;
-        int depth = MAXDEPTH;
-        int movesToGo = 6000;
-
-        if (contains(input, "wtime")) {
-            int start = int(input.find("wtime")) + 6;
-            int end   = int(input.find(' ', start));
-
-            wtime = std::stoi(input.substr(start, end));
-
-            start = int(input.find("btime")) + 6;
-            end   = int(input.find(' ', start));
-
-            btime = std::stoi(input.substr(start, end));
-
-            if (contains(input, "winc")) {
-                start = int(input.find("winc")) + 5;
-                end   = int(input.find(' ', start));
-
-                winc = std::stoi(input.substr(start, end));
-
-                start = int(input.find("binc")) + 5;
-                end   = int(input.find(' ', start));
-
-                binc = std::stoi(input.substr(start, end));
-            }
-
-            if (contains(input, "movestogo")) {
-                start = int(input.find("movestogo") + 9);
-                end   = int(input.find(' ', start));
-
-                movesToGo = std::stoi(input.substr(start, end));
-            }
-        }
-
-        int timeLeft  = internalBoard.sideToMove ? wtime : btime;
-        int increment = internalBoard.sideToMove ? winc  : binc;
-
-        searchTime st = calcThinkingTime(timeLeft, increment, movesToGo);
-
-        if (contains(input, "nodes ")) {
-            int nodes = std::stoi(input.substr(input.find("nodes ") + 6));
-            st.nodeLimit = nodes;
-            st.limit = Nodes;
-        }
-
-        if (contains(input, "depth "))
-            depth = std::stoi(input.substr(input.find("depth ") + 6)) + 1;
-
-        if (contains(input, "depth ") || contains(input, "infinite"))
-            st.limit = Depth;
-
-        if (contains(input, "movetime")) {
-            int start = int(input.find("movetime")) + 8;
-            int end   = int(input.find(' ', start));
-
-            st.thinkingTime[Hard] = st.thinkingTime[Soft] = std::chrono::milliseconds(std::stoi(input.substr(start, end)) - moveOverHead);
-        }
-
-        state.startSearch(internalBoard, st, depth);
-        return;
-    }
-
-    if (contains(input, "eval")) {
-        std::cout << evaluate(internalBoard) << "\n";
-    }
-
-    if (contains(input, "setoption")) {
-        std::string optionName = input.substr(input.find("name ") + 5);
-        int nameEnd = int(optionName.find("value "));
-        int value = std::stoi(optionName.substr(nameEnd + 6));
-        optionName = optionName.substr(0, optionName.size() - optionName.substr(nameEnd).size() - 1);
-
-        bool found = options.setOption(optionName, value);
+    bool found = options.setOption(splitArgs[1], std::stoi(splitArgs[3]));
 
 #ifdef TUNE
         found |= tuneOptions.setOption(optionName, value);
         tuneOptions.init();
 #endif
 
-        if (!found)
-            std::cout << "No such option: " << optionName << "\n";
+    if (!found)
+        std::cout << "No such option: " << splitArgs[1] << std::endl;
+}
+
+void UCI::position([[maybe_unused]] const std::string &args) {
+    const std::vector<std::string> argsSplit = split(args);
+    unsigned int offset = 1;
+    std::string fen     =  argsSplit[0] == "startpos"  ? defaultFEN : "";
+
+    while (   argsSplit[0] == "fen" 
+           && offset < argsSplit.size() 
+           && argsSplit[offset] != "moves")
+        fen += argsSplit[offset++] + " ";
+
+    offset++;
+    internalBoard.setBoard(fen);
+
+    for (unsigned long i = offset; i < argsSplit.size(); i++) {
+        std::string move = argsSplit[i];
+
+        int from       = lsb(stringToSquare(move.substr(0, 2)));
+        int to         = lsb(stringToSquare(move.substr(2, 4)));
+        int flag       = (move.size() == 5) ? PROMOTION : NORMAL;
+        int promoPiece = flag ? charIntToPiece(toupper(move.at(4)) - '0') - 1 : PROMO_KNIGHT;
+
+        Move m = internalBoard.fromToToMove(from, to, promoPiece, flag);
+        internalBoard.makeMove(m);
+        internalBoard.net.initAccumulator(internalBoard.bitBoards);
     }
+}
 
-    if (contains(input, "bench")) {
-        searchTime st;
+void UCI::go([[maybe_unused]] const std::string &args) {
+    std::array<int, 2> time      = {};
+    std::array<int, 2> increment = {};
+    int depth     = MAXDEPTH;
+    int movesToGo = 6000;
+
+    SearchTime st;
+    std::vector<std::string> splitTime = split(args);
+
+    if (splitTime[0] == "infinite" || splitTime[0] == "depth") {
         st.limit = Depth;
-        benchNodes = 0;
 
-        state.clearHistory();
+        if (splitTime[0] == "depth")
+            depth = std::stoi(splitTime[1]) + 1; 
 
-        for (int i = 0; i != BENCH_SIZE; i++) {
-            internalBoard.setBoard(positions[i]);
-            state.startSearch(internalBoard, st, BENCH_DEPTH + 1);
-            state.clearHistory();
-            std::cout << "\n";
+    } else if (splitTime[0] == "nodes") {
+        st.limit     = Nodes;
+        st.nodeLimit = std::stoull(splitTime[1]);
+
+    } else if (splitTime[0] == "movetime") {
+        st.limit = Time;
+        st.thinkingTime[Hard] = st.thinkingTime[Soft] = std::chrono::milliseconds(std::stoi(splitTime[1]) - moveOverHead);
+
+    } else {
+        st.limit = Time;
+
+        for (unsigned long i = 0; i < splitTime.size(); i += 2) {
+            if (contains(splitTime[i], "time"))
+                time[contains(splitTime[i], "w")] = std::stoi(splitTime[i + 1]);
+            else if (contains(splitTime[i], "inc"))
+                increment[contains(splitTime[i], "w")] = std::stoi(splitTime[i + 1]);
+            else if (contains(splitTime[i], "movestogo"))
+                movesToGo = std::stoi(splitTime[i + 1]);
         }
 
-        auto milliseconds = int(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - st.searchStart).count());
-        auto nps = (benchNodes * 1000) / std::max(milliseconds, 1);
-
-        std::cout << "_____________" << "\n";
-        std::cout << benchNodes << " Nodes" << "\n";
-        std::cout << nps << " nps\n";
+        st.calcThinkingTime(time[internalBoard.sideToMove], increment[internalBoard.sideToMove], movesToGo);
     }
+
+    state.startSearch(internalBoard, st, depth);
+}
+
+void UCI::start(int argc, char** argv) {
+    if (argc == 1)
+        return loop();
+
+    for (int i = 1; i < argc; i++) {
+        std::string in = argv[i];
+
+        if (in == "quit")
+            return;
+
+        handleInput(in);
+    }
+}
+
+void UCI::loop() {    
+    while (true) {
+        std::string input;
+        std::getline(std::cin, input);
+
+        if (input == "quit")
+            return;
+
+        handleInput(input);
+    }
+}
+
+void UCI::handleInput(const std::string &in) {
+    const std::string name = in.substr(0, in.find(' '));
+    auto iter = commands.find(name);
+
+    if (iter == commands.end()) {
+        std::cout << "No such command: " << in << std::endl;
+        return;
+    }
+    
+    std::string args = in.substr(std::min(in.length(), name.length() + 1));
+    (*this.*(iter->second))(args);
 }
