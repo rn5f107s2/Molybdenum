@@ -6,6 +6,7 @@
 #include "search.h"
 #include "tune.h"
 #include "UCIOptions.h"
+#include "thread.h"
 
 #include <unordered_map>
 #include <vector>
@@ -14,9 +15,8 @@
 class UCI {
 
 private:
-    SearchState state;
-    Position    internalBoard;
-    UCIOptions  options;
+    Position   internalBoard;
+    UCIOptions options = UCIOptions(this);
     std::unordered_map<std::string, void(UCI::*)(const std::string&)> commands;
 
     const std::string name       = "Molybdenum";
@@ -28,6 +28,8 @@ private:
 #endif
 
 public:
+    ThreadPool threads;
+
     UCI() {
         internalBoard.net.loadDefaultNet();
         internalBoard.setBoard(defaultFEN);
@@ -36,6 +38,7 @@ public:
         commands["go"] = &UCI::go;
         commands["uci"] = &UCI::uci;
         commands["eval"] = &UCI::eval;
+        commands["stop"] = &UCI::stop;
         commands["bench"] = &UCI::bench;
         commands["isready"] = &UCI::isready;
         commands["goPerft"] = &UCI::goPerft;
@@ -45,7 +48,8 @@ public:
 
 
         options.init();
-        state.clearHistory();
+        threads.set(1);
+        threads.clear();
 
 #ifdef TUNE
         tuneOptions.init();
@@ -57,6 +61,7 @@ public:
     void go(const std::string &time);
     void uci(const std::string &args);
     void eval(const std::string &args);
+    void stop(const std::string &args);
     void bench(const std::string &args);
     void goPerft(const std::string &args);
     void isready(const std::string &args);

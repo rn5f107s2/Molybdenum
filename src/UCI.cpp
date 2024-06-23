@@ -16,6 +16,7 @@
 #include "bench.h"
 #include "nnue.h"
 #include "Datagen/Datagen.h"
+#include "thread.h"
 
 
 const std::string name = "Molybdenum";
@@ -48,7 +49,10 @@ void UCI::isready([[maybe_unused]] const std::string &args) {
 }
 
 void UCI::ucinewgame([[maybe_unused]] const std::string &args) {
-    state.clearHistory();
+    if (!threads.done())
+        return;
+
+    threads.clear();
 }
 
 void UCI::goPerft([[maybe_unused]] const std::string &args) {
@@ -68,16 +72,20 @@ void UCI::goPerft([[maybe_unused]] const std::string &args) {
 }
 
 void UCI::bench([[maybe_unused]] const std::string &args) {
+    if (!threads.done())
+        return;
+
     SearchTime st;
     st.limit = Depth;
     benchNodes = 0;
-
-    state.clearHistory();
+    threads.clear();
 
     for (int i = 0; i != BENCH_SIZE; i++) {
         internalBoard.setBoard(positions[i]);
-        state.startSearch(internalBoard, st, BENCH_DEPTH + 1);
-        state.clearHistory();
+        go("depth " + std::to_string(BENCH_DEPTH));
+        threads.join();
+        threads.clear();
+
         std::cout << "\n";
     }
 
@@ -90,8 +98,10 @@ void UCI::bench([[maybe_unused]] const std::string &args) {
 }
 
 void UCI::setoption([[maybe_unused]] const std::string &args) {
-    std::vector<std::string> splitArgs = split(args);
+    if (!threads.done())
+        return;
 
+    std::vector<std::string> splitArgs = split(args);
     bool found = options.setOption(splitArgs[1], std::stoi(splitArgs[3]));
 
 #ifdef TUNE
@@ -104,6 +114,9 @@ void UCI::setoption([[maybe_unused]] const std::string &args) {
 }
 
 void UCI::position([[maybe_unused]] const std::string &args) {
+    if (!threads.done())
+        return;
+
     const std::vector<std::string> argsSplit = split(args);
     unsigned int offset = 1;
     std::string fen     =  argsSplit[0] == "startpos"  ? defaultFEN : "";
@@ -131,6 +144,9 @@ void UCI::position([[maybe_unused]] const std::string &args) {
 }
 
 void UCI::go([[maybe_unused]] const std::string &args) {
+    if (!threads.done())
+        return;
+
     std::array<int, 2> time      = {};
     std::array<int, 2> increment = {};
     int depth     = MAXDEPTH;
@@ -168,7 +184,11 @@ void UCI::go([[maybe_unused]] const std::string &args) {
         st.calcThinkingTime(time[internalBoard.sideToMove], increment[internalBoard.sideToMove], movesToGo);
     }
 
-    state.startSearch(internalBoard, st, depth);
+    threads.start(internalBoard, st, depth);
+}
+
+void UCI::stop([[maybe_unused]] const std::string &args) {
+    threads.stop();
 }
 
 void UCI::start(int argc, char** argv) {
@@ -190,8 +210,11 @@ void UCI::loop() {
         std::string input;
         std::getline(std::cin, input);
 
-        if (input == "quit")
+        if (input == "quit") {
+            threads.stop();
+            threads.join();
             return;
+        }
 
         handleInput(input);
     }

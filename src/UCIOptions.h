@@ -6,9 +6,12 @@
 #include "string"
 #include "Utility.h"
 
+class UCI;
+class UCIOptions;
+
 class UCIOptionSpin {
     public:
-        explicit UCIOptionSpin(std::string name = "NONE", int min = 0, int max = 0, int dfault = 0, void (*setter)(int) = nullptr) {
+        explicit UCIOptionSpin(std::string name = "NONE", int min = 0, int max = 0, int dfault = 0, void (UCIOptions::*setter)(int) = nullptr) {
             this->name = std::move(name);
             this->min = min;
             this->max = max;
@@ -20,7 +23,7 @@ class UCIOptionSpin {
         int min;
         int max;
         int dfault;
-        void (*setter)(int);
+        void (UCIOptions::*setter)(int);
 };
 
 class UCIOptions {
@@ -29,9 +32,22 @@ class UCIOptions {
         virtual bool setOption(const std::string& name, int value);
         void printOptions();
 
+        UCIOptions(UCI* u) {
+            uci = u;
+        }
+
+        UCIOptions() {}
+
     protected:
         Stack<UCIOptionSpin> spinOptions;
         UCIOptionSpin* findOptionSpin(const std::string& name);
+
+    private:
+        UCI* uci;
+
+        void setHash(int val);
+        void setThreads(int val);
+        void setMoveOverhead(int val);
 };
 
 
