@@ -32,7 +32,7 @@ void UCIOptions::setMoveOverhead(int val) {
 void UCIOptions::init() {
     spinOptions.push(UCIOptionSpin("Hash", 1, 1024, 16, &UCIOptions::setHash));
     spinOptions.push(UCIOptionSpin("Threads", 1, 32, 1, &UCIOptions::setThreads));
-    spinOptions.push(UCIOptionSpin("Move Overhead", 0, 2000, 10, &UCIOptions::setMoveOverhead));
+    spinOptions.push(UCIOptionSpin("MoveOverhead", 0, 2000, 10, &UCIOptions::setMoveOverhead));
 }
 
 UCIOptionSpin *UCIOptions::findOptionSpin(const std::string& name) {
