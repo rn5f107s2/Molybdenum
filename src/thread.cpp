@@ -18,6 +18,11 @@ void Thread::clear() {
     state.clearHistory();
 }
 
+void Thread::initSearchInfo(SearchTime st) {
+    state.si.clear();
+    state.si.st = st;
+}
+
 void Thread::detach() {
     thread.detach();
 }
@@ -36,9 +41,11 @@ u64 Thread::nodes() {
 
 void ThreadPool::start(Position &pos, SearchTime &st, int depth) {
     // Before starting the threads set all of them to searching, to avoid the mainthread stopping search
-    // while other threads havent been started yet
-    for (auto &t : threads)
+    // while other threads havent been started yet, also reset SearchInfo here, to avoid reading old nodecounts
+    for (auto &t : threads) {
         t.searching.store(true, std::memory_order_relaxed);
+        t.initSearchInfo(st);
+    }
 
     for (auto &t : threads)
         t.start(pos, st, depth);
