@@ -13,7 +13,7 @@ enum Toggle {
 };
 
 static const int INPUT_SIZE = 12 * 64;
-static const int L1_SIZE = 32;
+static const int L1_SIZE = 256;
 static const int L2_SIZE = 8;
 static const int OUTPUT_SIZE = 1;
 static const int NET_SIZE = 3;
@@ -59,6 +59,11 @@ inline int16_t relu(int16_t input) {
 inline float relu(float input) {
     float clamped = std::clamp(input, 0.0f, 1.0f);
     return clamped * clamped;
+}
+
+inline float crelu(float input) {
+    float clamped = std::clamp(input, 0.0f, 1.0f);
+    return clamped;
 }
 
 template<Color C> inline

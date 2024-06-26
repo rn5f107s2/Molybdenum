@@ -21,7 +21,7 @@
 #undef PUSHED_MACRO
 #endif
 
-#define defaultNetPath "src/Nets/params2.bin"
+#define defaultNetPath "src/Nets/params.bin"
 
 INCBIN(network, defaultNetPath);
 const Weights defaultWeights = *reinterpret_cast<const Weights*>(gnetworkData);
@@ -89,7 +89,7 @@ int calculate(Color c) {
     float output = 0;
 
     for (int n2 = 0; n2 != L2_SIZE; n2++) {
-        output += relu(float(l1Out[n2])) * net.weights2[n2];
+        output += crelu(float(l1Out[n2])) * net.weights2[n2];
     }
 
     return (output + net.bias2[0]) * 400;
