@@ -147,8 +147,9 @@ int SearchState::search(int alpha, int beta, Position &pos, int depth, SearchInf
     u64 ksq = pos.getPieces(pos.sideToMove, KING);
     u64 checkers = attackersTo<false, false>(lsb(ksq),pos.getOccupied(), pos.sideToMove ? BLACK_PAWN : WHITE_PAWN, pos);
     Move bestMove = 0, currentMove = 0, excluded = NO_MOVE;
-    int bestScore = -INFINITE, score = -INFINITE, moveCount = 0, extensions = 0;
+    int bestScore = -INFINITE, score = -INFINITE, moveCount = 0, extensions = 0, singularValue = INFINITE, singDepth = depth;
     bool exact = false, check = checkers, ttHit = false, improving, whatAreYouDoing;
+    TTBound singularBound = UPPER;
     Stack<Move> historyUpdates;
 
     excluded = stack->excluded;
@@ -300,6 +301,13 @@ int SearchState::search(int alpha, int beta, Position &pos, int depth, SearchInf
             && history < -6011 * expectedDepth - (-6305 * stack->quarterRed) / 4)
             continue;
 
+        if (   !PvNode
+            && !capture
+            && bestScore > -MAXMATE
+            && singularBound == UPPER
+            && std::max(expectedDepth - singDepth, 2) * 100 + 100 <= alpha)
+            continue;
+
         if (   depth >= 8
             && !ROOT
             && ttHit
@@ -308,13 +316,14 @@ int SearchState::search(int alpha, int beta, Position &pos, int depth, SearchInf
             && ttDepth >= depth - 3
             && !excluded) {
             
-            int singDepth = depth / 2;
+            singDepth = depth / 2;
             int singBeta  = ttScore - 12 + std::min(si.rootMoveCount * 2, 12); 
 
             stack->excluded = ttMove;
             stack->currMove = NO_MOVE;
 
-            score = search<nt>(singBeta - 1, singBeta, pos, singDepth, si, stack);
+            singularValue = score = search<nt>(singBeta - 1, singBeta, pos, singDepth, si, stack);
+            singularBound = singularValue >= singBeta ? LOWER : UPPER;
 
             stack->excluded = NO_MOVE;
 
