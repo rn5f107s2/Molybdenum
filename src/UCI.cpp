@@ -18,10 +18,6 @@
 #include "Datagen/Datagen.h"
 #include "thread.h"
 
-
-const std::string name = "Molybdenum";
-const std::string version = "3.1";
-
 void UCI::d([[maybe_unused]] const std::string &args) {
     internalBoard.printBoard();
 }

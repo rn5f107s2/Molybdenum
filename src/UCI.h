@@ -20,7 +20,7 @@ private:
     std::unordered_map<std::string, void(UCI::*)(const std::string&)> commands;
 
     const std::string name       = "Molybdenum";
-    const std::string version    = "3.1";
+    const std::string version    = "4.0";
     const std::string defaultFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
 #ifdef TUNE

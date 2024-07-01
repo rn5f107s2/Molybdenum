@@ -25,8 +25,6 @@
 INCBIN(network, EVALFILE);
 const Weights defaultWeights = *reinterpret_cast<const Weights*>(gnetworkData);
 
-Net net;
-
 void Net::loadDefaultNet() {
     weights0 = defaultWeights.weights0;
     weights1 = defaultWeights.weights1;
