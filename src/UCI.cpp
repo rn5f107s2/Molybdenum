@@ -84,7 +84,7 @@ void UCI::bench([[maybe_unused]] const std::string &args) {
         std::cout << "Starting search!" << std::endl;
         go("depth " + std::to_string(BENCH_DEPTH));
         std::cout << "Search started, waiting for threads to finish" << std::endl;
-        threads.join();
+        while (!threads.done()) {}
         std::cout << "Threads done!" << std::endl;
         threads.clear();
 
