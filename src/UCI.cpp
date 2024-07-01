@@ -79,7 +79,7 @@ void UCI::bench([[maybe_unused]] const std::string &args) {
     for (int i = 0; i != BENCH_SIZE; i++) {
         internalBoard.setBoard(positions[i]);
         go("depth " + std::to_string(BENCH_DEPTH));
-        threads.join();
+        while (!threads.done()) {}
         threads.clear();
 
         std::cout << "\n";
@@ -208,7 +208,7 @@ void UCI::loop() {
 
         if (input == "quit") {
             threads.stop();
-            threads.join();
+            while (!threads.done()) {}
             return;
         }
 
