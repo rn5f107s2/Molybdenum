@@ -303,6 +303,7 @@ int SearchState::search(int alpha, int beta, Position &pos, int depth, SearchInf
         if (   depth >= 8
             && !ROOT
             && ttHit
+            && moveCount == 0
             && currentMove == ttMove
             && ttBound != UPPER
             && ttDepth >= depth - 3
@@ -321,9 +322,19 @@ int SearchState::search(int alpha, int beta, Position &pos, int depth, SearchInf
             if (score < singBeta)
                 extensions = 1;
 
-            if (   score > singBeta
-                && stack->currMove) 
-                mp.setPrioMove(stack->currMove);
+            if (   score >= singBeta
+                && stack->currMove)
+            {
+                mp.setPrioMove(ttMove);
+                currentMove = stack->currMove;
+
+                from    = extract<FROM>(currentMove);
+                to      = extract<TO  >(currentMove);
+                pc      = pos.pieceOn(from);
+                capture = pos.isCapture(currentMove);
+
+                history = (*(stack-1)->contHist)[pc][to] + mainHistory[pos.sideToMove][from][to];
+            }
         }
 
         prefetchTTEntry(pos, pc, from, to, capture);
