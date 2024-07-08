@@ -21,6 +21,7 @@ Tune tune;
 
 int SearchState::startSearch(Position &pos, SearchTime &st, int maxDepth, Move &bestMove) {
     int score = iterativeDeepening(pos, st, maxDepth, bestMove);
+    thread->searching.store(false, std::memory_order_relaxed);
     thread->detach();
     return score;
 }
@@ -88,9 +89,8 @@ int SearchState::iterativeDeepening(Position  &pos, SearchTime &st, int maxDepth
         }
     }
 
-    thread->searching.store(false, std::memory_order_relaxed);
-
     if (!thread->id()) {
+        thread->searching.store(false, std::memory_order_relaxed);
         while (!thread->threads->done()) {}
         std::cout << "bestmove " << moveToString(si.bestRootMove) << std::endl;
     }
