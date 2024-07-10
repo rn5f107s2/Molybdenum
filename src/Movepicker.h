@@ -31,6 +31,7 @@ class Movepicker {
         PieceToHist *contHist2{};
         Move ttMove = NO_MOVE;
         Move prioMove = NO_MOVE;
+        Move ignoredMove = NO_MOVE;
         MoveList ml{};
         Position *pos;
         ScoredMove *currentMove = nullptr;
@@ -139,12 +140,19 @@ class Movepicker {
                 return NO_MOVE;
 
             Move next = sortNext();
-            return (next == prioMove) ? sortNext() : next; 
+            // If both a ignored and a prioMove exist, the prioMove is the ttMove and therfore was the first returned move from scoreMoves()
+            // and threfore it should not be possible to have a prioMove and a ignoredMove consecutive, this is not an ideal solution and I will
+            // (probably) improve it at some(TM) point
+            return (next == prioMove || next == ignoredMove) ? sortNext() : next; 
         }
 
         inline void setPrioMove(Move pm) {
             prioMove = pm;
             searchedPrio = false;
+        }
+
+        inline void setIgnoredMove(Move im) {
+            ignoredMove = im;
         }
         
 };

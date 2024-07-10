@@ -325,15 +325,20 @@ int SearchState::search(int alpha, int beta, Position &pos, int depth, SearchInf
             if (   score >= singBeta
                 && stack->currMove)
             {
-                mp.setPrioMove(ttMove);
-                currentMove = stack->currMove;
+                mp.setPrioMove(stack->currMove);
 
-                from    = extract<FROM>(currentMove);
-                to      = extract<TO  >(currentMove);
-                pc      = pos.pieceOn(from);
-                capture = pos.isCapture(currentMove);
+                if (ttScore <= alpha) {
+                    mp.setIgnoredMove(stack->currMove);
+                    mp.setPrioMove(ttMove);
+                    currentMove = stack->currMove;
 
-                history = (*(stack-1)->contHist)[pc][to] + mainHistory[pos.sideToMove][from][to];
+                    from    = extract<FROM>(currentMove);
+                    to      = extract<TO  >(currentMove);
+                    pc      = pos.pieceOn(from);
+                    capture = pos.isCapture(currentMove);
+
+                    history = (*(stack-1)->contHist)[pc][to] + mainHistory[pos.sideToMove][from][to];
+                }
             }
         }
 
