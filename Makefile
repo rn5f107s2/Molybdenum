@@ -3,7 +3,7 @@ OBJ_DIR=build
 MOLY_DIR=src
 CXX=clang++
 
-DEFAULT_NET_NAME=moly_20240526.nnue
+DEFAULT_NET_NAME=moly_20240715.nnue
 
 DEFAULT_EXE = $(OBJ_DIR)/Molybdenum
 DATAGEN_EXE = $(OBJ_DIR)/Datagen
