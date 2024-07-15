@@ -17,6 +17,7 @@
 #include "nnue.h"
 #include "Datagen/Datagen.h"
 #include "thread.h"
+#include "mcts.h"
 
 void UCI::d([[maybe_unused]] const std::string &args) {
     internalBoard.printBoard();
@@ -73,7 +74,7 @@ void UCI::bench([[maybe_unused]] const std::string &args) {
 
     SearchTime st;
     st.limit = Depth;
-    benchNodes = 0;
+    benchNodes = 1;
     threads.clear();
 
     for (int i = 0; i != BENCH_SIZE; i++) {
@@ -90,7 +91,7 @@ void UCI::bench([[maybe_unused]] const std::string &args) {
 
     std::cout << "_____________" << "\n";
     std::cout << benchNodes << " Nodes" << "\n";
-    std::cout << nps << " nps" << std::endl;
+    std::cout << 1 << " nps" << std::endl;
 }
 
 void UCI::setoption([[maybe_unused]] const std::string &args) {
@@ -142,6 +143,9 @@ void UCI::position([[maybe_unused]] const std::string &args) {
 void UCI::go([[maybe_unused]] const std::string &args) {
     if (!threads.done())
         return;
+
+    rootSearch(internalBoard);
+    return;
 
     std::array<int, 2> time      = {};
     std::array<int, 2> increment = {};

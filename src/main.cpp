@@ -4,6 +4,7 @@
 #include "BitStuff.h"
 #include "MagicBitboards.h"
 #include "Movegen.h"
+#include "mcts.h"
 
 int main(int argc, char** argv) {
     TT.setSize(16);
