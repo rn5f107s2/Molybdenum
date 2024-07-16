@@ -19,8 +19,7 @@ void rootSearch(Position &pos, SearchTime &st) {
     while ((int((++si.nodeCount) + 218) < pool.limit) && ((si.nodeCount & 511) || !stop<Soft>(st, si)))
         root.search(pos, pool);
 
-    std::cout << (int((++si.nodeCount) + 218) < pool.limit) << std::endl;
-    std::cout << ((si.nodeCount & 511) || !stop<Soft>(st, si)) << std::endl;
+    benchNodes += si.nodeCount;
 
     float bestRes;
     Move  bestMove;
