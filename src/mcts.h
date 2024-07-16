@@ -20,9 +20,9 @@ public:
     uint32_t visits = 0;
     float    result = 0.0f;
 
-    float search(Position &pos, NodePool &pool);
+    float search(Position &pos, NodePool &pool, bool root = false);
     float rollout(Position &pos);
-    Node* select();
+    Node* select(Position &pos, bool root = false);
     void  expand(Position &pos, NodePool &pool);
     float backpropagate();
 };
@@ -43,7 +43,8 @@ public:
     void resize(int newMB);
 };
 
-float uct(uint32_t pVisits, uint32_t visits, float score);
+float uct(uint32_t pVisits, uint32_t visits, float score, Move move, Position &pos, bool root = false);
+float policy(Position &pos, Move move, bool root = false);
 void rootSearch(Position &pos, SearchTime &st);
 
 #endif

@@ -17,7 +17,7 @@ void rootSearch(Position &pos, SearchTime &st) {
     si.st = st;
 
     while ((int((++si.nodeCount) + 218) < pool.limit) && ((si.nodeCount & 511) || !stop<Soft>(st, si)))
-        root.search(pos, pool);
+        root.search(pos, pool, true);
 
     benchNodes += si.nodeCount;
 
@@ -46,7 +46,6 @@ NodePool::NodePool(int mb) : sizeMB(mb),
                              limit((mb * 1024 * 1024) / sizeof(Node)),
                              currIdx(0) {
     memory = reinterpret_cast<Node*>(malloc(limit * sizeof(Node)));
-    std::cout << limit << std::endl;
 }
 
 Node* NodePool::allocate(int nNodes) {
@@ -75,16 +74,30 @@ void NodePool::resize(int newMB) {
     memory = reinterpret_cast<Node*>(malloc(limit * sizeof(Node)));
 }
 
-float uct(uint32_t pVisits, uint32_t visits, float score) {
+float uct(uint32_t pVisits, uint32_t visits, float score, Move move, Position &pos) {
     const float c = 1.414213562373095048801688f;
 
     if (!visits)
-        return std::numeric_limits<float>::max();
+        return std::numeric_limits<float>::max() * policy(pos, move);
 
     return (score / visits) + c * std::sqrt(std::log(pVisits) / visits);
 }
 
-float Node::search(Position &pos, NodePool &pool) {
+float policy(Position &pos, Move move, bool root) {
+    float p = 0.5f;
+
+    if (!pos.isCapture(move) || root)
+        return p;
+
+    const float pieceValues[6] = {0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.0f};
+
+    p +=    pieceValues[typeOf(pos.pieceOn(extract<TO  >(move)))] 
+         - (pieceValues[typeOf(pos.pieceOn(extract<FROM>(move)))] / 10);
+
+    return p;
+}
+
+float Node::search(Position &pos, NodePool &pool, bool root) {
     if (!visits)
         return rollout(pos);
 
@@ -101,7 +114,7 @@ float Node::search(Position &pos, NodePool &pool) {
         return 1 - (checkers ? 1.0f : 0.5f);
     }
 
-    Node* toSearch = select();
+    Node* toSearch = select(pos, root);
     pos.makeMove(toSearch->move);
 
     visits++;
@@ -138,12 +151,12 @@ float Node::rollout(Position &pos) {
     return res;
 }
 
-Node* Node::select() {
+Node* Node::select(Position &pos, bool root) {
     int   bestIndex = -1;
     float bestUCT   = 0.0f;
 
     for (int i = 0; i < cCount; i++) {
-        float thisUCT = uct(visits, children[i].visits, children[i].result);
+        float thisUCT = uct(visits, children[i].visits, children[i].result, children[i].move, pos, root);
 
         if (thisUCT <= bestUCT)
             continue;
