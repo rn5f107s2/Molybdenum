@@ -2,20 +2,25 @@
 #include "Position.h"
 #include "eval.h"
 #include "Movegen.h"
+#include "timemanagement.h"
+#include "search.h"
 
 #include <stdlib.h>
 #include <iostream>
 #include <cmath>
 
-void rootSearch(Position &pos) {
-    int i = 0;
-    Node     root;
-    NodePool pool(256);
+void rootSearch(Position &pos, SearchTime &st) {
+    Node       root;
+    NodePool   pool(256);
+    SearchInfo si;
+    si.clear();
+    si.st = st;
 
-    while (++i <= 1000000) {
+    while ((int((++si.nodeCount) + 218) < pool.limit) && ((si.nodeCount & 511) || !stop<Soft>(st, si)))
         root.search(pos, pool);
-    }
 
+    std::cout << (int((++si.nodeCount) + 218) < pool.limit) << std::endl;
+    std::cout << ((si.nodeCount & 511) || !stop<Soft>(st, si)) << std::endl;
 
     float bestRes;
     Move  bestMove;
@@ -32,7 +37,7 @@ void rootSearch(Position &pos) {
         bestMove = root.children[j].move;
     }
 
-    std::cout << "info depth 1 nodes 1000000 score cp " << (bestRes - 0.5f) * 1200 << std::endl;
+    std::cout << "info depth 1 nodes " << si.nodeCount << " score cp " << (bestRes - 0.5f) * 1200 << std::endl;
     std::cout << "bestmove " << moveToString(bestMove) << std::endl;
 
     pool.freeMemory();

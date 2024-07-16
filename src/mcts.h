@@ -3,6 +3,7 @@
 
 #include "Position.h"
 #include "Move.h"
+#include "timemanagement.h"
 
 #include <cstdint>
 
@@ -29,13 +30,12 @@ public:
 #pragma pack(pop)
 
 class NodePool {
-private:
+public:
     Node* memory;
     int   sizeMB;
     int   limit;
     int   currIdx;
 
-public:
     NodePool(int sizeMB);
     Node* allocate(int nNodes);
     void clear();
@@ -44,6 +44,6 @@ public:
 };
 
 float uct(uint32_t pVisits, uint32_t visits, float score);
-void rootSearch(Position &pos);
+void rootSearch(Position &pos, SearchTime &st);
 
 #endif

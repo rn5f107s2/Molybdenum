@@ -144,9 +144,6 @@ void UCI::go([[maybe_unused]] const std::string &args) {
     if (!threads.done())
         return;
 
-    rootSearch(internalBoard);
-    return;
-
     std::array<int, 2> time      = {};
     std::array<int, 2> increment = {};
     int depth     = MAXDEPTH;
@@ -184,7 +181,8 @@ void UCI::go([[maybe_unused]] const std::string &args) {
         st.calcThinkingTime(time[internalBoard.sideToMove], increment[internalBoard.sideToMove], movesToGo);
     }
 
-    threads.start(internalBoard, st, depth);
+    //threads.start(internalBoard, st, depth);
+    rootSearch(internalBoard, st);
 }
 
 void UCI::stop([[maybe_unused]] const std::string &args) {
