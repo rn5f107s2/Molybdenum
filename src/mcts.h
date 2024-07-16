@@ -20,7 +20,7 @@ public:
     uint32_t visits = 0;
     float    result = 0.0f;
 
-    float search(Position &pos, NodePool &pool);
+    float search(Position &pos, NodePool &pool, int ply);
     float rollout(Position &pos);
     Node* select();
     void  expand(Position &pos, NodePool &pool);

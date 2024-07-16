@@ -17,7 +17,7 @@ void rootSearch(Position &pos, SearchTime &st) {
     si.st = st;
 
     while ((int((++si.nodeCount) + 218) < pool.limit) && ((si.nodeCount & 511) || !stop<Soft>(st, si)))
-        root.search(pos, pool);
+        root.search(pos, pool, 0);
 
     benchNodes += si.nodeCount;
 
@@ -36,7 +36,7 @@ void rootSearch(Position &pos, SearchTime &st) {
         bestMove = root.children[j].move;
     }
 
-    std::cout << "info depth 1 nodes " << si.nodeCount << " score cp " << (bestRes - 0.5f) * 1200 << std::endl;
+    std::cout << "info depth 1 nodes " << si.nodeCount << " score cp " << int((bestRes - 0.5f) * 1200) << std::endl;
     std::cout << "bestmove " << moveToString(bestMove) << std::endl;
 
     pool.freeMemory();
@@ -84,7 +84,7 @@ float uct(uint32_t pVisits, uint32_t visits, float score) {
     return (score / visits) + c * std::sqrt(std::log(pVisits) / visits);
 }
 
-float Node::search(Position &pos, NodePool &pool) {
+float Node::search(Position &pos, NodePool &pool, int ply) {
     if (!visits)
         return rollout(pos);
 
@@ -101,11 +101,21 @@ float Node::search(Position &pos, NodePool &pool) {
         return 1 - (checkers ? 1.0f : 0.5f);
     }
 
+    if (   pos.hasRepeated(ply)
+            || pos.plys50moveRule > 99
+            || (pos.phase <= 3 && !(pos.getPieces(PAWN)))) 
+    {
+        visits = std::numeric_limits<uint32_t>::max();
+        result = 0.5f * visits;
+
+        return 0.5f;
+    }
+
     Node* toSearch = select();
     pos.makeMove(toSearch->move);
 
     visits++;
-    float res = toSearch->search(pos, pool);
+    float res = toSearch->search(pos, pool, ply + 1);
     result += res;
 
     pos.unmakeMove(toSearch->move);
