@@ -85,16 +85,16 @@ float uct(uint32_t pVisits, uint32_t visits, float score) {
 }
 
 float Node::search(Position &pos, NodePool &pool) {
-    if (!visits)
+    u64 ksq      = pos.getPieces(pos.sideToMove, KING);
+    u64 checkers = attackersTo<false, false>(lsb(ksq),pos.getOccupied(), pos.sideToMove ? BLACK_PAWN : WHITE_PAWN, pos);
+
+    if (!visits && !checkers)
         return rollout(pos);
 
-    if (visits == 1)
+    if (visits <= 1)
         expand(pos, pool);
 
     if (!cCount) {
-        u64 ksq      = pos.getPieces(pos.sideToMove, KING);
-        u64 checkers = attackersTo<false, false>(lsb(ksq),pos.getOccupied(), pos.sideToMove ? BLACK_PAWN : WHITE_PAWN, pos);
-
         visits = std::numeric_limits<uint32_t>::max();
         result = (checkers ? 1.0f : 0.5f) * visits;
 
