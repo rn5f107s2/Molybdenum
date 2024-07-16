@@ -105,8 +105,8 @@ float Node::search(Position &pos, NodePool &pool, int ply) {
             || pos.plys50moveRule > 99
             || (pos.phase <= 3 && !(pos.getPieces(PAWN)))) 
     {
-        visits = std::numeric_limits<uint32_t>::max();
-        result = 0.5f * visits;
+        visits++;
+        result += 0.5f;
 
         return 0.5f;
     }
