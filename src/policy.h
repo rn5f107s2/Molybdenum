@@ -27,7 +27,7 @@ class PolicyNet {
 public:
     void  loadDefault();
     void  initAccumulator(std::array<u64, 13> &bitboards, Color stm);
-    float forward(Move move);
+    float forward(Move move, bool stm);
 };
 
 #endif

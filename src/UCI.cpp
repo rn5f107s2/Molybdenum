@@ -205,7 +205,7 @@ void UCI::policy([[maybe_unused]] const std::string &args) {
     net.initAccumulator(internalBoard.bitBoards, internalBoard.sideToMove);
 
     for (int i = 0; i < ml.length; i++) {
-        scores[i] = net.forward(ml.moves[i].move);
+        scores[i] = net.forward(ml.moves[i].move, internalBoard.sideToMove);
         sum += std::exp(scores[i]);
     }
 

@@ -52,9 +52,14 @@ void PolicyNet::initAccumulator(std::array<u64, 13> &bitboards, Color stm) {
     }
 }
 
-float PolicyNet::forward(Move move) {
+float PolicyNet::forward(Move move, bool stm) {
     int from = extract<FROM>(move);
     int to   = extract<TO  >(move);
+
+    if (!stm) {
+        from ^= 56;
+        to   ^= 56;
+    }
 
     int idx = from * 64 + to;
     int out = 0;
