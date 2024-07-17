@@ -46,7 +46,6 @@ NodePool::NodePool(int mb) : sizeMB(mb),
                              limit((mb * 1024 * 1024) / sizeof(Node)),
                              currIdx(0) {
     memory = reinterpret_cast<Node*>(malloc(limit * sizeof(Node)));
-    std::cout << limit << std::endl;
 }
 
 Node* NodePool::allocate(int nNodes) {
@@ -75,13 +74,11 @@ void NodePool::resize(int newMB) {
     memory = reinterpret_cast<Node*>(malloc(limit * sizeof(Node)));
 }
 
-float uct(uint32_t pVisits, uint32_t visits, float score) {
+float uct(uint32_t pVisits, uint32_t visits, float score, float policy) {
     const float c = 1.414213562373095048801688f;
 
-    if (!visits)
-        return std::numeric_limits<float>::max();
-
-    return (score / visits) + c * std::sqrt(std::log(pVisits) / visits);
+    float  q = visits == 0 ? 1.0f : score / visits;
+    return q + policy * c * std::sqrt(pVisits) / (1 + visits);
 }
 
 float Node::search(Position &pos, NodePool &pool) {
@@ -122,8 +119,20 @@ void Node::expand(Position &pos, NodePool &pool) {
     cCount   = ml.length;
     children = pool.allocate(cCount);
 
-    for (int i = 0; i < ml.length; i++)
+    float sum = 0;
+    float scores[218];
+
+    pos.policyNet.initAccumulator(pos.bitBoards, pos.sideToMove);
+
+    for (int i = 0; i < ml.length; i++) {
         children[i].move = ml.moves[i].move;
+        scores[i]        = std::exp(pos.policyNet.forward(ml.moves[i].move, pos.sideToMove));
+
+        sum += scores[i];
+    }
+
+    for (int i = 0; i < ml.length; i++)
+        children[i].policy = scores[i] / sum;
 }
 
 float Node::rollout(Position &pos) {
@@ -143,7 +152,7 @@ Node* Node::select() {
     float bestUCT   = 0.0f;
 
     for (int i = 0; i < cCount; i++) {
-        float thisUCT = uct(visits, children[i].visits, children[i].result);
+        float thisUCT = uct(visits, children[i].visits, children[i].result, children[i].policy);
 
         if (thisUCT <= bestUCT)
             continue;

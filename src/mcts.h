@@ -19,6 +19,7 @@ public:
     uint8_t  cCount = 0;
     uint32_t visits = 0;
     float    result = 0.0f;
+    float    policy = 0.0f;
 
     float search(Position &pos, NodePool &pool);
     float rollout(Position &pos);
@@ -43,7 +44,7 @@ public:
     void resize(int newMB);
 };
 
-float uct(uint32_t pVisits, uint32_t visits, float score);
+float uct(uint32_t pVisits, uint32_t visits, float score, float policy);
 void rootSearch(Position &pos, SearchTime &st);
 
 #endif
