@@ -23,13 +23,13 @@
 #endif
 
 INCBIN(policy, POLICYFILE);
-const Weights defaultWeights = *reinterpret_cast<const Weights*>(gpolicyData);
+const PolicyWeights defaultWeights = *reinterpret_cast<const PolicyWeights*>(gpolicyData);
 
-void Net::loadDefault() {
+void PolicyNet::loadDefault() {
     weights = defaultWeights;
 }
 
-void Net::initAccumulator(std::array<u64, 13> &bitboards, Color stm) {
+void PolicyNet::initAccumulator(std::array<u64, 13> &bitboards, Color stm) {
     memcpy(&accumulator, &weights.l0Biases[0], sizeof(int16_t) * HIDDEN_SIZE);
 
     for (int pc = WHITE_PAWN; pc != NO_PIECE; pc++) {
@@ -47,12 +47,12 @@ void Net::initAccumulator(std::array<u64, 13> &bitboards, Color stm) {
             int idx = 64 * piece + square;
 
             for (int i = 0; i < HIDDEN_SIZE; i++)
-                accumulator[i] += weights.l0Weights[i * HIDDEN_SIZE + idx];
+                accumulator[i] += weights.l0Weights[idx * HIDDEN_SIZE + i];
         }
     }
 }
 
-float Net::forward(Move move) {
+float PolicyNet::forward(Move move) {
     int from = extract<FROM>(move);
     int to   = extract<TO  >(move);
 

@@ -18,6 +18,7 @@
 #include "Datagen/Datagen.h"
 #include "thread.h"
 #include "mcts.h"
+#include "policy.h"
 
 void UCI::d([[maybe_unused]] const std::string &args) {
     internalBoard.printBoard();
@@ -191,7 +192,25 @@ void UCI::stop([[maybe_unused]] const std::string &args) {
 
 void UCI::policy([[maybe_unused]] const std::string &args) {
     MoveList ml;
-    
+    u64 ksq = internalBoard.getPieces(internalBoard.sideToMove, KING);
+    u64 checkers = attackersTo<false, false>(lsb(ksq),internalBoard.getOccupied(), internalBoard.sideToMove ? BLACK_PAWN : WHITE_PAWN, internalBoard);
+
+    generateMoves<false>(internalBoard, ml, checkers);
+
+    float scores[218];
+    float sum = 0.0f;
+
+    PolicyNet net;
+    net.loadDefault();
+    net.initAccumulator(internalBoard.bitBoards, internalBoard.sideToMove);
+
+    for (int i = 0; i < ml.length; i++) {
+        scores[i] = net.forward(ml.moves[i].move);
+        sum += std::exp(scores[i]);
+    }
+
+    for (int i = 0; i < ml.length; i++)
+        std::cout << moveToString(ml.moves[i].move) << " raw: " << scores[i] << " softmaxed: " << std::exp(scores[i]) / sum << std::endl; 
 }
 
 void UCI::start(int argc, char** argv) {
