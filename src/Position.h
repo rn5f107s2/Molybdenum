@@ -3,14 +3,18 @@
 
 #include <string>
 #include <array>
+
 #include "Constants.h"
 #include "BitStuff.h"
 #include "Move.h"
 #include "Utility.h"
 #include "Transpositiontable.h"
+#include "nnue.h"
+#include "policy.h"
 
 class Position {
     public:
+        PolicyNet policyNet;
         void setBoard(std::string fen);
         void clearBoard();
         void printBoard();

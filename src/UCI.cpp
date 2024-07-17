@@ -14,6 +14,7 @@
 #include "bench.h"
 #include "nnue.h"
 #include "Datagen/Datagen.h"
+#include "policy.h"
 
 UCIOptions options;
 
@@ -38,6 +39,7 @@ void uciCommunication(const std::string& in) {
 #endif
 
     loadDefaultNet();
+    internalBoard.policyNet.loadDefault();
     internalBoard.setBoard("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     std::string input;
     options.init();
