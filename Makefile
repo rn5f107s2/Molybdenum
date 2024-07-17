@@ -4,12 +4,15 @@ MOLY_DIR=src
 CXX=clang++
 
 DEFAULT_NET_NAME=moly_20240715.nnue
+DEFAULT_POLICY_NAME=20240717_8
 
 DEFAULT_EXE = $(OBJ_DIR)/Molybdenum
 DATAGEN_EXE = $(OBJ_DIR)/Datagen
 DEFAULT_NET = $(MOLY_DIR)/Nets/$(DEFAULT_NET_NAME)
+DEFAULT_POLICY = $(MOLY_DIR)/Nets/$(DEFAULT_POLICY_NAME)
 
 EVALFILE ?= $(DEFAULT_NET)
+POLICYFILE ?= $(DEFAULT_POLICY)
 
 all: $(DEFAULT_EXE)
 
@@ -18,7 +21,7 @@ datagen: $(DATAGEN_EXE)
 CXXFLAGS = -static -Ofast -std=c++17
 CXXFLAGS += -Wall -Wextra -pedantic
 CXXFLAGS += -march=native
-CXXFLAGS += -DEVALFILE=\"$(EVALFILE)\"
+CXXFLAGS += -DEVALFILE=\"$(EVALFILE)\" -DPOLICYFILE=\"$(POLICYFILE)\"
 
 LDFLAGS += -static -Ofast -march=native
 

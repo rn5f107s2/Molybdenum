@@ -189,6 +189,11 @@ void UCI::stop([[maybe_unused]] const std::string &args) {
     threads.stop();
 }
 
+void UCI::policy([[maybe_unused]] const std::string &args) {
+    MoveList ml;
+    
+}
+
 void UCI::start(int argc, char** argv) {
     if (argc == 1)
         return loop();

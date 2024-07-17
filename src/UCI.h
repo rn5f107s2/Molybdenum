@@ -40,6 +40,7 @@ public:
         commands["eval"] = &UCI::eval;
         commands["stop"] = &UCI::stop;
         commands["bench"] = &UCI::bench;
+        commands["policy"] = &UCI::policy;
         commands["isready"] = &UCI::isready;
         commands["goPerft"] = &UCI::goPerft;
         commands["position"] = &UCI::position;
@@ -63,6 +64,7 @@ public:
     void eval(const std::string &args);
     void stop(const std::string &args);
     void bench(const std::string &args);
+    void policy(const std::string &args);
     void goPerft(const std::string &args);
     void isready(const std::string &args);
     void position(const std::string &args);
