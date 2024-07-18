@@ -24,7 +24,7 @@ void rootSearch(Position &pos, SearchTime &st) {
             && si.nodeCount >= st.nodeLimit)
             break;
 
-        root.search(pos, pool);
+        root.search(pos, pool, 0);
         si.nodeCount++;
     }
 
@@ -90,7 +90,7 @@ float uct(uint32_t pVisits, uint32_t visits, float score, float policy) {
     return q + policy * c * std::sqrt(pVisits) / (1 + visits);
 }
 
-float Node::search(Position &pos, NodePool &pool) {
+float Node::search(Position &pos, NodePool &pool, int ply) {
     if (!visits)
         return rollout(pos);
 
@@ -107,11 +107,21 @@ float Node::search(Position &pos, NodePool &pool) {
         return 1 - (checkers ? 1.0f : 0.5f);
     }
 
+    if (   pos.hasRepeated(ply)
+        || pos.plys50moveRule > 99
+        || (pos.phase <= 3 && !(pos.getPieces(PAWN)))) 
+    {
+        visits = std::numeric_limits<uint32_t>::max();
+        result = 0.5f * visits;
+
+        return 0.5f;
+    }
+
     Node* toSearch = select();
     pos.makeMove(toSearch->move);
 
     visits++;
-    float res = toSearch->search(pos, pool);
+    float res = toSearch->search(pos, pool, ply + 1);
     result += res;
 
     pos.unmakeMove(toSearch->move);
