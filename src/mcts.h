@@ -23,7 +23,7 @@ public:
 
     float search(Position &pos, NodePool &pool, int ply);
     float rollout(Position &pos);
-    Node* select();
+    Node* select(bool root);
     void  expand(Position &pos, NodePool &pool);
     float backpropagate();
 };
@@ -44,7 +44,7 @@ public:
     void resize(int newMB);
 };
 
-float uct(uint32_t pVisits, uint32_t visits, float score, float policy);
+float uct(uint32_t pVisits, uint32_t visits, float score, float policy, bool root);
 void rootSearch(Position &pos, SearchTime &st);
 
 #endif
