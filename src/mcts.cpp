@@ -36,7 +36,7 @@ void rootSearch(Position &pos, SearchTime &st) {
         bestMove = root.children[j].move;
     }
 
-    std::cout << "info depth 1 nodes " << si.nodeCount << " score cp " << (bestRes - 0.5f) * 1200 << std::endl;
+    std::cout << "info depth 1 nodes " << si.nodeCount << " score cp " << int((bestRes - 0.5f) * 1200) << std::endl;
     std::cout << "bestmove " << moveToString(bestMove) << std::endl;
 
     pool.freeMemory();
