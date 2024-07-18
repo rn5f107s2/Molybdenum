@@ -17,8 +17,16 @@ void rootSearch(Position &pos, SearchTime &st) {
     si.st = st;
     pos.policyNet.loadDefault();
 
-    while ((int((++si.nodeCount) + 218) < pool.limit) && ((si.nodeCount & 511) || !stop<Soft>(st, si)))
+    while (   (int((pool.currIdx) + 218) < pool.limit) 
+           && ((si.nodeCount & 511) || !stop<Soft>(st, si)))
+    {
+        if (   st.limit == Nodes
+            && si.nodeCount >= st.nodeLimit)
+            break;
+
         root.search(pos, pool);
+        si.nodeCount++;
+    }
 
     benchNodes += si.nodeCount;
 
