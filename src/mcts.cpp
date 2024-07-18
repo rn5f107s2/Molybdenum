@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include <cmath>
+#include <iomanip>
 
 void rootSearch(Position &pos, SearchTime &st) {
     Node       root;
@@ -37,7 +38,9 @@ void rootSearch(Position &pos, SearchTime &st) {
     for (int j = 0; j < root.cCount; j++) {
         float thisRes = root.children[j].result / root.children[j].visits;
 
-        std::cout << "info string " << thisRes << " " << moveToString(root.children[j].move) << std::endl;
+        std::cout << "info string move: " << moveToString(root.children[j].move) 
+                                          << " Q: " << std::setprecision(3) << thisRes
+                                          << " Visits: " << root.children[j].visits << std::endl;
 
         if (thisRes <= bestRes)
             continue;
