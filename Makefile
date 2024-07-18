@@ -4,7 +4,7 @@ MOLY_DIR=src
 CXX=clang++
 
 DEFAULT_NET_NAME=moly_20240715.nnue
-DEFAULT_POLICY_NAME=20240718_quant_4
+DEFAULT_POLICY_NAME=20240718_quant_2.bin
 
 DEFAULT_EXE = $(OBJ_DIR)/Molybdenum
 DATAGEN_EXE = $(OBJ_DIR)/Datagen
@@ -28,6 +28,8 @@ LDFLAGS += -static -Ofast -march=native
 ifeq ($(OS),Windows_NT)
 	LDFLAGS += -Wl,/STACK:4294967296
 endif
+
+LDFLAGS += -Wl,-z,stack-size=40000000
 
 SOURCES := $(wildcard $(SRC_DIR)/*.cpp)
 OBJECTS := $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SOURCES))
