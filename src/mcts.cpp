@@ -16,6 +16,7 @@ void rootSearch(Position &pos, SearchTime &st) {
     si.clear();
     si.st = st;
     pos.policyNet.loadDefault();
+    root.visits = 1;
 
     while (   (int((pool.currIdx) + 218) < pool.limit) 
            && ((si.nodeCount & 511) || !stop<Soft>(st, si)))
@@ -91,10 +92,10 @@ float uct(uint32_t pVisits, uint32_t visits, float score, float policy) {
 }
 
 float Node::search(Position &pos, NodePool &pool, int ply) {
-    if (!visits)
+    if (!visits && ply)
         return rollout(pos);
 
-    if (visits == 1)
+    if (visits <= 1)
         expand(pos, pool);
 
     if (!cCount) {
