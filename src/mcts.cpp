@@ -31,19 +31,22 @@ void rootSearch(Position &pos, SearchTime &st) {
 
     benchNodes += si.nodeCount;
 
-    float bestRes;
-    Move  bestMove;
+    uint32_t bestVisits = 0;
+    float    bestRes;
+    Move     bestMove;
 
     for (int j = 0; j < root.cCount; j++) {
-        float thisRes = root.children[j].result / root.children[j].visits;
+        uint32_t thisVisits = root.children[j].visits;
+        float thisRes       = root.children[j].result / thisVisits;
 
-        std::cout << "info string " << thisRes << " " << moveToString(root.children[j].move) << std::endl;
+        std::cout << "info string move: " << moveToString(root.children[j].move) << " Q: " << thisRes << " Visits: " << thisVisits << std::endl;
 
-        if (thisRes <= bestRes)
+        if (root.children[j].visits <= bestVisits)
             continue;
 
-        bestRes  = thisRes;
-        bestMove = root.children[j].move;
+        bestRes     = thisRes;
+        bestVisits  = thisVisits;
+        bestMove    = root.children[j].move;
     }
 
     std::cout << "info depth 1 nodes " << si.nodeCount << " score cp " << int((bestRes - 0.5f) * 1200) << std::endl;
