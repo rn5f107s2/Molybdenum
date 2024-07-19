@@ -95,7 +95,7 @@ float uct(uint32_t pVisits, uint32_t visits, float score, float policy, bool roo
     float whateverThisIsCalled = policy * c * std::sqrt(pVisits) / (1 + visits);
 
     if (root)
-        whateverThisIsCalled *= 3;
+        whateverThisIsCalled *= 10;
 
     return q + whateverThisIsCalled;
 }
