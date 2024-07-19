@@ -89,7 +89,6 @@ void NodePool::resize(int newMB) {
 
 float uct(uint32_t pVisits, uint32_t visits, float score, float policy, bool root) {
     const float c = 1.414213562373095048801688f;
-    
 
     float q                    = visits == 0 ? 1.0f : score / visits;
     float whateverThisIsCalled = policy * c * std::sqrt(pVisits) / (1 + visits);
@@ -111,7 +110,7 @@ float Node::search(Position &pos, NodePool &pool, int ply) {
         u64 ksq      = pos.getPieces(pos.sideToMove, KING);
         u64 checkers = attackersTo<false, false>(lsb(ksq),pos.getOccupied(), pos.sideToMove ? BLACK_PAWN : WHITE_PAWN, pos);
 
-        visits = std::numeric_limits<uint32_t>::max();
+        visits = std::numeric_limits<uint32_t>::max() - 1;
         result = (checkers ? 1.0f : 0.5f) * visits;
 
         return 1 - (checkers ? 1.0f : 0.5f);
@@ -121,7 +120,7 @@ float Node::search(Position &pos, NodePool &pool, int ply) {
         || pos.plys50moveRule > 99
         || (pos.phase <= 3 && !(pos.getPieces(PAWN)))) 
     {
-        visits = std::numeric_limits<uint32_t>::max();
+        visits = std::numeric_limits<uint32_t>::max() - 1;
         result = 0.5f * visits;
 
         return 0.5f;
