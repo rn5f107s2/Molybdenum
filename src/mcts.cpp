@@ -91,7 +91,7 @@ float uct(uint32_t pVisits, uint32_t visits, float score, float policy, bool roo
     const float c = 1.414213562373095048801688f;
     
 
-    float q                    = visits == 0 ? 1.0f : score / visits;
+    float q                    = visits == 0 ? 10.0f : score / visits;
     float whateverThisIsCalled = policy * c * std::sqrt(pVisits) / (1 + visits);
 
     if (root)
