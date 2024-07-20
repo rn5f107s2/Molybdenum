@@ -110,8 +110,8 @@ float Node::search(Position &pos, NodePool &pool, int ply) {
         u64 ksq      = pos.getPieces(pos.sideToMove, KING);
         u64 checkers = attackersTo<false, false>(lsb(ksq),pos.getOccupied(), pos.sideToMove ? BLACK_PAWN : WHITE_PAWN, pos);
 
-        visits = std::numeric_limits<uint32_t>::max() - 1;
-        result = (checkers ? 1.0f : 0.5f) * visits;
+        visits++;
+        result += (checkers ? 1.0f : 0.5f);
 
         return 1 - (checkers ? 1.0f : 0.5f);
     }
@@ -120,8 +120,8 @@ float Node::search(Position &pos, NodePool &pool, int ply) {
         || pos.plys50moveRule > 99
         || (pos.phase <= 3 && !(pos.getPieces(PAWN)))) 
     {
-        visits = std::numeric_limits<uint32_t>::max() - 1;
-        result = 0.5f * visits;
+        visits++;
+        result += 0.5f;
 
         return 0.5f;
     }
