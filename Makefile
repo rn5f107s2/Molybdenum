@@ -4,7 +4,7 @@ MOLY_DIR=src
 CXX=clang++
 
 DEFAULT_NET_NAME=moly_20240715.nnue
-DEFAULT_POLICY_NAME=20240718_quant_4
+DEFAULT_POLICY_NAME=libnetquantized5
 
 DEFAULT_EXE = $(OBJ_DIR)/Molybdenum
 DATAGEN_EXE = $(OBJ_DIR)/Datagen
