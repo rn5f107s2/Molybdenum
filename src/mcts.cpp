@@ -100,8 +100,8 @@ float uct(uint32_t pVisits, uint32_t visits, float score, float policy, bool roo
 }
 
 float fpu(float pq, float bq) {
-    float diff = (bq - (1.1f - pq));
-    return 1.0f - std::clamp(diff * 10, 0.0f, 1.0f);
+    //float diff = (bq - (1.1f - pq));
+    return 1.0f - /*std::clamp(diff * 10, 0.0f, 1.0f)*/pq;
 }
 
 float Node::search(Position &pos, NodePool &pool, int ply) {
