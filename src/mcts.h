@@ -44,7 +44,8 @@ public:
     void resize(int newMB);
 };
 
-float uct(uint32_t pVisits, uint32_t visits, float score, float policy, bool root);
+float uct(uint32_t pVisits, uint32_t visits, float score, float policy, bool root, float pq, float bestq);
+float fpu(float pq, float bq);
 void rootSearch(Position &pos, SearchTime &st);
 
 #endif
