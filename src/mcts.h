@@ -24,7 +24,7 @@ public:
     float search(Position &pos, NodePool &pool, int ply);
     float rollout(Position &pos);
     Node* select(bool root);
-    void  expand(Position &pos, NodePool &pool);
+    void  expand(Position &pos, NodePool &pool, bool root);
     float backpropagate();
 };
 
