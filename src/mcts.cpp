@@ -26,7 +26,7 @@ void rootSearch(Position &pos, SearchTime &st) {
             && si.nodeCount >= st.nodeLimit)
             break;
 
-        root.search(pos, pool, 0);
+        root.search(pos, pool, 0, si);
         si.nodeCount++;
     }
 
@@ -87,19 +87,23 @@ void NodePool::resize(int newMB) {
     memory = reinterpret_cast<Node*>(malloc(limit * sizeof(Node)));
 }
 
-float uct(uint32_t pVisits, uint32_t visits, float score, float policy, bool root) {
+float uct(uint32_t pVisits, uint32_t visits, float score, float policy, bool root, SearchInfo &si) {
     const float c = 1.414213562373095048801688f;
+
+    if (root) {
+        uint64_t limit = 10000;
+        int      nodes = std::min(si.nodeCount.load(std::memory_order_relaxed), limit);
+
+        policy = ((policy * (limit - nodes)) + nodes) / limit;
+    }
 
     float q                    = visits == 0 ? 1.0f : score / visits;
     float whateverThisIsCalled = policy * c * std::sqrt(pVisits) / (1 + visits);
 
-    if (root)
-        whateverThisIsCalled *= 3;
-
     return q + whateverThisIsCalled;
 }
 
-float Node::search(Position &pos, NodePool &pool, int ply) {
+float Node::search(Position &pos, NodePool &pool, int ply, SearchInfo &si) {
     if (!visits && ply)
         return rollout(pos);
 
@@ -126,11 +130,11 @@ float Node::search(Position &pos, NodePool &pool, int ply) {
         return 0.5f;
     }
 
-    Node* toSearch = select(!ply);
+    Node* toSearch = select(!ply, si);
     pos.makeMove(toSearch->move);
 
     visits++;
-    float res = toSearch->search(pos, pool, ply + 1);
+    float res = toSearch->search(pos, pool, ply + 1, si);
     result += res;
 
     pos.unmakeMove(toSearch->move);
@@ -175,12 +179,12 @@ float Node::rollout(Position &pos) {
     return res;
 }
 
-Node* Node::select(bool root) {
+Node* Node::select(bool root, SearchInfo &si) {
     int   bestIndex = -1;
     float bestUCT   = 0.0f;
 
     for (int i = 0; i < cCount; i++) {
-        float thisUCT = uct(visits, children[i].visits, children[i].result, children[i].policy, root);
+        float thisUCT = uct(visits, children[i].visits, children[i].result, children[i].policy, root, si);
 
         if (thisUCT <= bestUCT)
             continue;

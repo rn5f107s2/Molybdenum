@@ -4,6 +4,7 @@
 #include "Position.h"
 #include "Move.h"
 #include "timemanagement.h"
+#include "search.h"
 
 #include <cstdint>
 
@@ -21,11 +22,10 @@ public:
     float    result = 0.0f;
     float    policy = 0.0f;
 
-    float search(Position &pos, NodePool &pool, int ply);
+    float search(Position &pos, NodePool &pool, int ply, SearchInfo &si);
     float rollout(Position &pos);
-    Node* select(bool root);
+    Node* select(bool root, SearchInfo &si);
     void  expand(Position &pos, NodePool &pool);
-    float backpropagate();
 };
 
 #pragma pack(pop)
@@ -44,7 +44,7 @@ public:
     void resize(int newMB);
 };
 
-float uct(uint32_t pVisits, uint32_t visits, float score, float policy, bool root);
+float uct(uint32_t pVisits, uint32_t visits, float score, float policy, bool root, SearchInfo &si);
 void rootSearch(Position &pos, SearchTime &st);
 
 #endif
