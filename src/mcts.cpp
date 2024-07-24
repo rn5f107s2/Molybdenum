@@ -87,16 +87,21 @@ void NodePool::resize(int newMB) {
     memory = reinterpret_cast<Node*>(malloc(limit * sizeof(Node)));
 }
 
-float uct(uint32_t pVisits, uint32_t visits, float score, float policy, bool root) {
+float uct(uint32_t pVisits, uint32_t visits, float score, float policy, bool root, float pq, float bq) {
     const float c = 1.414213562373095048801688f;
 
-    float q                    = visits == 0 ? 1.0f : score / visits;
+    float q                    = visits == 0 ? fpu(pq, bq) : score / visits;
     float whateverThisIsCalled = policy * c * std::sqrt(pVisits) / (1 + visits);
 
     if (root)
         whateverThisIsCalled *= 3;
 
     return q + whateverThisIsCalled;
+}
+
+float fpu(float pq, float bq) {
+    float diff = (bq - (1.1f - pq));
+    return 1.0f - std::clamp(diff * 10, 0.0f, 1.0f);
 }
 
 float Node::search(Position &pos, NodePool &pool, int ply) {
@@ -178,9 +183,14 @@ float Node::rollout(Position &pos) {
 Node* Node::select(bool root) {
     int   bestIndex = -1;
     float bestUCT   = 0.0f;
+    float bestQ     = 0.0f;
+
+    for (int i = 0; i < cCount; i++)
+        if (children[i].visits)
+            bestQ = std::max(bestQ, children[i].result / children[i].visits);
 
     for (int i = 0; i < cCount; i++) {
-        float thisUCT = uct(visits, children[i].visits, children[i].result, children[i].policy, root);
+        float thisUCT = uct(visits, children[i].visits, children[i].result, children[i].policy, root, result / visits, bestQ);
 
         if (thisUCT <= bestUCT)
             continue;
