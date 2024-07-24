@@ -20,6 +20,10 @@
 #include "mcts.h"
 #include "policy.h"
 
+#ifdef TUNE
+    TuneOptions tuneOptions;
+#endif
+
 void UCI::d([[maybe_unused]] const std::string &args) {
     internalBoard.printBoard();
 }
@@ -103,7 +107,7 @@ void UCI::setoption([[maybe_unused]] const std::string &args) {
     bool found = options.setOption(splitArgs[1], std::stoi(splitArgs[3]));
 
 #ifdef TUNE
-        found |= tuneOptions.setOption(optionName, value);
+        found |= tuneOptions.setOption(splitArgs[1], std::stoi(splitArgs[3]));
         tuneOptions.init();
 #endif
 

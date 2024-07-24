@@ -1,12 +1,11 @@
 #ifndef MOLYBDENUM_TUNE_H
 #define MOLYBDENUM_TUNE_H
 
-//#define TUNE
+#define TUNE
 
 #ifdef TUNE
 
 #include <iomanip>
-#include "UCIOptions.h"
 #include "iostream"
 #include "UCIOptions.h"
 
@@ -22,17 +21,19 @@ struct Tune {
     int QsSEEMargin, QsDeltaMargin;
     int HistDepthMult, HistMax, HistLimit;
     int SEEPawn, SEEKnight, SEEBishop, SEERook, SEEQueen;
+
+    float c, w;
 };
 
 class TuneOptions: public UCIOptions {
     public:
-        bool setOption(const std::string &name, int value) override {
+        bool setOption(const std::string &name, int v) override {
             UCIOptionSpin *option = findOptionSpin(name);
 
             if (!option)
                 return false;
 
-            option->setter = reinterpret_cast<void (*)(int)>(value);
+            option->value = v;
             return true;
         };
 
@@ -44,7 +45,7 @@ class TuneOptions: public UCIOptions {
                 return 0;
             }
 
-            return int(reinterpret_cast<u64>(option->setter));
+            return option->value;
         }
 
         void printSPSAConfig() {
@@ -70,7 +71,7 @@ class TuneOptions: public UCIOptions {
 };
 
 
-#define RANGE(x, y, z) int(y), int(z), int(x), reinterpret_cast<void (*)(int)>(x)
+#define RANGE(x, y, z) int(y), int(z), int(x)
 
 #define UPDATEFLOAT(x) tune.x = float(tuneOptions.getValue(#x)) / 100;
 #define UPDATEINT(x) tune.x = tuneOptions.getValue(#x);
@@ -81,6 +82,7 @@ extern TuneOptions tuneOptions;
 extern Tune tune;
 
 inline void TuneOptions::init() {
+    /*
     TUNEFLOAT(LMRBase, 0.75, 0.01, 4)
     TUNEFLOAT(LMRDiv, 2.19, 0.01, 8)
     TUNEFLOAT(LMRImproving, 0.55, 0, 2)
@@ -124,6 +126,10 @@ inline void TuneOptions::init() {
     TUNEINT(SEEBishop, 281, 1, 1200)
     TUNEINT(SEERook, 538, 1, 1200)
     TUNEINT(SEEQueen, 972, 1, 1200)
+    */
+
+    TUNEFLOAT(c, 1.41, 0.01, 3)
+    TUNEFLOAT(w,  3.0, 0.01, 6)
 
     initialized = true;
 }

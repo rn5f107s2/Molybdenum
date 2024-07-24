@@ -12,6 +12,10 @@
 #include <vector>
 #include <sstream>
 
+#ifdef TUNE
+    extern TuneOptions tuneOptions;
+#endif
+
 class UCI {
 
 private:
@@ -22,10 +26,6 @@ private:
     const std::string name       = "Molybdenum";
     const std::string version    = "4.0";
     const std::string defaultFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-
-#ifdef TUNE
-    TuneOptions tuneOptions;
-#endif
 
 public:
     ThreadPool threads;

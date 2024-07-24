@@ -10,6 +10,10 @@
 #include <cmath>
 #include <iomanip>
 
+#ifdef TUNE
+    extern Tune tune;
+#endif
+
 void rootSearch(Position &pos, SearchTime &st) {
     Node       root;
     NodePool   pool(256);
@@ -88,13 +92,13 @@ void NodePool::resize(int newMB) {
 }
 
 float uct(uint32_t pVisits, uint32_t visits, float score, float policy, bool root) {
-    const float c = 1.414213562373095048801688f;
+    float c = tune.c;
 
     float q                    = visits == 0 ? 1.0f : score / visits;
     float whateverThisIsCalled = policy * c * std::sqrt(pVisits) / (1 + visits);
 
     if (root)
-        whateverThisIsCalled *= 3;
+        whateverThisIsCalled *= tune.w;
 
     return q + whateverThisIsCalled;
 }
