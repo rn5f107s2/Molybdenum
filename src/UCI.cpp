@@ -25,7 +25,10 @@ void UCI::d([[maybe_unused]] const std::string &args) {
 }
 
 void UCI::eval([[maybe_unused]] const std::string &args) {
+    ValueNet net;
+    net.loadDefault();
     std::cout << evaluate(internalBoard) << std::endl;
+    std::cout << net.forward(internalBoard.bitBoards, internalBoard.sideToMove) << std::endl;
 }
 
 void UCI::uci([[maybe_unused]] const std::string &args) {
