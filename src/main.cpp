@@ -8,7 +8,7 @@
 
 int main(int argc, char** argv) {
     TT.setSize(16);
-    UCI uci;
+    static UCI uci;
     uci.start(argc, argv);
     return 0;
 }
