@@ -11,11 +11,13 @@
 #include "Transpositiontable.h"
 #include "nnue.h"
 #include "policy.h"
+#include "value.h"
 
 class Position {
     public:
         Net net;
         PolicyNet policyNet;
+        ValueNet  valueNet;
         void setBoard(std::string fen);
         void clearBoard();
         void printBoard();
