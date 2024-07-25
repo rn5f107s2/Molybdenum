@@ -113,7 +113,7 @@ void Position::makeMove(Move move) {
     pieceLocations[from] = NO_PIECE;
     bitBoards[movedPiece] ^= 1ULL << from;
     updateKey(movedPiece,  from, key);
-    net.toggleFeature<Off>(movedPiece, from);
+    //net.toggleFeature<Off>(movedPiece, from);
 
     if (flag == PROMOTION) {
         movedPiece = makePromoPiece(extract<PROMOTIONTYPE>(move), sideToMove);
@@ -126,7 +126,7 @@ void Position::makeMove(Move move) {
         u64 captureSquare = movePawn(enPassantSquare, !sideToMove);
         bitBoards[capturedPawn] ^= captureSquare;
         pieceLocations[lsb(captureSquare)] = NO_PIECE;
-        net.toggleFeature<Off>(capturedPawn, lsb(captureSquare));
+        //net.toggleFeature<Off>(capturedPawn, lsb(captureSquare));
     }
 
     if (flag == CASTLING) {
@@ -139,7 +139,7 @@ void Position::makeMove(Move move) {
         bitBoards[rook] ^= (1ULL << rookFrom) | (1ULL << rookTo);
         updateKey(rook, rookFrom, key);
         updateKey(rook, rookTo, key);
-        net.moveFeature(rook, rookFrom, rookTo);
+        //net.moveFeature(rook, rookFrom, rookTo);
     }
 
     enPassantSquare = 0ULL;
@@ -159,19 +159,19 @@ void Position::makeMove(Move move) {
     if (capturedPiece != NO_PIECE) {
         bitBoards[capturedPiece] ^= 1ULL << to;
         phase -= gamePhaseValues[typeOf(capturedPiece)];
-        net.toggleFeature<Off>(capturedPiece, to);
+        //net.toggleFeature<Off>(capturedPiece, to);
         updateKey(capturedPiece, to, key);
         plys50moveRule = 0;
     }
 
     pieceLocations[to] = movedPiece;
-    net.toggleFeature<On>(movedPiece, to);
+    //net.toggleFeature<On>(movedPiece, to);
     bitBoards[movedPiece] ^= 1ULL << to;
     updateKey(movedPiece, to, key);
     updateKey(key);
     keyHistory.push(key);
     sideToMove = !sideToMove;
-    net.pushAccToStack();
+    //net.pushAccToStack();
 }
 
 void Position::unmakeMove(Move move) {
@@ -219,7 +219,7 @@ void Position::unmakeMove(Move move) {
     }
 
     sideToMove = !sideToMove;
-    net.popAccStack();
+    //net.popAccStack();
 }
 
 void Position::clearBoard() {

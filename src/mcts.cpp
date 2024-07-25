@@ -172,6 +172,7 @@ void Node::expand(Position &pos, NodePool &pool, int ply) {
 float Node::rollout(Position &pos) {
     const float scale = 1.0f / 133.0f;
 
+    pos.net.initAccumulator(pos.bitBoards);
     int eval  = evaluate(pos);
     float res = 1 / (1 + std::exp(-eval * scale));
 
@@ -200,5 +201,5 @@ Node* Node::select(bool root) {
         bestIndex = i;
     }
 
-    return (bestIndex != -1 ? &children[bestIndex] : nullptr);
+    return &children[bestIndex];
 }
