@@ -6,7 +6,7 @@
 #include "Constants.h"
 
 const int LAYER1_SIZE = 128;
-const int LAYER2_SIZE = 32;
+const int LAYER2_SIZE = 8;
 
 struct ValueWeights {
     std::array<float, 768 * LAYER1_SIZE> l0Weights;
