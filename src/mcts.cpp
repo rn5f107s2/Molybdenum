@@ -17,6 +17,7 @@ void rootSearch(Position &pos, SearchTime &st) {
     si.clear();
     si.st = st;
     pos.policyNet.loadDefault();
+    pos.valueNet.loadDefault();
     root.visits = 1;
 
     while (   (int((pool.currIdx) + 218) < pool.limit) 
@@ -172,8 +173,7 @@ void Node::expand(Position &pos, NodePool &pool, int ply) {
 float Node::rollout(Position &pos) {
     const float scale = 1.0f / 133.0f;
 
-    pos.net.initAccumulator(pos.bitBoards);
-    int eval  = evaluate(pos);
+    int eval  = pos.valueNet.forward(pos.bitBoards, pos.sideToMove);
     float res = 1 / (1 + std::exp(-eval * scale));
 
     visits++;
