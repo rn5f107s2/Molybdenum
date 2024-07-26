@@ -5,13 +5,13 @@
 
 #include "Constants.h"
 
-const int LAYER1_SIZE = 128;
-const int LAYER2_SIZE = 8;
+const int LAYER1_SIZE = 256;
+const int LAYER2_SIZE = 32;
 
 struct ValueWeights {
     std::array<float, 768 * LAYER1_SIZE> l0Weights;
     std::array<float, LAYER1_SIZE> l0Biases;
-    std::array<float, LAYER1_SIZE * LAYER2_SIZE> l1Weights;
+    std::array<float, LAYER1_SIZE * LAYER2_SIZE * 2> l1Weights;
     std::array<float, LAYER2_SIZE> l1Biases;
     std::array<float, LAYER2_SIZE> l2Weights;
     std::array<float, 1> l2Biases;
