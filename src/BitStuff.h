@@ -20,6 +20,7 @@ inline int lsb(const u64& bitboard) {
 #endif
 }
 
+
 inline int lsb(const int &bitboard) {
 #ifdef __GNUC__
     return __builtin_ctz(bitboard);
