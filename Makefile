@@ -17,10 +17,9 @@ datagen: $(DATAGEN_EXE)
 
 CXXFLAGS = -static -Ofast -std=c++17
 CXXFLAGS += -Wall -Wextra -pedantic
-CXXFLAGS += -march=native
 CXXFLAGS += -DEVALFILE=\"$(EVALFILE)\"
 
-LDFLAGS += -static -Ofast -march=native
+LDFLAGS += -static -Ofast
 
 ifeq ($(OS),Windows_NT)
 	LDFLAGS += -Wl,/STACK:4294967296
