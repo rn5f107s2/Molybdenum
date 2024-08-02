@@ -2,7 +2,7 @@
 
 void Thread::start(Position &pos, SearchTime &st, int depth) {
     state.thread = this;
-    thread = std::thread{[this, pos, st, depth]() mutable { state.startSearch(pos, st, depth); }};
+    //thread = std::thread{[this, pos, st, depth]() mutable { state.startSearch(pos, st, depth); }};
 }
 
 void Thread::join() {
