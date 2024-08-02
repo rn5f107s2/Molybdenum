@@ -28,6 +28,7 @@ inline int lsb(const int &bitboard) {
 #endif
 }
 
+
 inline int popLSB(u64 &bitboard) {
     int bit = lsb(bitboard);
     bitboard &= bitboard - 1;
