@@ -113,7 +113,7 @@ float Node::search(Position &pos, NodePool &pool, int ply) {
         return rollout(pos);
 
     if (visits <= 1)
-        expand(pos, pool, !ply);
+        expand(pos, pool, ply);
 
     if (!cCount) {
         u64 ksq      = pos.getPieces(pos.sideToMove, KING);
@@ -146,8 +146,9 @@ float Node::search(Position &pos, NodePool &pool, int ply) {
     return 1 - res;
 }
 
-void Node::expand(Position &pos, NodePool &pool, bool root) {
+void Node::expand(Position &pos, NodePool &pool, int ply) {
     MoveList ml;
+    const float PST_VALUES[4] = {3.0f, 2.0f, 1.5f, 1.0f};
 
     u64 ksq = pos.getPieces(pos.sideToMove, KING);
     u64 checkers = attackersTo<false, false>(lsb(ksq),pos.getOccupied(), pos.sideToMove ? BLACK_PAWN : WHITE_PAWN, pos);
@@ -163,7 +164,7 @@ void Node::expand(Position &pos, NodePool &pool, bool root) {
 
     for (int i = 0; i < ml.length; i++) {
         children[i].move = ml.moves[i].move;
-        scores[i]        = std::exp(pos.policyNet.forward(ml.moves[i].move, pos.sideToMove) / (root ? 3 : 1));
+        scores[i]        = std::exp(pos.policyNet.forward(ml.moves[i].move, pos.sideToMove) / PST_VALUES[std::min(ply, 3)]);
 
         sum += scores[i];
     }
