@@ -261,7 +261,7 @@ int SearchState::search(int alpha, int beta, Position &pos, int depth, SearchInf
                                             &killers[stack->plysInSearch], 
                                             &mainHistory[pos.sideToMove], 
                                             &*(stack-1)->contHist, 
-                                            &*(stack-2)->contHist, checkers, ROOT);
+                                            &*(stack-2)->contHist, checkers, ROOT, depth > 4 && !ttMove);
     while ((currentMove = mp.pickMove())) {
         extensions = depth + moveCount <= 13 ? extensions : 0;
     

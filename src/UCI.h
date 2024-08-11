@@ -32,6 +32,7 @@ public:
 
     UCI() {
         internalBoard.net.loadDefaultNet();
+        internalBoard.policyNet.loadDefault();
         internalBoard.setBoard(defaultFEN);
 
         commands["d"] = &UCI::d;

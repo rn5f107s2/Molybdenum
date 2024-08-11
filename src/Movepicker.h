@@ -37,6 +37,7 @@ class Movepicker {
         ScoredMove *endMoveList = nullptr;
         bool scored = false;
         bool root   = false;
+        bool policy = false;
         bool searchedPrio = true;
 
     public:
@@ -46,15 +47,17 @@ class Movepicker {
                       PieceToHist *cont1 = &emptyCont, 
                       PieceToHist *cont2 = &emptyCont, 
                       u64 checkers = 0ULL,
-                      bool r       = false) 
+                      bool r         = false,
+                      bool usePolicy = false) 
         {
             ttMove = ttm; 
             killers = k; 
             mainHist = main; 
             contHist1 = cont1; 
             contHist2 = cont2;
-            pos  = p;
-            root = r;
+            pos    = p;
+            root   = r;
+            policy = usePolicy;
 
 
             generateMoves<qsearch>(*pos, ml, checkers);
@@ -68,6 +71,9 @@ class Movepicker {
 
             int bestScore = std::numeric_limits<int>::min(); 
             ScoredMove *best = currentMove;
+
+            if (policy)
+                pos->policyNet.initAccumulator(pos->bitBoards, pos->sideToMove);
 
             while (idx < ml.length) {
                 ScoredMove *current = &ml.moves[idx++];
@@ -92,6 +98,9 @@ class Movepicker {
                 *score += contHist2[0][pc][to];
 
                 *score += MVVLVA[movingPiece][capturedPiece];
+
+                if (policy)
+                    *score += 5000 * pos->policyNet.forward(move, pos->sideToMove);;
 
                 if (*score > bestScore) {
                     bestScore = *score;
