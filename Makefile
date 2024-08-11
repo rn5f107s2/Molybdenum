@@ -4,7 +4,7 @@ MOLY_DIR=src
 CXX=clang++
 
 DEFAULT_NET_NAME=moly_20240715.nnue
-DEFAULT_POLICY_NAME=moarDataAgain_quantized_6.bin
+DEFAULT_POLICY_NAME=float_weNeedToGoDeeper_20.bin
 
 DEFAULT_EXE = $(OBJ_DIR)/Molybdenum
 DATAGEN_EXE = $(OBJ_DIR)/Datagen

@@ -30,7 +30,8 @@ void PolicyNet::loadDefault() {
 }
 
 void PolicyNet::initAccumulator(std::array<u64, 13> &bitboards, Color stm) {
-    memcpy(&accumulator, &weights.l0Biases[0], sizeof(int16_t) * HIDDEN_SIZE);
+    memcpy(&l1Out, &weights.l0Biases[0], sizeof(float) * HIDDEN_SIZE);
+    memcpy(&l2Out, &weights.l1Biases[0], sizeof(float) * L2_SIZE);
 
     for (int pc = WHITE_PAWN; pc != NO_PIECE; pc++) {
         u64 pieceBB = bitboards[pc];
@@ -47,9 +48,13 @@ void PolicyNet::initAccumulator(std::array<u64, 13> &bitboards, Color stm) {
             int idx = 64 * piece + square;
 
             for (int i = 0; i < HIDDEN_SIZE; i++)
-                accumulator[i] += weights.l0Weights[idx * HIDDEN_SIZE + i];
+                l1Out[i] += weights.l0Weights[idx * HIDDEN_SIZE + i];
         }
     }
+
+    for (int i = 0; i < HIDDEN_SIZE; i++)
+        for (int j = 0; j < L2_SIZE; j++)
+            l2Out[j] += ReLU(l1Out[i]) * weights.l1Weights[i * L2_SIZE + j];
 }
 
 float PolicyNet::forward(Move move, bool stm) {
@@ -62,12 +67,10 @@ float PolicyNet::forward(Move move, bool stm) {
     }
 
     int idx = from * 64 + to;
-    int out = 0;
+    float out = weights.l2Biases[idx];
 
-    for (int i = 0; i < HIDDEN_SIZE; i++)
-        out += ReLU(accumulator[i]) * weights.l1Weights[i * OUT_SIZE + idx];
+    for (int i = 0; i < L2_SIZE; i++)
+        out += ReLU(l2Out[i]) * weights.l2Weights[i * OUT_SIZE + idx];
 
-    out += weights.l1Biases[idx];
-
-    return float(out) / float(255 * 64);
+    return out;
 }

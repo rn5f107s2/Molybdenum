@@ -7,22 +7,26 @@
 #include "Move.h"
 
 const int HIDDEN_SIZE = 256;
+const int L2_SIZE     = 256;
 const int OUT_SIZE    = 64 * 64;
 
 struct PolicyWeights {
-    std::array<int16_t, 768 * HIDDEN_SIZE> l0Weights;
-    std::array<int16_t, HIDDEN_SIZE> l0Biases;
-    std::array<int16_t, HIDDEN_SIZE * OUT_SIZE> l1Weights;
-    std::array<int16_t, OUT_SIZE> l1Biases;
+    std::array<float, 768 * HIDDEN_SIZE> l0Weights;
+    std::array<float, HIDDEN_SIZE> l0Biases;
+    std::array<float, HIDDEN_SIZE * L2_SIZE> l1Weights;
+    std::array<float, L2_SIZE> l1Biases;
+    std::array<float, OUT_SIZE * L2_SIZE> l2Weights;
+    std::array<float, OUT_SIZE> l2Biases;
 };
 
-inline int16_t ReLU(int16_t val) {
-    return std::max(val, int16_t(0));
+inline float ReLU(float val) {
+    return std::max(val, 0.0f);
 }
 
 class PolicyNet {
     PolicyWeights weights;
-    std::array<int16_t, HIDDEN_SIZE> accumulator;
+    std::array<float, HIDDEN_SIZE> l1Out;
+    std::array<float, L2_SIZE> l2Out;
 
 public:
     void  loadDefault();
