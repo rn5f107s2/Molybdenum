@@ -80,24 +80,26 @@ class Movepicker {
                 Move move  = current->move;
                 int *score = &current->score;
 
-                int from = extract<FROM>(move);
-                int to   = extract<TO  >(move);
-                int movingPiece   = pos->pieceLocations[from];
-                int capturedPiece = pos->pieceLocations[to];
-                Piece pc = pos->pieceOn(from);
+                if (!policy) {
+                    int from = extract<FROM>(move);
+                    int to   = extract<TO  >(move);
+                    int movingPiece   = pos->pieceLocations[from];
+                    int capturedPiece = pos->pieceLocations[to];
+                    Piece pc = pos->pieceOn(from);
 
-                if (move == ttMove)
-                    *score = 10000000;
-                else if (move == killers[0][0])
-                    *score = 900000 + 10 * root;
-                else if (move == killers[0][1])
-                    *score = 800000 + 10 * root;
+                    if (move == ttMove)
+                        *score = 10000000;
+                    else if (move == killers[0][0])
+                        *score = 900000 + 10 * root;
+                    else if (move == killers[0][1])
+                        *score = 800000 + 10 * root;
 
-                *score += mainHist [0][from][to];
-                *score += contHist1[0][pc][to];
-                *score += contHist2[0][pc][to];
+                    *score += mainHist [0][from][to];
+                    *score += contHist1[0][pc][to];
+                    *score += contHist2[0][pc][to];
 
-                *score += MVVLVA[movingPiece][capturedPiece];
+                    *score += MVVLVA[movingPiece][capturedPiece];
+                }
 
                 if (policy)
                     *score += 5000 * pos->policyNet.forward(move, pos->sideToMove);;
