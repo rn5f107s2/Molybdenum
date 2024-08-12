@@ -5,7 +5,7 @@ CXX=clang++
 
 DEFAULT_NET_NAME=moly_20240715.nnue
 DEFAULT_POLICY_NAME=moarDataAgain_quantized_6.bin
-DEFAULT_VALUE_NAME=testValue.bin
+DEFAULT_VALUE_NAME=value512.bin
 
 DEFAULT_EXE = $(OBJ_DIR)/Molybdenum
 DATAGEN_EXE = $(OBJ_DIR)/Datagen
