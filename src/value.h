@@ -5,7 +5,7 @@
 
 #include "Constants.h"
 
-const int LAYER1_SIZE = 512;
+const int LAYER1_SIZE = 384;
 const int LAYER2_SIZE = 1;
 
 struct ValueWeights {
