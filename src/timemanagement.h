@@ -17,7 +17,7 @@ enum LimitType {
 struct searchTime{
     std::array<std::chrono::milliseconds, 2> thinkingTime = {std::chrono::milliseconds::max(), std::chrono::milliseconds::max()};
     std::chrono::time_point<std::chrono::steady_clock> searchStart = std::chrono::steady_clock::now();
-    uint64_t nodeLimit = 18446744073709551615ull;
+    std::array<uint64_t, 2> nodeLimit = {18446744073709551615ull, 18446744073709551615ull};
     SearchLimit limit = Time;
 };
 

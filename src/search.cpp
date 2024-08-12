@@ -85,9 +85,12 @@ int iterativeDeepening(Position  &pos, searchTime &st, int maxDepth, [[maybe_unu
             uciOutput += moveToString(pvMoves[0][i]) + " ";
 
         std::cout << uciOutput << std::endl;
+#endif
 
         if (stop<Soft>(st, si))
             break;
+
+#ifndef DATAGEN
     }
 
     benchNodes += si.nodeCount;

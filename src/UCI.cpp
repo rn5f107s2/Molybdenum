@@ -195,7 +195,7 @@ void uciLoop(const std::string& input, Position &internalBoard) {
 
         if (contains(input, "nodes ")) {
             int nodes = std::stoi(input.substr(input.find("nodes ") + 6));
-            st.nodeLimit = nodes;
+            st.nodeLimit[Hard] = st.nodeLimit[Soft] = nodes;
             st.limit = Nodes;
         }
 
