@@ -98,7 +98,7 @@ float uct(uint32_t pVisits, uint32_t visits, float score, float policy, bool roo
     float whateverThisIsCalled = policy * c * std::sqrt(pVisits) / (1 + visits);
 
     if (root)
-        whateverThisIsCalled *= tune.w;
+        whateverThisIsCalled *= 3;
 
     return q + whateverThisIsCalled;
 }
@@ -148,7 +148,7 @@ float Node::search(Position &pos, NodePool &pool, int ply) {
 
 void Node::expand(Position &pos, NodePool &pool, int ply) {
     MoveList ml;
-    const float PST_VALUES[4] = {3.0f, 2.0f, 1.5f, 1.0f};
+    const float PST_VALUES[4] = {tune.zeroply, tune.oneply, tune.twoply, tune.threeplusply};
 
     u64 ksq = pos.getPieces(pos.sideToMove, KING);
     u64 checkers = attackersTo<false, false>(lsb(ksq),pos.getOccupied(), pos.sideToMove ? BLACK_PAWN : WHITE_PAWN, pos);

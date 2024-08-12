@@ -22,7 +22,7 @@ struct Tune {
     int HistDepthMult, HistMax, HistLimit;
     int SEEPawn, SEEKnight, SEEBishop, SEERook, SEEQueen;
 
-    float c, w;
+    float zeroply, oneply, twoply, threeplusply;
 };
 
 class TuneOptions: public UCIOptions {
@@ -128,8 +128,10 @@ inline void TuneOptions::init() {
     TUNEINT(SEEQueen, 972, 1, 1200)
     */
 
-    TUNEFLOAT(c, 1.41, 0.01, 3)
-    TUNEFLOAT(w,  3.0, 0.01, 6)
+    TUNEFLOAT(zeroply, 3.0, 1.0, 8.0)
+    TUNEFLOAT(oneply, 2.0, 1.0, 8.0)
+    TUNEFLOAT(twoply, 1.5, 1.0, 8.0)
+    TUNEFLOAT(threeplusply, 1.0, 1.0, 8.0)
 
     initialized = true;
 }
