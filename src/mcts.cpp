@@ -88,20 +88,17 @@ void NodePool::resize(int newMB) {
 }
 
 float uct(uint32_t pVisits, uint32_t visits, float score, float policy, bool root, float pq, float bq) {
-    const float c = 1.414213562373095048801688f;
+    const float c = root ? 1.00f : 5.11f;
 
     float q                    = visits == 0 ? fpu(pq, bq) : score / visits;
     float whateverThisIsCalled = policy * c * std::sqrt(pVisits) / (1 + visits);
-
-    if (root)
-        whateverThisIsCalled *= 3;
 
     return q + whateverThisIsCalled;
 }
 
 float fpu(float pq, float bq) {
-    float diff = (bq - (1.1f - pq));
-    return 1.0f - std::clamp(diff * 10, 0.0f, 1.0f);
+    float diff = (bq - (1.0f - pq));
+    return 1.0f - std::clamp(diff * 6.63f, 0.0f, 1.0f);
 }
 
 float Node::search(Position &pos, NodePool &pool, int ply) {
@@ -144,7 +141,7 @@ float Node::search(Position &pos, NodePool &pool, int ply) {
 
 void Node::expand(Position &pos, NodePool &pool, int ply) {
     MoveList ml;
-    const float PST_VALUES[4] = {3.0f, 2.0f, 1.5f, 1.0f};
+    const float PST_VALUES[4] = {3.88f, 2.95f, 2.59f, 1.0f};
 
     u64 ksq = pos.getPieces(pos.sideToMove, KING);
     u64 checkers = attackersTo<false, false>(lsb(ksq),pos.getOccupied(), pos.sideToMove ? BLACK_PAWN : WHITE_PAWN, pos);
