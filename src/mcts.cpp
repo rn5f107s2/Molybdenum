@@ -144,7 +144,7 @@ float Node::search(Position &pos, NodePool &pool, int ply) {
 
 void Node::expand(Position &pos, NodePool &pool, int ply) {
     MoveList ml;
-    const float PST_VALUES[4] = {3.0f, 2.0f, 1.5f, 1.0f};
+    const float PST_VALUES[4] = {3.0f, 2.0f, 1.5f, 1.5f};
 
     u64 ksq = pos.getPieces(pos.sideToMove, KING);
     u64 checkers = attackersTo<false, false>(lsb(ksq),pos.getOccupied(), pos.sideToMove ? BLACK_PAWN : WHITE_PAWN, pos);
