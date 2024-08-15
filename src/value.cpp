@@ -32,10 +32,12 @@ void ValueNet::loadDefault() {
 float ValueNet::forward(std::array<u64, 13> &bitboards, Color stm) {
     float l1Out[LAYER1_SIZE];
     float l2Out[LAYER2_SIZE];
-    float out = weights.l2Biases[0];
+    float l3Out[LAYER3_SIZE];
+    float out = weights.l3Biases[0];
 
     memcpy(l1Out, &weights.l0Biases[0], sizeof(float) * LAYER1_SIZE);
     memcpy(l2Out, &weights.l1Biases[0], sizeof(float) * LAYER2_SIZE);
+    memcpy(l3Out, &weights.l2Biases[0], sizeof(float) * LAYER3_SIZE);
 
     for (int pc = WHITE_PAWN; pc != NO_PIECE; pc++) {
         u64 pieceBB = bitboards[pc];
@@ -60,8 +62,12 @@ float ValueNet::forward(std::array<u64, 13> &bitboards, Color stm) {
         for (int j = 0; j < LAYER1_SIZE; j++)
             l2Out[i] += SCReLU(l1Out[j]) * weights.l1Weights[j * LAYER2_SIZE + i];
 
-    for (int i = 0; i < LAYER2_SIZE; i++)
-        out += SCReLU(l2Out[i]) * weights.l2Weights[i];
+    for (int i = 0; i < LAYER3_SIZE; i++)
+        for (int j = 0; j < LAYER2_SIZE; j++)
+            l3Out[i] += SCReLU(l2Out[j]) * weights.l2Weights[j * LAYER3_SIZE + i];
+
+    for (int i = 0; i < LAYER3_SIZE; i++)
+        out += SCReLU(l3Out[i]) * weights.l3Weights[i];
 
     return out * 133;
 }

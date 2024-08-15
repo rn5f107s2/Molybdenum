@@ -7,14 +7,17 @@
 
 const int LAYER1_SIZE = 512;
 const int LAYER2_SIZE = 8;
+const int LAYER3_SIZE = 8;
 
 struct ValueWeights {
     std::array<float, 768 * LAYER1_SIZE> l0Weights;
     std::array<float, LAYER1_SIZE> l0Biases;
     std::array<float, LAYER1_SIZE * LAYER2_SIZE> l1Weights;
     std::array<float, LAYER2_SIZE> l1Biases;
-    std::array<float, LAYER2_SIZE> l2Weights;
-    std::array<float, 1> l2Biases;
+    std::array<float, LAYER2_SIZE * LAYER3_SIZE> l2Weights;
+    std::array<float, LAYER3_SIZE> l2Biases;
+    std::array<float, LAYER3_SIZE * 1> l3Weights;
+    std::array<float, 1> l3Biases;
 };
 
 inline float SCReLU(float val) {
