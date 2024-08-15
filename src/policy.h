@@ -6,7 +6,7 @@
 
 #include "Move.h"
 
-const int HIDDEN_SIZE = 256;
+const int HIDDEN_SIZE = 384;
 const int OUT_SIZE    = 64 * 64;
 
 struct PolicyWeights {
