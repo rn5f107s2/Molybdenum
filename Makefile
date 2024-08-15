@@ -4,7 +4,7 @@ MOLY_DIR=src
 CXX=clang++
 
 DEFAULT_NET_NAME=moly_20240715.nnue
-DEFAULT_POLICY_NAME=quant_moarData_92.bin
+DEFAULT_POLICY_NAME=quant_threats?_71.bin
 
 DEFAULT_EXE = $(OBJ_DIR)/Molybdenum
 DATAGEN_EXE = $(OBJ_DIR)/Datagen

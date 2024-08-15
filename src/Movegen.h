@@ -4,7 +4,6 @@
 #include "BitStuff.h"
 #include "MagicBitboards.h"
 #include "Move.h"
-#include "Position.h"
 #include <limits>
 
 std::array<std::array<u64, 64>, 64> initMaskBB();
@@ -321,6 +320,30 @@ inline bool generateMoves(Position &pos, MoveList &ml, u64 checkingPieces = 0ULL
         generateCastling(pos, mv, ml);
 
     return checkers;
+}
+
+template<PieceType pt> inline 
+u64 getThreats(Position &pos, Color c) {
+    u64 pieces   = pos.bitBoards[makePiece(pt, c)];
+    u64 occupied = pos.getOccupied(); 
+    u64 threats  = 0;
+
+    while (pieces) {
+        int sq = popLSB(pieces);
+
+        threats |= getAttacks<pt>(sq, occupied, c);
+    }
+
+    return threats;
+}
+
+inline u64 getThreats(Position &pos, Color c) {
+    return   getThreats<PAWN>(pos, c)
+           | getThreats<KNIGHT>(pos, c)
+           | getThreats<BISHOP>(pos, c)
+           | getThreats<ROOK>(pos, c)
+           | getThreats<QUEEN>(pos, c)
+           | getThreats<KING>(pos, c);
 }
 
 #endif //MOLYBDENUM_MOVEGEN_H
