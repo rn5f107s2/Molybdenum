@@ -11,6 +11,7 @@
 #include "Transpositiontable.h"
 #include "nnue.h"
 #include "policy.h"
+#include "Movegen.h"
 
 class Position {
     public:
@@ -43,6 +44,8 @@ class Position {
         inline Piece pieceOn(int sq);
         inline u64 getOccupied();
         template<Color c> u64 getOccupied();
+        template<PieceType pt> u64 getThreats(Color c);
+        inline u64 getThreats(Color c);
     private:
         Stack<Piece>  capturedHistory;
         Stack<int>  plys50mrHistory;
@@ -88,6 +91,30 @@ u64 Position::getOccupied() {
 
 inline u64 Position::getOccupied() {
     return getOccupied<WHITE>() | getOccupied<BLACK>();
+}
+
+template<PieceType pt> inline 
+u64 Position::getThreats(Color c) {
+    u64 pieces   = bitBoards[makePiece(pt, c)];
+    u64 occupied = getOccupied(); 
+    u64 threats  = 0;
+
+    while (pieces) {
+        int sq = popLSB(pieces);
+
+        threats |= getAttacks(sq, occupied, c);
+    }
+
+    return threats;
+}
+
+inline u64 Position::getThreats(Color c) {
+    return   getThreats<PAWN>(c)
+           | getThreats<KNIGHT>(c)
+           | getThreats<BISHOP>(c)
+           | getThreats<ROOK>(c)
+           | getThreats<QUEEN>(c)
+           | getThreats<KING>(c);
 }
 
 inline bool Position::isCapture(Move move) {
