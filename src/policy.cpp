@@ -29,7 +29,7 @@ void PolicyNet::loadDefault() {
     weights = defaultWeights;
 }
 
-void PolicyNet::initAccumulator(std::array<u64, 13> &bitboards, Color stm, u64 threats) {
+void PolicyNet::initAccumulator(std::array<u64, 13> &bitboards, Color stm, std::array<u64, 6> &threats) {
     memcpy(&accumulator, &weights.l0Biases[0], sizeof(int16_t) * HIDDEN_SIZE);
 
     for (int pc = WHITE_PAWN; pc != NO_PIECE; pc++) {
@@ -50,16 +50,21 @@ void PolicyNet::initAccumulator(std::array<u64, 13> &bitboards, Color stm, u64 t
                 accumulator[i] += weights.l0Weights[idx * HIDDEN_SIZE + i];
         }
     }
+    
+    for (int i = 0; i < 6; i++) {
+        u64 t   = threats[i];
+        int add = 768 + 64 * i; 
 
-    if (!stm)
-        threats = __builtin_bswap64(threats);
+        if (!stm)
+            t = __builtin_bswap64(t);
 
-    while (threats) {
-        int square = popLSB(threats);
-        int idx    = 768 + square;
+        while (t) {
+            int square = popLSB(t);
+            int idx    = add + square;
 
-        for (int i = 0; i < HIDDEN_SIZE; i++)
-            accumulator[i] += weights.l0Weights[idx * HIDDEN_SIZE + i];
+            for (int i = 0; i < HIDDEN_SIZE; i++)
+                accumulator[i] += weights.l0Weights[idx * HIDDEN_SIZE + i];
+        }
     }
     
 }

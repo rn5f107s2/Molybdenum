@@ -156,7 +156,14 @@ void Node::expand(Position &pos, NodePool &pool, int ply) {
     float sum = 0;
     float scores[218];
 
-    pos.policyNet.initAccumulator(pos.bitBoards, pos.sideToMove, getThreats(pos, !pos.sideToMove));
+    std::array<u64, 6> threats = {getThreats<PAWN>(pos, !pos.sideToMove),
+                                  getThreats<KNIGHT>(pos, !pos.sideToMove),
+                                  getThreats<BISHOP>(pos, !pos.sideToMove),
+                                  getThreats<ROOK>(pos, !pos.sideToMove),
+                                  getThreats<QUEEN>(pos, !pos.sideToMove),
+                                  getThreats<KING>(pos, !pos.sideToMove)};
+
+    pos.policyNet.initAccumulator(pos.bitBoards, pos.sideToMove, threats);
 
     for (int i = 0; i < ml.length; i++) {
         children[i].move = ml.moves[i].move;

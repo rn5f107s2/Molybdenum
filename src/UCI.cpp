@@ -201,8 +201,16 @@ void UCI::policy([[maybe_unused]] const std::string &args) {
     float sum = 0.0f;
 
     PolicyNet net;
+
+    std::array<u64, 6> threats = {getThreats<PAWN  >(internalBoard, !internalBoard.sideToMove),
+                                  getThreats<KNIGHT>(internalBoard, !internalBoard.sideToMove),
+                                  getThreats<BISHOP>(internalBoard, !internalBoard.sideToMove),
+                                  getThreats<ROOK  >(internalBoard, !internalBoard.sideToMove),
+                                  getThreats<QUEEN >(internalBoard, !internalBoard.sideToMove),
+                                  getThreats<KING  >(internalBoard, !internalBoard.sideToMove)};
+
     net.loadDefault();
-    net.initAccumulator(internalBoard.bitBoards, internalBoard.sideToMove, getThreats(internalBoard, !internalBoard.sideToMove));
+    net.initAccumulator(internalBoard.bitBoards, internalBoard.sideToMove, threats);
 
     for (int i = 0; i < ml.length; i++) {
         scores[i] = net.forward(ml.moves[i].move, internalBoard.sideToMove);

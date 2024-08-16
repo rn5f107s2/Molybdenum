@@ -6,7 +6,7 @@
 
 #include "Move.h"
 
-const int IN_SIZE  = 832;
+const int IN_SIZE     = 1536;
 const int HIDDEN_SIZE = 256;
 const int OUT_SIZE    = 64 * 64;
 
@@ -27,7 +27,7 @@ class PolicyNet {
 
 public:
     void  loadDefault();
-    void  initAccumulator(std::array<u64, 13> &bitboards, Color stm, u64 threats);
+    void  initAccumulator(std::array<u64, 13> &bitboards, Color stm, std::array<u64, 6> &threats);
     float forward(Move move, bool stm);
 };
 
