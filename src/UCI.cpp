@@ -202,7 +202,7 @@ void UCI::policy([[maybe_unused]] const std::string &args) {
 
     PolicyNet net;
     net.loadDefault();
-    net.initAccumulator(internalBoard.bitBoards, internalBoard.sideToMove);
+    net.initAccumulator(internalBoard.bitBoards, internalBoard.sideToMove, getThreats(internalBoard, !internalBoard.sideToMove));
 
     for (int i = 0; i < ml.length; i++) {
         scores[i] = net.forward(ml.moves[i].move, internalBoard.sideToMove);

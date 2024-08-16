@@ -156,7 +156,7 @@ void Node::expand(Position &pos, NodePool &pool, int ply) {
     float sum = 0;
     float scores[218];
 
-    pos.policyNet.initAccumulator(pos.bitBoards, pos.sideToMove);
+    pos.policyNet.initAccumulator(pos.bitBoards, pos.sideToMove, getThreats(pos, !pos.sideToMove));
 
     for (int i = 0; i < ml.length; i++) {
         children[i].move = ml.moves[i].move;

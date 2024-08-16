@@ -6,11 +6,12 @@
 
 #include "Move.h"
 
+const int IN_SIZE  = 832;
 const int HIDDEN_SIZE = 256;
 const int OUT_SIZE    = 64 * 64;
 
 struct PolicyWeights {
-    std::array<int16_t, 768 * HIDDEN_SIZE> l0Weights;
+    std::array<int16_t, IN_SIZE * HIDDEN_SIZE> l0Weights;
     std::array<int16_t, HIDDEN_SIZE> l0Biases;
     std::array<int16_t, HIDDEN_SIZE * OUT_SIZE> l1Weights;
     std::array<int16_t, OUT_SIZE> l1Biases;
@@ -26,7 +27,7 @@ class PolicyNet {
 
 public:
     void  loadDefault();
-    void  initAccumulator(std::array<u64, 13> &bitboards, Color stm);
+    void  initAccumulator(std::array<u64, 13> &bitboards, Color stm, u64 threats);
     float forward(Move move, bool stm);
 };
 
