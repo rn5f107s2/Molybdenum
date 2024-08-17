@@ -26,7 +26,7 @@ void rootSearch(Position &pos, SearchTime &st) {
             && si.nodeCount >= st.nodeLimit)
             break;
 
-        root.search(pos, pool, 0);
+        root.search(pos, pool, 0, true);
         si.nodeCount++;
     }
 
@@ -87,8 +87,8 @@ void NodePool::resize(int newMB) {
     memory = reinterpret_cast<Node*>(malloc(limit * sizeof(Node)));
 }
 
-float uct(uint32_t pVisits, uint32_t visits, float score, float policy, bool root, float pq, float bq) {
-    const float c = !root ? 1.00f : 5.11f;
+float uct(uint32_t pVisits, uint32_t visits, float score, float policy, bool root, float pq, float bq, bool pvNode) {
+    const float c = root ? 5.11f : (pvNode ? 1.25f : 0.75f);
 
     float q                    = visits == 0 ? fpu(pq, bq) : score / visits;
     float whateverThisIsCalled = policy * c * std::sqrt(pVisits) / (1 + visits);
@@ -101,7 +101,7 @@ float fpu(float pq, float bq) {
     return 1.0f - std::clamp(diff * 6.63f, 0.0f, 1.0f);
 }
 
-float Node::search(Position &pos, NodePool &pool, int ply) {
+float Node::search(Position &pos, NodePool &pool, int ply, bool pvNode) {
     if (!visits && ply)
         return rollout(pos);
 
@@ -128,11 +128,13 @@ float Node::search(Position &pos, NodePool &pool, int ply) {
         return 0.5f;
     }
 
-    Node* toSearch = select(!ply);
+    bool pvChild;
+
+    Node* toSearch = select(!ply, pvNode, pvChild);
     pos.makeMove(toSearch->move);
 
     visits++;
-    float res = toSearch->search(pos, pool, ply + 1);
+    float res = toSearch->search(pos, pool, ply + 1, pvChild);
     result += res;
 
     pos.unmakeMove(toSearch->move);
@@ -178,7 +180,7 @@ float Node::rollout(Position &pos) {
     return res;
 }
 
-Node* Node::select(bool root) {
+Node* Node::select(bool root, bool pvNode, bool &pvChild) {
     int   bestIndex = -1;
     float bestUCT   = 0.0f;
     float bestQ     = 0.0f;
@@ -188,7 +190,7 @@ Node* Node::select(bool root) {
             bestQ = std::max(bestQ, children[i].result / children[i].visits);
 
     for (int i = 0; i < cCount; i++) {
-        float thisUCT = uct(visits, children[i].visits, children[i].result, children[i].policy, root, result / visits, bestQ);
+        float thisUCT = uct(visits, children[i].visits, children[i].result, children[i].policy, root, result / visits, bestQ, pvNode);
 
         if (thisUCT <= bestUCT)
             continue;
@@ -197,5 +199,9 @@ Node* Node::select(bool root) {
         bestIndex = i;
     }
 
-    return (bestIndex != -1 ? &children[bestIndex] : nullptr);
+    pvChild =   pvNode
+             && children[bestIndex].visits 
+             && bestQ == (children[bestIndex].result / children[bestIndex].visits);
+
+    return &children[bestIndex];
 }

@@ -21,9 +21,9 @@ public:
     float    result = 0.0f;
     float    policy = 0.0f;
 
-    float search(Position &pos, NodePool &pool, int ply);
+    float search(Position &pos, NodePool &pool, int ply, bool pvNode);
     float rollout(Position &pos);
-    Node* select(bool root);
+    Node* select(bool root, bool pvNode, bool &pvChild);
     void  expand(Position &pos, NodePool &pool, int ply);
     float backpropagate();
 };
@@ -44,7 +44,7 @@ public:
     void resize(int newMB);
 };
 
-float uct(uint32_t pVisits, uint32_t visits, float score, float policy, bool root, float pq, float bestq);
+float uct(uint32_t pVisits, uint32_t visits, float score, float policy, bool root, float pq, float bestq, bool pvNode);
 float fpu(float pq, float bq);
 void rootSearch(Position &pos, SearchTime &st);
 
