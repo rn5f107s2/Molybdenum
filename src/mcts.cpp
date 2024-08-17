@@ -88,7 +88,7 @@ void NodePool::resize(int newMB) {
 }
 
 float uct(uint32_t pVisits, uint32_t visits, float score, float policy, bool root, float pq, float bq) {
-    const float c = root ? 1.00f : 5.11f;
+    const float c = !root ? 1.00f : 5.11f;
 
     float q                    = visits == 0 ? fpu(pq, bq) : score / visits;
     float whateverThisIsCalled = policy * c * std::sqrt(pVisits) / (1 + visits);
