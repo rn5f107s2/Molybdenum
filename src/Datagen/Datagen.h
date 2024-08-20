@@ -17,14 +17,13 @@ static void init() {
     auto epoch = now_ms.time_since_epoch();
     auto value = std::chrono::duration_cast<std::chrono::milliseconds>(epoch);
     seedDataGen = value.count();
-    std::cout << "initCalled" << std::endl;
 }
 
 bool verifyExit(Position &pos);
 void createExit(Position &pos);
-void playGame(Position &pos, const std::string& filename, u64 &fenCount);
+void playGame(Position &pos, const std::string& valueFile, const std::string &policyFile, u64 &fenCount);
 
-[[noreturn]] void start(Position &pos, const std::string& filename);
+[[noreturn]] void start(Position &pos, const std::string &valueFile, const std::string &policyFile);
 
 #endif //MOLYBDENUM_DATAGEN_H
 //#endif

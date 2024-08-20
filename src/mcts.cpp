@@ -34,20 +34,20 @@ int rootSearch(Position &pos, SearchTime &st, PolicyGenInfo* pgi, Move* bm) {
 
     int pgiIndex = 0;
     float bestRes = -1.0f;
-    Move  bestMove;
+    Move  bestMove = NO_MOVE;
 
     for (int j = 0; j < root.cCount; j++) {
         float thisRes = root.children[j].result / root.children[j].visits;
 
-//#ifndef DATAGEN
+#ifndef DATAGEN
         std::cout << "info string move: " << moveToString(root.children[j].move) 
                                           << " Q: " << std::setprecision(3) << thisRes
                                           << " Visits: " << root.children[j].visits << std::endl;
-//#endif
+#endif
 
         if (pgi) {
-            pgi->moves           [pgiIndex] = root.children[j].move;
-            pgi->visitPecrcentage[pgiIndex] = float(root.children[j].visits) / float(si.nodeCount.load(std::memory_order_relaxed));
+            pgi->moves [pgiIndex] = root.children[j].move;
+            pgi->visits[pgiIndex] = root.children[j].visits;
             pgiIndex++;
         }
 
@@ -58,12 +58,14 @@ int rootSearch(Position &pos, SearchTime &st, PolicyGenInfo* pgi, Move* bm) {
         bestMove = root.children[j].move;
     }
 
+    std::clamp(bestRes, 0.0f, 1.0f);
+
     int centipawns = std::log(bestRes / (1.0f - bestRes)) / (1.0f / 133.0f);
 
-//#ifndef DATAGEN
+#ifndef DATAGEN
     std::cout << "info depth 1 nodes " << si.nodeCount << " score cp " << centipawns << std::endl;
     std::cout << "bestmove " << moveToString(bestMove) << std::endl;
-//#endif
+#endif
 
     pool.freeMemory();
 
@@ -108,7 +110,7 @@ void NodePool::resize(int newMB) {
 float uct(uint32_t pVisits, uint32_t visits, float score, float policy, bool root, float pq, float bq) {
     const float c = !root ? 1.32f : 2.35f;
 
-    float q                    = visits == 0 ? fpu(pq, bq) : score / visits;
+    float q                    = visits == 0 ? fpu(pq, bq) : std::clamp(score / visits, 0.0f, 1.0f);
     float whateverThisIsCalled = policy * c * std::sqrt(pVisits) / (1 + visits);
 
     return q + whateverThisIsCalled;
@@ -131,7 +133,7 @@ float Node::search(Position &pos, NodePool &pool, int ply) {
         u64 checkers = attackersTo<false, false>(lsb(ksq),pos.getOccupied(), pos.sideToMove ? BLACK_PAWN : WHITE_PAWN, pos);
 
         visits++;
-        result += (checkers ? 1.0f : 0.5f);
+        result += (checkers ? 1.5f - (float(ply) / 100.0f) : 0.5f);
 
         return 1 - (checkers ? 1.0f : 0.5f);
     }
@@ -205,6 +207,8 @@ Node* Node::select(bool root) {
     for (int i = 0; i < cCount; i++)
         if (children[i].visits)
             bestQ = std::max(bestQ, children[i].result / children[i].visits);
+
+    std::clamp(bestQ, 0.0f, 1.0f);
 
     for (int i = 0; i < cCount; i++) {
         float thisUCT = uct(visits, children[i].visits, children[i].result, children[i].policy, root, result / visits, bestQ);

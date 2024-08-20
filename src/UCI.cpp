@@ -227,12 +227,12 @@ void UCI::start(int argc, char** argv) {
         handleInput(in);
     }
 #else
-    if (argc != 2) {
-        std::cout << "Missing file argument" << std::endl;
+    if (argc != 3) {
+        std::cout << "Wrong number of arguments, expected 2 (policy & value filename)" << std::endl;
         return;
     }
 
-    ::start(internalBoard, argv[1]);
+    ::start(internalBoard, argv[1], argv[2]);
 #endif
 }
 
