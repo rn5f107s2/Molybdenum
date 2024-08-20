@@ -1,6 +1,7 @@
 #include "search.h"
+#include "../mcts.h"
 
-#ifdef DATAGEN
+//#ifdef DATAGEN
 #ifndef MOLYBDENUM_DATAGEN_H
 #define MOLYBDENUM_DATAGEN_H
 
@@ -16,6 +17,7 @@ static void init() {
     auto epoch = now_ms.time_since_epoch();
     auto value = std::chrono::duration_cast<std::chrono::milliseconds>(epoch);
     seedDataGen = value.count();
+    std::cout << "initCalled" << std::endl;
 }
 
 bool verifyExit(Position &pos);
@@ -25,4 +27,4 @@ void playGame(Position &pos, const std::string& filename, u64 &fenCount);
 [[noreturn]] void start(Position &pos, const std::string& filename);
 
 #endif //MOLYBDENUM_DATAGEN_H
-#endif
+//#endif

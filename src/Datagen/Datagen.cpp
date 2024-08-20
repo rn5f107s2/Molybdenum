@@ -1,6 +1,7 @@
 #include "../search.h"
+#include "../mcts.h"
 
-#ifdef DATAGEN
+//#ifdef DATAGEN
 #include <fstream>
 #include <iostream>
 #include "Datagen.h"
@@ -56,58 +57,55 @@ void createExit(Position &pos) {
 }
 
 bool verifyExit(Position &pos) {
-    searchTime st;
-    st.limit = Nodes; st.nodeLimit = 2500;
+    SearchTime st;
+    st.limit = Nodes; st.nodeLimit = 1000;
 
-    return abs(startSearch(pos, st)) < 150;
+    return abs(rootSearch(pos, st)) < 150;
 }
 
 void playGame(Position &pos, const std::string& filename, u64 &fenCount) {
     int adjCounter = 0;
-    int wadjCounter = 0;
-    int wadjReq = int(seedDataGen % 20) + 5;
     std::string result;
     Stack<int> scores;
     Stack<std::string> fens;
-    Stack<Move> bestMoves;
+    Stack<PolicyGenInfo> visits;
     std::ofstream output;
     output.open(filename, std::ios::app);
 
-    clearHistory();
-
     while (true) {
         Move bestMove;
-        searchTime st;
-        st.nodeLimit = 25000;
+        PolicyGenInfo pgi;
+        SearchTime st;
+        st.nodeLimit = 5000;
         st.limit = Nodes;
 
-        int score = startSearch(pos, st, MAXDEPTH, bestMove);
-
-        if (abs(score) > 300)
-            wadjCounter++;
-        else
-            wadjCounter = 0;
-
-        if (abs(score) >= MAXMATE || wadjCounter > wadjReq) {
-            result = (score > 0 == pos.sideToMove) ? "1.0" : "0.0";
-            break;
-        }
+        int score = rootSearch(pos, st, &pgi, &bestMove);
 
         if (abs(score) <= 0)
             adjCounter++;
         else
             adjCounter = 0;
 
-        if (adjCounter > 7 || pos.plys50moveRule >= 100 || bestMove == NO_MOVE) {
+        if (bestMove == NO_MOVE) {
+            u64 ksq = pos.getPieces(pos.sideToMove, KING);
+            u64 checkers = attackersTo<false, false>(lsb(ksq),pos.getOccupied(), pos.sideToMove ? BLACK_PAWN : WHITE_PAWN, pos);
+
+            result = !checkers ? "0.5" : (pos.sideToMove ? "0.0" : "1.0");
+            break;
+        }
+
+        if (adjCounter > 10 || pos.plys50moveRule >= 100) {
             result = "0.5";
             break;
         }
 
-        if (!pos.isCapture(bestMove) && extract<FLAG>(bestMove) != PROMOTION) {
-            fens.push(pos.fen());
-            scores.push(score * (pos.sideToMove ? 1 : -1));
-            bestMoves.push(bestMove);
-        }
+        fens.push(pos.fen());
+        scores.push(score * (pos.sideToMove ? 1 : -1));
+        std::cout << "prepush" << std::endl;
+        visits.push(pgi);
+        std::cout << "postpush" << std::endl;
+
+        pos.printBoard();
         pos.makeMove(bestMove);
         pos.movecount++;
     }
@@ -115,12 +113,25 @@ void playGame(Position &pos, const std::string& filename, u64 &fenCount) {
     while (fens.getSize()) {
         std::string fen = fens.pop();
         std::string score = std::to_string(scores.pop());
-        std::string bestMove = moveToString(bestMoves.pop());
+        PolicyGenInfo pgi = visits.pop();
 
         fen += " | ";
         fen += score;
         fen += " | ";
         fen += result;
+        
+        int pgiIndex = 0;
+
+        while (pgi.moves[pgiIndex] && false) {
+            fen += " | ";
+            fen += moveToString(pgi.moves[pgiIndex]);
+            fen += " ";
+            fen += std::to_string(pgi.visitPecrcentage[pgiIndex]);
+            
+            pgiIndex++;
+        }
+        
+
         fen += "\n";
         output << fen;
         fenCount++;
@@ -128,4 +139,4 @@ void playGame(Position &pos, const std::string& filename, u64 &fenCount) {
 
     output.close();
 }
-#endif
+//#endif

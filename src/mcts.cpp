@@ -10,7 +10,7 @@
 #include <cmath>
 #include <iomanip>
 
-void rootSearch(Position &pos, SearchTime &st) {
+int rootSearch(Position &pos, SearchTime &st, PolicyGenInfo* pgi, Move* bm) {
     Node       root;
     NodePool   pool(256);
     SearchInfo si;
@@ -32,15 +32,24 @@ void rootSearch(Position &pos, SearchTime &st) {
 
     benchNodes += si.nodeCount;
 
-    float bestRes;
+    int pgiIndex = 0;
+    float bestRes = -1.0f;
     Move  bestMove;
 
     for (int j = 0; j < root.cCount; j++) {
         float thisRes = root.children[j].result / root.children[j].visits;
 
+//#ifndef DATAGEN
         std::cout << "info string move: " << moveToString(root.children[j].move) 
                                           << " Q: " << std::setprecision(3) << thisRes
                                           << " Visits: " << root.children[j].visits << std::endl;
+//#endif
+
+        if (pgi) {
+            pgi->moves           [pgiIndex] = root.children[j].move;
+            pgi->visitPecrcentage[pgiIndex] = float(root.children[j].visits) / float(si.nodeCount.load(std::memory_order_relaxed));
+            pgiIndex++;
+        }
 
         if (thisRes <= bestRes)
             continue;
@@ -49,10 +58,19 @@ void rootSearch(Position &pos, SearchTime &st) {
         bestMove = root.children[j].move;
     }
 
-    std::cout << "info depth 1 nodes " << si.nodeCount << " score cp " << int((bestRes - 0.5f) * 1200) << std::endl;
+    int centipawns = std::log(bestRes / (1.0f - bestRes)) / (1.0f / 133.0f);
+
+//#ifndef DATAGEN
+    std::cout << "info depth 1 nodes " << si.nodeCount << " score cp " << centipawns << std::endl;
     std::cout << "bestmove " << moveToString(bestMove) << std::endl;
+//#endif
 
     pool.freeMemory();
+
+    if (bm)
+        *bm = bestMove;
+
+    return centipawns;
 }
 
 NodePool::NodePool(int mb) : sizeMB(mb), 
@@ -118,9 +136,10 @@ float Node::search(Position &pos, NodePool &pool, int ply) {
         return 1 - (checkers ? 1.0f : 0.5f);
     }
 
-    if (   pos.hasRepeated(ply)
-        || pos.plys50moveRule > 99
-        || (pos.phase <= 3 && !(pos.getPieces(PAWN)))) 
+    if (   ply
+        && (   pos.hasRepeated(ply)
+            || pos.plys50moveRule > 99
+            || (pos.phase <= 3 && !(pos.getPieces(PAWN))))) 
     {
         visits++;
         result += 0.5f;

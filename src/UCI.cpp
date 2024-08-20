@@ -214,6 +214,7 @@ void UCI::policy([[maybe_unused]] const std::string &args) {
 }
 
 void UCI::start(int argc, char** argv) {
+#ifndef DATAGEN
     if (argc == 1)
         return loop();
 
@@ -225,6 +226,14 @@ void UCI::start(int argc, char** argv) {
 
         handleInput(in);
     }
+#else
+    if (argc != 2) {
+        std::cout << "Missing file argument" << std::endl;
+        return;
+    }
+
+    ::start(internalBoard, argv[1]);
+#endif
 }
 
 void UCI::loop() {    
