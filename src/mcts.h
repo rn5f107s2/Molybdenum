@@ -10,8 +10,8 @@
 class NodePool;
 
 struct PolicyGenInfo {
-    std::array<Move , 218> moves;
-    std::array<float, 218> visitPecrcentage;
+    std::array<Move , 218> moves = {};
+    std::array<int16_t, 218> visits;
 };
 
 #pragma pack(push, 1)

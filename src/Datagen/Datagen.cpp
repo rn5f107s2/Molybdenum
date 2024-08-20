@@ -7,7 +7,7 @@
 #include "Datagen.h"
 #include "../Position.h"
 
-[[noreturn]] void start(Position &pos, const std::string& filename) {
+[[noreturn]] void start(Position &pos, const std::string &valueFile, const std::string &policyFile) {
     init();
     u64 gameCount = 0;
     u64 fenCount = 0;
@@ -16,7 +16,7 @@
     std::cout << "Starting Data Generation\n";
     while (true) {
         createExit(pos);
-        playGame(pos, filename, fenCount);
+        playGame(pos, valueFile, policyFile, fenCount);
         gameCount++;
 
         if (gameCount % 100 == 0) {
@@ -63,14 +63,16 @@ bool verifyExit(Position &pos) {
     return abs(rootSearch(pos, st)) < 150;
 }
 
-void playGame(Position &pos, const std::string& filename, u64 &fenCount) {
+void playGame(Position &pos, const std::string &valueFile, const std::string &policyFile, u64 &fenCount) {
     int adjCounter = 0;
     std::string result;
     Stack<int> scores;
     Stack<std::string> fens;
     Stack<PolicyGenInfo> visits;
-    std::ofstream output;
-    output.open(filename, std::ios::app);
+    std::ofstream valueOutput;
+    std::ofstream policyOutput;
+    valueOutput.open(valueFile, std::ios::app);
+    policyOutput.open(policyFile, std::ios::app);
 
     while (true) {
         Move bestMove;
@@ -101,11 +103,8 @@ void playGame(Position &pos, const std::string& filename, u64 &fenCount) {
 
         fens.push(pos.fen());
         scores.push(score * (pos.sideToMove ? 1 : -1));
-        std::cout << "prepush" << std::endl;
         visits.push(pgi);
-        std::cout << "postpush" << std::endl;
 
-        pos.printBoard();
         pos.makeMove(bestMove);
         pos.movecount++;
     }
@@ -115,28 +114,34 @@ void playGame(Position &pos, const std::string& filename, u64 &fenCount) {
         std::string score = std::to_string(scores.pop());
         PolicyGenInfo pgi = visits.pop();
 
-        fen += " | ";
-        fen += score;
-        fen += " | ";
-        fen += result;
+        std::string policy = fen;
+        std::string value  = fen;
+
+        value += " | ";
+        value += score;
+        value += " | ";
+        value += result;
         
         int pgiIndex = 0;
 
-        while (pgi.moves[pgiIndex] && false) {
-            fen += " | ";
-            fen += moveToString(pgi.moves[pgiIndex]);
-            fen += " ";
-            fen += std::to_string(pgi.visitPecrcentage[pgiIndex]);
+        while (pgi.moves[pgiIndex]) {
+            policy += " | ";
+            policy += moveToString(pgi.moves[pgiIndex]);
+            policy += " ";
+            policy += std::to_string(pgi.visits[pgiIndex]);
             
             pgiIndex++;
         }
         
 
-        fen += "\n";
-        output << fen;
+        value += "\n";
+        policy += "\n";
+        valueOutput << value;
+        policyOutput << policy;
         fenCount++;
     }
 
-    output.close();
+    valueOutput.close();
+    policyOutput.close();
 }
 //#endif
