@@ -9,6 +9,11 @@
 
 class NodePool;
 
+struct PolicyGenInfo {
+    std::array<Move , 218> moves;
+    std::array<float, 218> visitPecrcentage;
+};
+
 #pragma pack(push, 1)
 
 class Node {
@@ -46,6 +51,6 @@ public:
 
 float uct(uint32_t pVisits, uint32_t visits, float score, float policy, bool root, float pq, float bestq);
 float fpu(float pq, float bq);
-void rootSearch(Position &pos, SearchTime &st);
+int rootSearch(Position &pos, SearchTime &st, PolicyGenInfo* pgi = nullptr, Move* bestMove = nullptr);
 
 #endif
