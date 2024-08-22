@@ -346,6 +346,11 @@ int SearchState::search(int alpha, int beta, Position &pos, int depth, SearchInf
         reductions = std::max(reductions, 0);
 
         if (depth > 1 && moveCount > 2) {
+            if (depth > 10) {
+                score = -search<NonPvNode>(-alpha - 1, -alpha, pos, 3, si, stack+1);
+                reductions += std::clamp((score - alpha) / 100, -2, 2);
+            }
+
             score = -search<NonPvNode>(-alpha - 1, -alpha, pos, depth - 1 - reductions + extensions, si, stack+1);
 
             if (score > alpha && reductions > 0) {
