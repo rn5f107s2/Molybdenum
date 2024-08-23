@@ -127,7 +127,7 @@ class Movepicker {
 
         inline Move pickMove() {
 
-            if (!searchedPrio) {
+            if (!searchedPrio && prioMove && (!ttMove || scored)) {
                 searchedPrio = true;
                 return prioMove;
             }

@@ -142,7 +142,7 @@ int SearchState::search(int alpha, int beta, Position &pos, int depth, SearchInf
 
     u64 ksq = pos.getPieces(pos.sideToMove, KING);
     u64 checkers = attackersTo<false, false>(lsb(ksq),pos.getOccupied(), pos.sideToMove ? BLACK_PAWN : WHITE_PAWN, pos);
-    Move bestMove = 0, currentMove = 0, excluded = NO_MOVE;
+    Move bestMove = 0, currentMove = 0, excluded = NO_MOVE, prioMove = NO_MOVE;
     int bestScore = -INFINITE, score = -INFINITE, moveCount = 0, extensions = 0;
     bool exact = false, check = checkers, ttHit = false, improving, whatAreYouDoing;
     Stack<Move> historyUpdates;
@@ -253,13 +253,47 @@ int SearchState::search(int alpha, int beta, Position &pos, int depth, SearchInf
             return nullScore;
     }
 
+    if (   depth >= 8
+        && !ROOT
+        && ttHit
+        && ttMove
+        && ttBound != UPPER
+        && ttDepth >= depth - 3
+        && !excluded)
+    {
+        int singDepth = depth / 2;
+        int singBeta  = ttScore - 12 + std::min(si.rootMoveCount * 2, 12); 
+
+        stack->excluded = ttMove;
+        stack->currMove = NO_MOVE;
+
+        score = search<nt>(singBeta - 1, singBeta, pos, singDepth, si, stack);
+
+        stack->excluded = NO_MOVE;
+
+        if (score < singBeta)
+            extensions = 1;
+
+        if (score >= singBeta && stack->currMove) {
+            prioMove = stack->currMove;
+
+            if (ttScore <= alpha && score >= beta && ttBound == LOWER) {
+                prioMove = ttMove;
+                ttMove   = stack->currMove;
+            }
+        }
+    }
+
     Movepicker mp = Movepicker<false>(&pos, ttMove, 
                                             &killers[stack->plysInSearch], 
                                             &mainHistory[pos.sideToMove], 
                                             &*(stack-1)->contHist, 
                                             &*(stack-2)->contHist, checkers, ROOT);
+
+    mp.setPrioMove(prioMove);
+
     while ((currentMove = mp.pickMove())) {
-        extensions = depth + moveCount <= 13 ? extensions : 0;
+        extensions = !moveCount || (depth + moveCount <= 13) ? extensions : 0;
     
         if (currentMove == excluded)
             continue;
@@ -295,32 +329,6 @@ int SearchState::search(int alpha, int beta, Position &pos, int depth, SearchInf
             && depth <= 6
             && history < -6011 * expectedDepth - (-6305 * stack->quarterRed) / 4)
             continue;
-
-        if (   depth >= 8
-            && !ROOT
-            && ttHit
-            && currentMove == ttMove
-            && ttBound != UPPER
-            && ttDepth >= depth - 3
-            && !excluded) {
-            
-            int singDepth = depth / 2;
-            int singBeta  = ttScore - 12 + std::min(si.rootMoveCount * 2, 12); 
-
-            stack->excluded = ttMove;
-            stack->currMove = NO_MOVE;
-
-            score = search<nt>(singBeta - 1, singBeta, pos, singDepth, si, stack);
-
-            stack->excluded = NO_MOVE;
-
-            if (score < singBeta)
-                extensions = 1;
-
-            if (   score > singBeta
-                && stack->currMove) 
-                mp.setPrioMove(stack->currMove);
-        }
 
         prefetchTTEntry(pos, pc, from, to, capture);
 
