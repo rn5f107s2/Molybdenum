@@ -108,16 +108,16 @@ int rootSearch(Position &pos, SearchInfo &si, SearchStack *stack, int maxDepth) 
         pos.makeMove(move);
         si.nodeCount++;
 
-        int alpha =  INFINITE;
-        int beta  = -INFINITE;
-        int delta = 100;
+        int alpha = -INFINITE;
+        int beta  =  INFINITE;
+        int delta = 50;
 
         if (depths[idx] >= 2) {
-            alpha = scores[idx] + delta;
-            beta  = scores[idx] - delta;
+            alpha = scores[idx] - delta;
+            beta  = scores[idx] + delta;
         }
 
-        int score = -search<PVNode>(-alpha, -beta, pos, depths[idx]++, si, stack+1);
+        int score = -search<PVNode>(-beta, -alpha, pos, depths[idx]++, si, stack+1);
 
         if ((score >= beta || score <= alpha) && !stop<Hard>(si.st, si))
             score = -search<PVNode>(-INFINITE, INFINITE, pos, depths[idx]++, si, stack+1);
