@@ -56,6 +56,8 @@ public:
     bool done();
 
     u64 nodes();
+
+    std::atomic_bool doneSearching;
 };
 
 #endif

@@ -41,6 +41,7 @@ void UCI::uci([[maybe_unused]] const std::string &args) {
 }
 
 void UCI::isready([[maybe_unused]] const std::string &args) {
+    while (!threads.doneSearching.load(std::memory_order_relaxed)) {}
     std::cout << "readyok" << std::endl;
 }
 

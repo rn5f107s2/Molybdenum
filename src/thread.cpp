@@ -40,6 +40,8 @@ u64 Thread::nodes() {
 }
 
 void ThreadPool::start(Position &pos, SearchTime &st, int depth) {
+    doneSearching.store(false);
+
     // Before starting the threads set all of them to searching, to avoid the mainthread stopping search
     // while other threads havent been started yet, also reset SearchInfo here, to avoid reading old nodecounts
     for (auto &t : threads) {
