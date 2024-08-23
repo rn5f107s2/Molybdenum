@@ -14,6 +14,7 @@
 #endif
 
 #include <string.h>
+#include <cmath>
 
 #include "Constants.h"
 #include "BitStuff.h"
@@ -82,4 +83,17 @@ float PolicyNet::forward(Move move, bool stm) {
     out += weights.l1Biases[idx];
 
     return float(out) / float(255 * 64);
+}
+
+void PolicyNet::scoreMovesList(MoveList &ml, bool stm, std::array<u64, 13> &bitboards, u64 threats, int temperature) {
+    initAccumulator(bitboards, stm, threats);
+
+    float scores[218];
+    float sum = 0;
+
+    for (int i = 0; i < ml.length; i++)
+        sum += (scores[i] = std::exp(forward(ml.moves[i].move, stm) / float(temperature)));
+
+    for (int i = 0; i < ml.length; i++)
+        ml.moves[i].score = int((scores[i] / sum) * 16384.0f);
 }

@@ -67,4 +67,15 @@ inline std::string moveToString(Move move) {
     return moveS;
 }
 
+struct ScoredMove {
+    Move move;
+    int score;
+};
+
+struct MoveList {
+    std::array<ScoredMove, 218> moves = {};
+    int currentIdx = 0;
+    int length = 0;
+};
+
 #endif //MOLYBDENUM_MOVE_H

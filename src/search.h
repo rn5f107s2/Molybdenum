@@ -37,8 +37,8 @@ extern u64 benchNodes;
 static Move emptyMove = NO_MOVE;
 
 int startSearch(Position &pos, searchTime &st, int maxDepth = MAXDEPTH, Move &bm = emptyMove);
-int iterativeDeepening(Position  &pos, searchTime &st, int maxDepth = MAXDEPTH, Move &bm = emptyMove);
-int aspirationWindow(int prevScore, Position &pos, SearchInfo &si, int depth);
+int iterativeDeepening(Position &pos, searchTime &st, int maxDepth = MAXDEPTH, Move &bm = emptyMove);
+int start(Position &pos, SearchInfo &si, int depth);
 void clearHistory();
 
 inline std::array<double, 256> initReductions() {
@@ -66,6 +66,34 @@ template<LimitType LT> inline
 bool stop(searchTime &st, SearchInfo &si) {
     return    (std::chrono::steady_clock::now() > (si.st.searchStart + si.st.thinkingTime[LT]) && st.limit == Time)
               || (st.limit == Nodes && si.nodeCount >= st.nodeLimit);
+}
+
+inline float sigmoid(int val) {
+    return 1 / (1 + std::exp((1.0f / 133.0f) * float(-val)));
+}
+
+inline Move selectMove(MoveList &ml, std::array<int, 218> &depths, std::array<int, 218> &scores, float cpuct, float fpu, uint64_t nodeCount) {
+    int   bestIdx  = 0;
+    float best     = -1.0f;
+
+    const int d0Visits = 20;
+    const float base   = 2.0f;
+
+    for (int i = 0; i < ml.length; i++) {
+        const int approxVisits = d0Visits * pow(base, depths[i]);
+
+        const float q = depths[i] ? sigmoid(scores[i]) : fpu;
+        
+        float thisVal = q + (float(ml.moves[i].score) / 16384.0f) * cpuct * std::sqrt(nodeCount + 1) / (approxVisits);
+
+        if (thisVal <= best)
+            continue;
+
+        best    = thisVal;
+        bestIdx = i; 
+    }
+
+    return bestIdx;
 }
 
 #endif //MOLYBDENUM_SEARCH_H

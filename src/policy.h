@@ -28,6 +28,7 @@ class PolicyNet {
 public:
     void  loadDefault();
     void  initAccumulator(std::array<u64, 13> &bitboards, Color stm, u64 threats);
+    void  scoreMovesList(MoveList &ml, bool stm, std::array<u64, 13> &bitboards, u64 threats, int temperature = 1);
     float forward(Move move, bool stm);
 };
 

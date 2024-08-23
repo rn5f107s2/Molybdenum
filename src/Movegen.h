@@ -17,11 +17,6 @@ const std::array<std::array<u64, 4096>, 64> rookUpTable = initRookUpTable();
 const std::array<std::array<u64, 64>, 64> masksBBs = initMaskBB();
 const std::array<std::array<u64, 64>, 64> extendedMasksBBs = initExtendedMaskBB();
 
-struct ScoredMove {
-    Move move;
-    int score;
-};
-
 struct MovegenVariables {
     u64 white;
     u64 black;
@@ -39,12 +34,6 @@ struct MovegenVariables {
     int pawnIdx;
     int oppPawnIdx;
     int kingSquare;
-};
-
-struct MoveList {
-    std::array<ScoredMove, 218> moves = {};
-    int currentIdx = 0;
-    int length = 0;
 };
 
 template<PieceType TYPE> inline

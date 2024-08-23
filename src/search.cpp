@@ -29,6 +29,7 @@ enum NodeType {
 template<NodeType NT>
 int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, SearchStack *stack);
 int qsearch(int alpha, int beta, Position &pos, SearchInfo &si, SearchStack *stack);
+int rootSearch(Position &pos, SearchInfo &si, SearchStack *stack, int depth);
 
 int startSearch(Position &pos, searchTime &st, int maxDepth, Move &bestMove) {
     return iterativeDeepening(pos, st, maxDepth,bestMove);
@@ -44,94 +45,95 @@ void clearHistory() {
 }
 
 int iterativeDeepening(Position  &pos, searchTime &st, int maxDepth, [[maybe_unused]] Move &bestMove) {
-    int score = 0;
-    int prevScore = 0;
     SearchInfo si;
     si.st = st;
 
-    for (int depth = 1; depth != maxDepth; depth++) {
-        score = aspirationWindow(score, pos, si, depth);
-
-        if (stop<Hard>(st, si))
-            break;
-
-#ifndef DATAGEN
-        std::string uciOutput;
-        auto searchTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - si.st.searchStart).count();
-        uciOutput += "info depth ";
-        uciOutput += std::to_string(depth);
-
-        uciOutput += " seldepth ";
-        uciOutput += std::to_string(si.selDepth);
-
-        uciOutput += " currmove ";
-        uciOutput += moveToString(si.bestRootMove);
-
-        uciOutput += " score ";
-        uciOutput += abs(score) > MAXMATE ? "mate " : "cp ";
-        uciOutput += std::to_string(abs(score) > MAXMATE ? mateInPlies(score) : score);
-
-        uciOutput += " nodes ";
-        uciOutput += std::to_string(si.nodeCount);
-
-        uciOutput += " time ";
-        uciOutput += std::to_string(searchTime);
-
-        uciOutput += " nps ";
-        uciOutput += std::to_string((si.nodeCount / std::max(int(searchTime), 1)) * 1000);
-
-        uciOutput += " pv ";
-        for (int i = 0; i < pvLength[0]; i++)
-            uciOutput += moveToString(pvMoves[0][i]) + " ";
-
-        std::cout << uciOutput << std::endl;
-
-        if (stop<Soft>(st, si))
-            break;
-    }
-
-    benchNodes += si.nodeCount;
-    std::cout << "bestmove " << moveToString(si.bestRootMove) << std::endl;
-#else
-    prevScore = score;
-    }
-    bestMove = si.bestRootMove;
-#endif
-    return prevScore;
+    return start(pos, si, maxDepth);
 }
 
-int aspirationWindow(int prevScore, Position &pos, SearchInfo &si, int depth) {
-    int delta = std::clamp(79 - depth * depth, 23, 34);
-    int alpha = -INFINITE;
-    int beta  =  INFINITE;
-
-    if (depth >= 2) {
-        alpha = std::max(-INFINITE, prevScore - delta);
-        beta  = std::min( INFINITE, prevScore + delta);
-    }
-
+int start(Position &pos, SearchInfo &si, int depth) {
     std::array<SearchStack, STACKSIZE> stack;
     stack[0].contHist = &continuationHistory[NO_PIECE][0];
     stack[1].contHist = &continuationHistory[NO_PIECE][0];
 
-    si.selDepth = 0;
+    return rootSearch(pos, si, &stack[2], depth);
+}
 
-    int score = search<Root>(alpha, beta, pos, depth, si, &stack[2]);
+int rootSearch(Position &pos, SearchInfo &si, SearchStack *stack, int maxDepth) {     
+    u64 ksq = pos.getPieces(pos.sideToMove, KING);     
+    u64 checkers = attackersTo<false, false>(lsb(ksq), pos.getOccupied(), pos.sideToMove ? BLACK_PAWN : WHITE_PAWN, pos);
+    u64 threats  = getThreats(pos, !pos.sideToMove);
 
-    while ((score >= beta || score <= alpha) && !stop<Hard>(si.st, si)) {
-        delta *= 1.23;
+    MoveList ml;     
+    generateMoves<false>(pos, ml, checkers);
 
-        if (score >= beta)
-            beta = std::max(score + delta, INFINITE);
-        else
-            alpha = std::max(score - delta, -INFINITE);
+    std::array<int, 218> depths;
+    std::array<int, 218> scores;
 
-        si.selDepth = 0;
+    scores.fill(-INFINITE);
+    depths.fill(0);
 
-        score = search<Root>(alpha, beta, pos, depth, si, &stack[2]);
+    const float cpuct       = 2.35f;
+    const float temperature = 4.17f;
+    const float fpu         = 1.0f;
+
+    pos.policyNet.scoreMovesList(ml, pos.sideToMove, pos.bitBoards, threats, temperature);
+
+    stack->plysInSearch = 0;
+    stack->quarterRed   = 0;
+    stack->staticEval   = evaluate(pos);
+
+    while (!stop<Soft>(si.st, si)) {
+
+        if (si.st.limit == Depth) {
+            int total = 0;
+
+            for (int i = 0; i < ml.length; i++)
+                total += depths[i];
+
+            if ((total / ml.length) >= maxDepth)
+                break;
+        }
+
+        int idx = selectMove(ml, depths, scores, cpuct, fpu, si.nodeCount);
+
+        Move move = ml.moves[idx].move;
+        int  from = extract<FROM>(move);
+        int  to   = extract<TO  >(move);
+        int  pc   = pos.pieceOn(from);
+
+        stack->currMove = move;
+        stack->contHist = &continuationHistory[pc][to];
+
+        pos.makeMove(move);
+        si.nodeCount++;
+
+        int score = -search<PVNode>(-INFINITE, INFINITE, pos, depths[idx]++, si, stack+1);
+
+        pos.unmakeMove(move);
+
+        if (stop<Hard>(si.st, si))
+            break;
+
+        scores[idx] = score;
     }
 
-    return score;
+    int  bestScore = -INFINITE;
+    Move bestMove  = NO_MOVE;
+
+    for (int i = 0; i < ml.length; i++) {
+        if (scores[i] > bestScore) {
+            bestScore = scores[i];
+            bestMove  = ml.moves[i].move;
+        }
+    }
+
+    std::cout << "info depth 1 score cp " << bestScore << " nodes " << si.nodeCount << "\n";
+    std::cout << "bestmove " << moveToString(bestMove) << std::endl;
+
+    benchNodes += si.nodeCount; 
+
+    return bestScore;
 }
 
 template<NodeType nt>
