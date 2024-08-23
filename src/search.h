@@ -58,7 +58,6 @@ enum NodeType {
     Root, PVNode, NonPvNode
 };
 
-extern u64 benchNodes;
 static Move emptyMove = NO_MOVE;
 
 class SearchState {

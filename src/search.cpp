@@ -10,8 +10,6 @@
 #include <chrono>
 #include <algorithm>
 
-u64 benchNodes = 0;
-
 #include "tune.h"
 
 #ifdef TUNE
@@ -94,8 +92,6 @@ int SearchState::iterativeDeepening(Position  &pos, SearchTime &st, int maxDepth
         while (!thread->threads->done()) {}
         std::cout << "bestmove " << moveToString(si.bestRootMove) << std::endl;
     }
-
-    benchNodes += si.nodeCount.load(std::memory_order_relaxed);
 
 #else
     prevScore = score;

@@ -73,13 +73,14 @@ void UCI::bench([[maybe_unused]] const std::string &args) {
 
     SearchTime st;
     st.limit = Depth;
-    benchNodes = 0;
+    uint64_t benchNodes = 0;
     threads.clear();
 
     for (int i = 0; i != BENCH_SIZE; i++) {
         internalBoard.setBoard(positions[i]);
         go("depth " + std::to_string(BENCH_DEPTH));
         while (!threads.done()) {}
+        benchNodes += threads.nodes();
         threads.clear();
 
         std::cout << "\n";
