@@ -84,6 +84,7 @@ int rootSearch(Position &pos, SearchInfo &si, SearchStack *stack, int maxDepth) 
     stack->staticEval   = evaluate(pos);
 
     while (!stop<Soft>(si.st, si)) {
+        int bestScore = -INFINITE;
 
         if (si.st.limit == Depth) {
             int total = 0;
@@ -94,6 +95,9 @@ int rootSearch(Position &pos, SearchInfo &si, SearchStack *stack, int maxDepth) 
             if ((total / ml.length) >= maxDepth)
                 break;
         }
+
+        for (int i = 0; i < ml.length; i++)
+            bestScore = std::max(bestScore, scores[i]);
 
         int idx = selectMove(ml, depths, scores, cpuct, fpu, si.nodeCount);
 
@@ -120,7 +124,7 @@ int rootSearch(Position &pos, SearchInfo &si, SearchStack *stack, int maxDepth) 
         int score = -search<PVNode>(-beta, -alpha, pos, depths[idx]++, si, stack+1);
 
         if ((score >= beta || score <= alpha) && !stop<Hard>(si.st, si))
-            score = -search<PVNode>(-INFINITE, INFINITE, pos, depths[idx]++, si, stack+1);
+            score = -search<PVNode>(-INFINITE, INFINITE, pos, depths[idx]- 1, si, stack+1);
 
         pos.unmakeMove(move);
 
