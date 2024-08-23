@@ -124,7 +124,7 @@ int rootSearch(Position &pos, SearchInfo &si, SearchStack *stack, int maxDepth) 
 
         pos.unmakeMove(move);
 
-        if (stop<Hard>(si.st, si))
+        if (stop<Hard>(si.st, si) && depths[idx] != 1)
             break;
 
         scores[idx] = score;
