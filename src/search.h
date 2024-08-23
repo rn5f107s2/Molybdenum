@@ -72,7 +72,7 @@ inline float sigmoid(int val) {
     return 1 / (1 + std::exp((1.0f / 133.0f) * float(-val)));
 }
 
-inline Move selectMove(MoveList &ml, std::array<int, 218> &depths, std::array<int, 218> &scores, float cpuct, float fpu, uint64_t nodeCount) {
+inline Move selectMove(MoveList &ml, std::array<uint64_t, 218> &nodes, std::array<int, 218> &scores, float cpuct, float fpu, uint64_t nodeCount) {
     int   bestIdx  = 0;
     float best     = -1.0f;
 
@@ -80,11 +80,11 @@ inline Move selectMove(MoveList &ml, std::array<int, 218> &depths, std::array<in
     const float base   = 2.0f;
 
     for (int i = 0; i < ml.length; i++) {
-        const int approxVisits = d0Visits * pow(base, depths[i]);
+        //const int approxVisits = d0Visits * pow(base, nodes[i]);
 
-        const float q = depths[i] ? sigmoid(scores[i]) : fpu;
+        const float q = nodes[i] ? sigmoid(scores[i]) : fpu;
         
-        float thisVal = q + (float(ml.moves[i].score) / 16384.0f) * cpuct * std::sqrt(nodeCount + 1) / (approxVisits);
+        float thisVal = q + (float(ml.moves[i].score) / 16384.0f) * cpuct * std::sqrt(nodeCount + 1) / (1 + nodes[i]);
 
         if (thisVal <= best)
             continue;

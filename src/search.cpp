@@ -68,10 +68,12 @@ int rootSearch(Position &pos, SearchInfo &si, SearchStack *stack, int maxDepth) 
     generateMoves<false>(pos, ml, checkers);
 
     std::array<int, 218> depths;
+    std::array<uint64_t, 218> nodes;
     std::array<int, 218> scores;
 
     scores.fill(-INFINITE);
     depths.fill(0);
+    nodes.fill(0);
 
     const float cpuct       = 2.35f;
     const float temperature = 4.17f;
@@ -99,7 +101,7 @@ int rootSearch(Position &pos, SearchInfo &si, SearchStack *stack, int maxDepth) 
         for (int i = 0; i < ml.length; i++)
             bestScore = std::max(bestScore, scores[i]);
 
-        int idx = selectMove(ml, depths, scores, cpuct, fpu, si.nodeCount);
+        int idx = selectMove(ml, nodes, scores, cpuct, fpu, si.nodeCount);
 
         Move move = ml.moves[idx].move;
         int  from = extract<FROM>(move);
@@ -121,7 +123,11 @@ int rootSearch(Position &pos, SearchInfo &si, SearchStack *stack, int maxDepth) 
             beta  = scores[idx] + delta;
         }
 
+        nodes[idx] -= si.nodeCount;
+
         int score = -search<PVNode>(-beta, -alpha, pos, depths[idx]++, si, stack+1);
+
+        nodes[idx] += si.nodeCount;
 
         if ((score >= beta || score <= alpha) && !stop<Hard>(si.st, si))
             score = -search<PVNode>(-INFINITE, INFINITE, pos, depths[idx]- 1, si, stack+1);
