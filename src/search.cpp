@@ -121,7 +121,7 @@ int rootSearch(Position &pos, SearchInfo &si, SearchStack *stack, int maxDepth) 
             beta  = scores[idx] + delta;
         }
 
-        bool pv = beta > bestScore;
+        bool pv = beta > bestScore && alpha < bestScore;
 
         int score = pv ? -search<PVNode   >(-beta, -alpha, pos, depths[idx]++, si, stack+1)
                        : -search<NonPvNode>(-beta, -alpha, pos, depths[idx]++, si, stack+1);
