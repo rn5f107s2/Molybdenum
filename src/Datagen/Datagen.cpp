@@ -107,6 +107,10 @@ void playGame(Position &pos, const std::string& filename, u64 &fenCount) {
         scores.push(score * (pos.sideToMove ? 1 : -1));
         bestMoves.push(bestMove);
 
+        pos.printBoard();
+        std::cout << moveToString(bestMove) << std::endl;
+        std::cout << std::endl;
+
         pos.makeMove(bestMove);
         pos.movecount++;
     }
