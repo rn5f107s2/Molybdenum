@@ -65,7 +65,7 @@ bool verifyExit(Position &pos) {
 void playGame(Position &pos, const std::string& filename, u64 &fenCount) {
     int adjCounter = 0;
     int wadjCounter = 0;
-    int wadjReq = int(seedDataGen % 20) + 5;
+    int wadjReq = 7;
     std::string result;
     Stack<int> scores;
     Stack<std::string> fens;
@@ -78,12 +78,12 @@ void playGame(Position &pos, const std::string& filename, u64 &fenCount) {
     while (true) {
         Move bestMove;
         searchTime st;
-        st.nodeLimit = 25000;
+        st.nodeLimit = 5000;
         st.limit = Nodes;
 
         int score = startSearch(pos, st, MAXDEPTH, bestMove);
 
-        if (abs(score) > 300)
+        if (abs(score) > 1000)
             wadjCounter++;
         else
             wadjCounter = 0;
@@ -103,11 +103,10 @@ void playGame(Position &pos, const std::string& filename, u64 &fenCount) {
             break;
         }
 
-        if (!pos.isCapture(bestMove) && extract<FLAG>(bestMove) != PROMOTION) {
-            fens.push(pos.fen());
-            scores.push(score * (pos.sideToMove ? 1 : -1));
-            bestMoves.push(bestMove);
-        }
+        fens.push(pos.fen());
+        scores.push(score * (pos.sideToMove ? 1 : -1));
+        bestMoves.push(bestMove);
+
         pos.makeMove(bestMove);
         pos.movecount++;
     }
@@ -121,6 +120,8 @@ void playGame(Position &pos, const std::string& filename, u64 &fenCount) {
         fen += score;
         fen += " | ";
         fen += result;
+        fen += " | ";
+        fen += bestMove;
         fen += "\n";
         output << fen;
         fenCount++;

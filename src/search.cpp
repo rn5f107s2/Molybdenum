@@ -48,7 +48,10 @@ int iterativeDeepening(Position  &pos, searchTime &st, int maxDepth, [[maybe_unu
     SearchInfo si;
     si.st = st;
 
-    return start(pos, si, maxDepth);
+    int score = start(pos, si, maxDepth);
+    bestMove = si.bestRootMove;
+
+    return score;
 }
 
 int start(Position &pos, SearchInfo &si, int depth) {
@@ -144,10 +147,13 @@ int rootSearch(Position &pos, SearchInfo &si, SearchStack *stack, int maxDepth) 
         }
     }
 
+#ifndef DATAGEN
     std::cout << "info depth 1 score cp " << bestScore << " nodes " << si.nodeCount << "\n";
     std::cout << "bestmove " << moveToString(bestMove) << std::endl;
+#endif
 
     benchNodes += si.nodeCount; 
+    si.bestRootMove = bestMove;
 
     return bestScore;
 }
