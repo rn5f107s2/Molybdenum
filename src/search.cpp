@@ -149,7 +149,20 @@ int rootSearch(Position &pos, SearchInfo &si, SearchStack *stack, int maxDepth) 
     int  bestScore = -INFINITE;
     Move bestMove  = NO_MOVE;
 
+    double temp     = 1;
+    double realTemp = std::max(temp / 16.0, 0.001);
+
+    double s[218];
+    double sum = 0;
+
+    for (int i = 0; i < ml.length; i++)
+        sum += (s[i] = std::exp(sigmoid(scores[i]) / realTemp));
+
     for (int i = 0; i < ml.length; i++) {
+        double probability = s[i] / sum;
+
+        std::cout << moveToString(ml.moves[i].move) << " " << probability  << " " << scores[i] << std::endl;
+
         if (scores[i] > bestScore) {
             bestScore = scores[i];
             bestMove  = ml.moves[i].move;
