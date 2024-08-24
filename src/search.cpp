@@ -114,7 +114,7 @@ int rootSearch(Position &pos, SearchInfo &si, SearchStack *stack, int maxDepth) 
 
         int alpha = -INFINITE;
         int beta  =  INFINITE;
-        int delta = 50;
+        int delta = std::clamp(79 - depths[idx] * depths[idx], 23, 34);
 
         if (depths[idx] >= 2) {
             alpha = scores[idx] - delta;
@@ -123,8 +123,18 @@ int rootSearch(Position &pos, SearchInfo &si, SearchStack *stack, int maxDepth) 
 
         int score = -search<PVNode>(-beta, -alpha, pos, depths[idx]++, si, stack+1);
 
-        if ((score >= beta || score <= alpha) && !stop<Hard>(si.st, si))
-            score = -search<PVNode>(-INFINITE, INFINITE, pos, depths[idx]- 1, si, stack+1);
+        while ((score >= beta || score <= alpha) && !stop<Hard>(si.st, si)) {
+            delta *= 1.23;
+
+            if (score >= beta)
+                beta = std::max(score + delta, INFINITE);
+            else
+                alpha = std::max(score - delta, -INFINITE);
+
+            si.selDepth = 0;
+
+            score = -search<PVNode>(-beta, -alpha, pos, depths[idx]++, si, stack+1);
+        }
 
         pos.unmakeMove(move);
 
