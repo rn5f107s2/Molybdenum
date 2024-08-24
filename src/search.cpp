@@ -121,12 +121,9 @@ int rootSearch(Position &pos, SearchInfo &si, SearchStack *stack, int maxDepth) 
         if (depths[idx] >= 2) {
             alpha = scores[idx] - delta;
             beta  = scores[idx] + delta;
-
-            if (scores[idx] < bestScore)
-                beta = std::min(bestScore, beta);
         }
 
-        bool pv = scores[idx] == bestScore;
+        bool pv = beta > bestScore;
 
         int score = pv ? -search<PVNode   >(-beta, -alpha, pos, depths[idx]++, si, stack+1)
                        : -search<NonPvNode>(-beta, -alpha, pos, depths[idx]++, si, stack+1);
