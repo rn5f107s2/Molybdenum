@@ -114,7 +114,7 @@ int rootSearch(Position &pos, SearchInfo &si, SearchStack *stack, int maxDepth) 
 
         int alpha = -INFINITE;
         int beta  =  INFINITE;
-        int delta = 50;
+        int delta = 25;
 
         if (depths[idx] >= 2) {
             alpha = scores[idx] - delta;
