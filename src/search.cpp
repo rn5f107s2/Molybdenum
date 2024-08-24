@@ -73,9 +73,9 @@ int rootSearch(Position &pos, SearchInfo &si, SearchStack *stack, int maxDepth) 
     scores.fill(-INFINITE);
     depths.fill(0);
 
-    const float cpuct       = 2.35f;
-    const float temperature = 4.17f;
-    const float fpu         = 1.0f;
+    const float cpuct       = 7.31f;
+    const float temperature = 4.78f;
+    const float fpu         = 0.66f;
 
     pos.policyNet.scoreMovesList(ml, pos.sideToMove, pos.bitBoards, threats, temperature);
 
@@ -114,7 +114,7 @@ int rootSearch(Position &pos, SearchInfo &si, SearchStack *stack, int maxDepth) 
 
         int alpha = -INFINITE;
         int beta  =  INFINITE;
-        int delta = 50;
+        int delta = 26;
 
         if (depths[idx] >= 2) {
             alpha = scores[idx] - delta;

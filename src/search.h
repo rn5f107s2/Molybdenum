@@ -76,8 +76,8 @@ inline Move selectMove(MoveList &ml, std::array<int, 218> &depths, std::array<in
     int   bestIdx  = 0;
     float best     = -1.0f;
 
-    const int d0Visits = 20;
-    const float base   = 2.0f;
+    const int d0Visits = 14;
+    const float base   = 2.87f;
 
     for (int i = 0; i < ml.length; i++) {
         const int approxVisits = d0Visits * pow(base, depths[i]);
