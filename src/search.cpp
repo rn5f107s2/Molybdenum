@@ -70,6 +70,15 @@ int rootSearch(Position &pos, SearchInfo &si, SearchStack *stack, int maxDepth) 
     MoveList ml;     
     generateMoves<false>(pos, ml, checkers);
 
+    if (!ml.length) {
+        int res = checkers ? -MATE : DRAW;
+#ifndef DATAGEN
+        std::cout << "info depth 1 score " << (checkers ? "mate " : "cp ") << (checkers ? mateInPlies(res) : res) << std::endl;
+        std::cout << "bestmove (none)" << std::endl;
+#endif
+        return res;
+    }
+
     std::array<int, 218> depths;
     std::array<int, 218> scores;
 
