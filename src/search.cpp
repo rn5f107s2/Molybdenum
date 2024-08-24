@@ -149,7 +149,11 @@ int rootSearch(Position &pos, SearchInfo &si, SearchStack *stack, int maxDepth) 
     int  bestScore = -INFINITE;
     Move bestMove  = NO_MOVE;
 
-    double temp     = 1;
+    double startTemp           = 1.0f;
+    double tempDampeningFactor = 0.95f;
+
+    double temp = startTemp * std::pow(tempDampeningFactor, pos.movecount);
+
     double realTemp = std::max(temp / 16.0, 0.001);
 
     double s[218];
