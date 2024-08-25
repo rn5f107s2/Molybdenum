@@ -18,6 +18,8 @@ jobs:
           platform: x64
       - name: Compile Molybdenum
         run: make
+      - name: Benchmarking
+        run: build/Molybdenum bench
       - name: Compile Datagen
         run: make datagen
   build_windows:
@@ -31,6 +33,17 @@ jobs:
           version: latest
           platform: x64
       - name: Compile Molybdenum
-        run: make
+        run: |
+          make
+          cd build
+          ren Molybdenum Molybdenum.exe
+      - name: Benchmarking
+        run: build/Molybdenum bench
+      - name: Upload Molybdenum (Win x64)
+        uses: actions/upload-artifact@v4
+        with:
+          name: Molybdenum-${{ github.sha }}.exe
+          path: build/Molybdenum.exe
+          retention-days: 3
       - name: Compile Datagen
         run: make datagen
