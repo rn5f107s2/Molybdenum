@@ -5,14 +5,20 @@
 #include "Constants.h"
 #include "Movepicker.h"
 #include "searchUtil.h"
+
 #include <chrono>
 #include <algorithm>
+#include <random>
 
 std::array<std::array<Move, 2>, STACKSIZE> killers;
 SideFromToHist mainHistory;
 ContHist continuationHistory;
 std::array<std::array<Move, MAXDEPTH>, MAXDEPTH> pvMoves;
 std::array<int, MAXDEPTH> pvLength;
+
+std::random_device rd;
+std::mt19937 gen(rd());
+std::uniform_real_distribution<> dis(0.0, 1.0);
 
 u64 benchNodes = 0;
 
@@ -158,19 +164,24 @@ int rootSearch(Position &pos, SearchInfo &si, SearchStack *stack, int maxDepth) 
 
     double s[218];
     double sum = 0;
+    double rn  = dis(gen);
 
-    for (int i = 0; i < ml.length; i++)
+    for (int i = 0; i < ml.length; i++) {
         sum += (s[i] = std::exp(sigmoid(scores[i]) / realTemp));
+
+        if (scores[i] > bestScore)
+            bestScore = scores[i];
+    }
 
     for (int i = 0; i < ml.length; i++) {
         double probability = s[i] / sum;
 
-        std::cout << moveToString(ml.moves[i].move) << " " << probability  << " " << scores[i] << std::endl;
-
-        if (scores[i] > bestScore) {
-            bestScore = scores[i];
-            bestMove  = ml.moves[i].move;
+        if (probability >= rn || (i == ml.length - 1)) {
+            bestMove = ml.moves[i].move;
+            break;
         }
+
+        rn -= probability;
     }
 
 #ifndef DATAGEN
