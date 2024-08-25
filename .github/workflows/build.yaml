@@ -18,5 +18,7 @@ jobs:
           platform: x64
       - name: Compile Molybdenum
         run: make
+      - name: Run bench
+        run: ./build/Molybdenum bench
       - name: Compile Datagen
         run: make datagen
