@@ -160,7 +160,7 @@ int rootSearch(Position &pos, SearchInfo &si, SearchStack *stack, int maxDepth) 
 
     double temp = startTemp * std::pow(tempDampeningFactor, pos.movecount);
 
-    double realTemp = std::max(temp / 16.0, 0.001);
+    double realTemp = std::max(temp / 16.0, 0.005);
 
     double s[218];
     double sum = 0;
@@ -175,6 +175,8 @@ int rootSearch(Position &pos, SearchInfo &si, SearchStack *stack, int maxDepth) 
 
     for (int i = 0; i < ml.length; i++) {
         double probability = s[i] / sum;
+
+        std::cout << moveToString(ml.moves[i].move) << " " << probability << std::endl;
 
         if (probability >= rn || (i == ml.length - 1)) {
             bestMove = ml.moves[i].move;
