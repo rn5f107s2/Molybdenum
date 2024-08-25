@@ -153,6 +153,7 @@ int rootSearch(Position &pos, SearchInfo &si, SearchStack *stack, int maxDepth) 
     }
 
     int  bestScore = -INFINITE;
+    int  bestIndex = 0;
     Move bestMove  = NO_MOVE;
 
     double startTemp           = 1.0f;
@@ -160,7 +161,7 @@ int rootSearch(Position &pos, SearchInfo &si, SearchStack *stack, int maxDepth) 
 
     double temp = startTemp * std::pow(tempDampeningFactor, pos.movecount);
 
-    double realTemp = std::max(temp / 16.0, 0.005);
+    double realTemp = std::max(temp / 16.0, 0.01);
 
     double s[218];
     double sum = 0;
@@ -169,14 +170,17 @@ int rootSearch(Position &pos, SearchInfo &si, SearchStack *stack, int maxDepth) 
     for (int i = 0; i < ml.length; i++) {
         sum += (s[i] = std::exp(sigmoid(scores[i]) / realTemp));
 
-        if (scores[i] > bestScore)
+        if (scores[i] > bestScore) {
             bestScore = scores[i];
+            bestIndex = i;
+        }
     }
 
-    for (int i = 0; i < ml.length; i++) {
-        double probability = s[i] / sum;
+    if (pos.movecount >= 35)
+        bestMove = ml.moves[bestIndex].move;
 
-        std::cout << moveToString(ml.moves[i].move) << " " << probability << std::endl;
+    for (int i = 0; i < ml.length && pos.movecount < 35; i++) {
+        double probability = s[i] / sum;
 
         if (probability >= rn || (i == ml.length - 1)) {
             bestMove = ml.moves[i].move;
