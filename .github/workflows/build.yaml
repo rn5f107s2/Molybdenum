@@ -1,0 +1,22 @@
+name: build_all
+run-name: Compile Molybdenum and Datagen
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+      - name: Setup clang++ for x64
+        uses:  egor-tensin/setup-clang@v1
+        with:
+          version: latest
+          platform: x64
+      - name: Compile Molybdenum
+        run: make
+      - name: Compile Datagen
+        run: make datagen
