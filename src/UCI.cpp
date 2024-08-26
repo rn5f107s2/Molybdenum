@@ -41,6 +41,7 @@ void UCI::uci([[maybe_unused]] const std::string &args) {
 }
 
 void UCI::isready([[maybe_unused]] const std::string &args) {
+    threads.join();
     std::cout << "readyok" << std::endl;
 }
 
@@ -190,16 +191,18 @@ void UCI::stop([[maybe_unused]] const std::string &args) {
 
 void UCI::start(int argc, char** argv) {
     if (argc == 1)
-        return loop();
+        loop();
 
     for (int i = 1; i < argc; i++) {
         std::string in = argv[i];
 
         if (in == "quit")
-            return;
+            break;
 
         handleInput(in);
     }
+
+    threads.join();
 }
 
 void UCI::loop() {    

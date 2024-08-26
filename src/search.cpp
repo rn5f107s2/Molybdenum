@@ -19,7 +19,6 @@ Tune tune;
 
 int SearchState::startSearch(Position &pos, SearchTime &st, int maxDepth, Move &bestMove) {
     int score = iterativeDeepening(pos, st, maxDepth, bestMove);
-    thread->detach();
     return score;
 }
 
