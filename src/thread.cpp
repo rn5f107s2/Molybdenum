@@ -24,7 +24,7 @@ void Thread::initSearchInfo(SearchTime st) {
 }
 
 void Thread::detach() {
-    while (!thread.joinable()) {}
+    while (!thread.joinable()) { if (thread.joinable()) break; }
 
     thread.detach();
 }
