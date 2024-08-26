@@ -308,6 +308,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
         
         stack->quarterRed = (red - reductions) * 4;
 
+#ifndef DATAGEN
         if (   !capture
             && bestScore > -MAXMATE
             && depth <= 4
@@ -327,6 +328,7 @@ int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, Search
             && depth <= 6
             && history < -6011 * expectedDepth - (-6305 * stack->quarterRed) / 4)
             continue;
+#endif
 
         if (   depth >= 8
             && !ROOT
