@@ -73,7 +73,7 @@ int rootSearch(Position &pos, SearchInfo &si, SearchStack *stack, int maxDepth) 
     scores.fill(-INFINITE);
     depths.fill(0);
 
-    const float cpuct       = 2.35f;
+    const float cpuct       = 20.35f;
     const float temperature = 2.00f;
     const float fpu         = 1.0f;
 
@@ -138,6 +138,7 @@ int rootSearch(Position &pos, SearchInfo &si, SearchStack *stack, int maxDepth) 
     Move bestMove  = NO_MOVE;
 
     for (int i = 0; i < ml.length; i++) {
+        //std::cout << moveToString(ml.moves[i].move) << " " << depths[i] << " " << scores[i] << std::endl;
         if (scores[i] > bestScore) {
             bestScore = scores[i];
             bestMove  = ml.moves[i].move;
