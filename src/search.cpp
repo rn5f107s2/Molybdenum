@@ -74,7 +74,7 @@ int rootSearch(Position &pos, SearchInfo &si, SearchStack *stack, int maxDepth) 
     depths.fill(0);
 
     const float cpuct       = 2.35f;
-    const float temperature = 2.00f;
+    const float temperature = 1.00f;
     const float fpu         = 1.0f;
 
     pos.policyNet.scoreMovesList(ml, pos.sideToMove, pos.bitBoards, threats, temperature);
