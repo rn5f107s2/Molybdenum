@@ -1,5 +1,6 @@
 #include <iostream>
 #include <iomanip>
+#include <fstream>
 
 #include "UCI.h"
 #include "Transpositiontable.h"
@@ -23,6 +24,9 @@ int main(int argc, char** argv) {
         { 0.0f, 57.0f, 58.0f, 59.0f, 60.0f, 61.0f, 62.0f, 63.0f, 64.0f, 0.0f },
         { 0.0f,  0.0f,  0.0f,  0.0f,  0.0f,  0.0f,  0.0f,  0.0f,  0.0f, 0.0f }
     }}}};
+
+    std::ifstream in("testweights.bin", std::ios::binary);
+    //cl.loadWeights(in);
 
     auto& output = cl.forward(paddedInput);
 

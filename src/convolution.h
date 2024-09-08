@@ -14,7 +14,7 @@ class ConvolutionalLayer {
 
     using Input   = std::array<std::array<std::array<float, DIM2_PADDED>, DIM1_PADDED>, IN_CHANNELS >;
     using Output  = std::array<std::array<std::array<float, DIM2_PADDED>, DIM1_PADDED>, OUT_CHANNELS>;
-    using Weights = std::array<std::array<std::array<std::array<float, KERNEL_SIZE>, KERNEL_SIZE>, OUT_CHANNELS>, IN_CHANNELS>;
+    using Weights = std::array<std::array<std::array<std::array<float, KERNEL_SIZE>, KERNEL_SIZE>, IN_CHANNELS>, OUT_CHANNELS>;
     using Biases  = Output;
 
     Output  output;
@@ -42,7 +42,7 @@ public:
                     for (int l = PADDING; l < DIM2 + PADDING; l++) {
                         for (int m = -PADDING; m < KERNEL_SIZE - PADDING; m++) {
                             for (int n = -PADDING; n < KERNEL_SIZE - PADDING; n++) {
-                                output[j][k][l] += input[i][k + m][l + n] * weights[i][j][m + PADDING][n + PADDING];
+                                output[j][k][l] += input[i][k + m][l + n] * weights[j][i][m + PADDING][n + PADDING];
                             }
                         }
                     }
@@ -54,18 +54,17 @@ public:
     }
 
     void loadWeights(std::ifstream &in) {
-        in.read(reinterpret_cast<char*>(&weights), sizeof(Weights));
-
-        memset(&biases, 0, sizeof(Biases));
         float bias;
 
+        in.read(reinterpret_cast<char*>(&weights), sizeof(Weights));
+        memset(&biases, 0, sizeof(Biases));
+
         for (int i = 0; i < OUT_CHANNELS; i++) {
-            for (int j = PADDING; j < DIM1_PADDED + PADDING; i++) {
-                for (int k = PADDING; k < DIM1_PADDED + PADDING; k++) {
-                    in.read(reinterpret_cast<char*>(&bias), sizeof(float));
+            in.read(reinterpret_cast<char*>(&bias), sizeof(float));
+
+            for (int j = PADDING; j < DIM1 + PADDING; j++)
+                for (int k = PADDING; k < DIM2 + PADDING; k++)
                     biases[i][j][k] = bias;
-                }
-            }
         }
     }
 };
