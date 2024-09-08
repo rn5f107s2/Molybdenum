@@ -73,7 +73,7 @@ int rootSearch(Position &pos, SearchInfo &si, SearchStack *stack, int maxDepth) 
     scores.fill(-INFINITE);
     depths.fill(0);
 
-    const float cpuct       = 2.35f;
+    const float cpuct       = 4.70f;
     const float temperature = 2.00f;
     const float fpu         = 1.0f;
 
