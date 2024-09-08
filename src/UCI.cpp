@@ -1,6 +1,7 @@
 #include <string>
 #include <iostream>
 #include <chrono>
+#include <stdlib.h>
 
 #include "tune.h"
 #include "UCI.h"
@@ -39,7 +40,8 @@ void uciCommunication(const std::string& in) {
 #endif
 
     loadDefaultNet();
-    std::ifstream weights("weights.bin", std::ios::binary);
+    std::string home = getenv("HOME");
+    std::ifstream weights(home + "/Desktop/Moly/Molybdenum/weights.bin", std::ios::binary);
     internalBoard->policyNet.loadWeights(weights);
     internalBoard->setBoard("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     std::string input;

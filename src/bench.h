@@ -4,7 +4,7 @@
 #include <array>
 #include <string>
 
-const int BENCH_DEPTH = 3;
+const int BENCH_DEPTH = 2;
 const int BENCH_SIZE = 10;
 
 std::array<std::string, BENCH_SIZE> positions =
