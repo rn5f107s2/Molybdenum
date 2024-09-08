@@ -14,7 +14,7 @@
 
 class Position {
     public:
-        PolicyNet policyNet;
+        Network policyNet;
         void setBoard(std::string fen);
         void clearBoard();
         void printBoard();

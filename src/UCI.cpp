@@ -39,7 +39,8 @@ void uciCommunication(const std::string& in) {
 #endif
 
     loadDefaultNet();
-    internalBoard.policyNet.loadDefault();
+    std::ifstream weights("weights.bin", std::ios::binary);
+    internalBoard.policyNet.loadWeights(weights);
     internalBoard.setBoard("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     std::string input;
     options.init();

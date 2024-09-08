@@ -77,7 +77,9 @@ int rootSearch(Position &pos, SearchInfo &si, SearchStack *stack, int maxDepth) 
     const float temperature = 2.00f;
     const float fpu         = 1.0f;
 
-    pos.policyNet.scoreMovesList(ml, pos.sideToMove, pos.bitBoards, threats, temperature);
+    std::array<std::array<std::array<float, 10>, 10>, 12> input;
+    bbsToPaddedInput(pos.bitBoards, pos.sideToMove, input);
+    pos.policyNet.forward(input);
 
     stack->plysInSearch = 0;
     stack->quarterRed   = 0;
