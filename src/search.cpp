@@ -79,7 +79,7 @@ int rootSearch(Position &pos, SearchInfo &si, SearchStack *stack, int maxDepth) 
 
     std::array<std::array<std::array<float, 10>, 10>, 12> input;
     bbsToPaddedInput(pos.bitBoards, pos.sideToMove, input);
-    pos.policyNet.forward(input);
+    pos.policyNet.scoreMoveList(input, ml, temperature, pos.sideToMove);
 
     stack->plysInSearch = 0;
     stack->quarterRed   = 0;

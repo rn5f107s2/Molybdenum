@@ -26,7 +26,7 @@ const std::string name = "Molybdenum";
 const std::string version = "3.1";
 
 void uciCommunication(const std::string& in) {
-    Position internalBoard;
+    Position* internalBoard = new Position();
 
 #ifdef DATAGEN
     if (in.empty()) {
@@ -40,8 +40,8 @@ void uciCommunication(const std::string& in) {
 
     loadDefaultNet();
     std::ifstream weights("weights.bin", std::ios::binary);
-    internalBoard.policyNet.loadWeights(weights);
-    internalBoard.setBoard("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    internalBoard->policyNet.loadWeights(weights);
+    internalBoard->setBoard("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     std::string input;
     options.init();
 
@@ -51,7 +51,7 @@ void uciCommunication(const std::string& in) {
 #endif
 
     if (!in.empty()) {
-        uciLoop(in, internalBoard);
+        uciLoop(in, *internalBoard);
         return;
     }
 
@@ -61,7 +61,7 @@ void uciCommunication(const std::string& in) {
         if (contains(input, "quit"))
             return;
 
-        uciLoop(input, internalBoard);
+        uciLoop(input, *internalBoard);
     }
 }
 
