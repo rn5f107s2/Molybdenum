@@ -4,6 +4,7 @@
 #include <array>
 #include <cstdint>
 #include <vector>
+#include <sstream>
 
 #include "Move.h"
 #include "convolution.h"
@@ -85,7 +86,7 @@ struct Block {
         return out;
     }
 
-    void loadWeights(std::ifstream &in) {
+    void loadWeights(std::istream &in) {
         cl1.loadWeights(in);
         bn1.loadWeights(in);
         cl2.loadWeights(in);
@@ -127,7 +128,7 @@ struct Network {
             ml.moves[i].score = (scores[i] / sum) * 16384.0f;
     }
 
-    void loadWeights(std::ifstream &in) {
+    void loadWeights(std::istream &in) {
         cl1.loadWeights(in);
 
         for (Block &b : blocks)
@@ -135,6 +136,8 @@ struct Network {
 
         cl2.loadWeights(in);
     }
+
+    void loadDefault();
 
 private:
     Output& forward(Input &input) {

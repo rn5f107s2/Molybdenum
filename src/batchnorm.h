@@ -51,7 +51,7 @@ public:
         return output;
     }
 
-    void loadWeights(std::ifstream &in) {
+    void loadWeights(std::istream &in) {
         in.read(reinterpret_cast<char*>(&weights),  sizeof(Params));
         in.read(reinterpret_cast<char*>(&biases),   sizeof(Params));
         in.read(reinterpret_cast<char*>(&variance), sizeof(Params));

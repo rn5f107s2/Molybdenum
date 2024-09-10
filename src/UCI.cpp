@@ -40,9 +40,7 @@ void uciCommunication(const std::string& in) {
 #endif
 
     loadDefaultNet();
-    std::string home = getenv("HOME");
-    std::ifstream weights(home + "/Desktop/Moly/Molybdenum/weights.bin", std::ios::binary);
-    internalBoard->policyNet.loadWeights(weights);
+    internalBoard->policyNet.loadDefault();
     internalBoard->setBoard("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     std::string input;
     options.init();
