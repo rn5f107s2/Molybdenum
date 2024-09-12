@@ -14,23 +14,26 @@ enum Toggle {
 
 static const int INPUT_SIZE = 12 * 64;
 static const int L1_SIZE = 256;
-static const int OUTPUT_SIZE = 1;
-static const int NET_SIZE = 3;
-static const std::array<int, NET_SIZE> LAYER_SIZE = {INPUT_SIZE, L1_SIZE, OUTPUT_SIZE};
+static const int L2_SIZE = 8;
+static const int OUT_SIZE = 1;
 
 struct Weights {
-    std::array<int16_t , L1_SIZE * INPUT_SIZE> weights0{};
-    std::array<int16_t, L1_SIZE> bias0{};
-    std::array<int16_t, L1_SIZE * OUTPUT_SIZE * 2> weights1{};
-    std::array<int16_t, OUTPUT_SIZE> bias1{};
+    std::array<float, L1_SIZE * INPUT_SIZE> weights0{};
+    std::array<float, L1_SIZE> bias0{};
+    std::array<float, L1_SIZE * L2_SIZE * 2> weights1{};
+    std::array<float, L2_SIZE> bias1{};
+    std::array<float, L2_SIZE * OUT_SIZE> weights2{};
+    std::array<float, OUT_SIZE> bias2{};
 };
 
 class Net {
 public:
     std::array<int16_t , L1_SIZE * INPUT_SIZE> weights0{};
     std::array<int16_t, L1_SIZE> bias0{};
-    std::array<int16_t, L1_SIZE * OUTPUT_SIZE * 2> weights1{};
-    std::array<int16_t, OUTPUT_SIZE> bias1{};
+    std::array<float, L1_SIZE * L2_SIZE * 2> weights1{};
+    std::array<float, L2_SIZE> bias1{};
+    std::array<float, L2_SIZE * OUT_SIZE> weights2{};
+    std::array<float, OUT_SIZE> bias2{};
     std::array<std::array<int16_t, L1_SIZE>, 2> accumulator{};
     Stack<std::array<std::array<int16_t, L1_SIZE>, 2>, MAXDEPTH> accumulatorStack;
 
@@ -47,6 +50,11 @@ public:
 
 inline int screlu(int16_t input) {
     int clamped = std::clamp(input, int16_t(0), int16_t(255));
+    return clamped * clamped;
+}
+
+inline float screlu(float input) {
+    float clamped = std::clamp(input, 0.0f, 1.0f);
     return clamped * clamped;
 }
 

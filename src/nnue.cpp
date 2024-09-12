@@ -26,10 +26,16 @@ INCBIN(network, EVALFILE);
 const Weights defaultWeights = *reinterpret_cast<const Weights*>(gnetworkData);
 
 void Net::loadDefaultNet() {
-    weights0 = defaultWeights.weights0;
+    for (size_t i = 0; i < defaultWeights.weights0.size(); i++)
+        weights0[i] = int16_t(defaultWeights.weights0[i] * 255);
+
+    for (size_t i = 0; i < defaultWeights.bias0.size(); i++)
+        bias0[i] = int16_t(defaultWeights.bias0[i] * 255);
+
     weights1 = defaultWeights.weights1;
-    bias0 = defaultWeights.bias0;
-    bias1 = defaultWeights.bias1;
+    bias1    = defaultWeights.bias1;
+    weights2 = defaultWeights.weights2;
+    bias2    = defaultWeights.bias2;
 }
 
 void Net::initAccumulator(std::array<u64, 13> &bitboards) {
@@ -52,12 +58,18 @@ void Net::initAccumulator(std::array<u64, 13> &bitboards) {
 }
 
 int Net::calculate(Color c) {
-    int output = 0;
+    float out = bias2[0];
+    std::array<float, 8> output = bias1;
 
-    for (int n = 0; n != L1_SIZE; n++) {
-         output += screlu(accumulator[ c][n]) * weights1[n          ];
-         output += screlu(accumulator[!c][n]) * weights1[n + L1_SIZE];
+    for (int n = 0; n < L1_SIZE; n++) {
+        for (int m = 0; m < L2_SIZE; m++) {
+            output[m] += screlu(float(accumulator[ c][n]) / 255.0f) * weights1[n * L2_SIZE + m                    ];
+            output[m] += screlu(float(accumulator[!c][n]) / 255.0f) * weights1[n * L2_SIZE + m + L1_SIZE * L2_SIZE];
+        }
     }
 
-    return ((output / 255) + bias1[0]) * 133 / (64 * 255);
+    for (int n = 0; n < L2_SIZE; n++)
+        out += screlu(output[n]) * weights2[n];
+
+    return int(out * 133.0f);
 }
