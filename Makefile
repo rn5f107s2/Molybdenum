@@ -6,7 +6,6 @@ CXX=clang++
 DEFAULT_NET_NAME=params_new.bin
 DEFAULT_WDL_HEAD_NAME=net.nnue
 
-
 DEFAULT_EXE = $(OBJ_DIR)/Molybdenum
 DATAGEN_EXE = $(OBJ_DIR)/Datagen
 DEFAULT_NET = $(MOLY_DIR)/Nets/$(DEFAULT_NET_NAME)

@@ -71,7 +71,7 @@ void Net::initAccumulator(std::array<u64, 13> &bitboards) {
 
 int Net::calculate(Color c) {
     float out = bias2[0];
-    std::array<float, 8> output = bias1;
+    std::array<float, L2_SIZE> output = bias1;
 
     for (int n = 0; n < L1_SIZE; n++) {
         for (int m = 0; m < L2_SIZE; m++) {
