@@ -13,8 +13,8 @@ enum Toggle {
 };
 
 static const int INPUT_SIZE = 12 * 64;
-static const int L1_SIZE = 64;
-static const int L2_SIZE = 8;
+static const int L1_SIZE = 256;
+static const int L2_SIZE = 4;
 static const int OUT_SIZE = 1;
 
 struct Weights {
