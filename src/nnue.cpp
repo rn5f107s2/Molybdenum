@@ -74,6 +74,27 @@ int Net::calculate(Color c) {
     return ((output / 255) + bias1[0]) * 133 / (64 * 255);
 }
 
+int Net::wdlEval(Color c) {
+    int output[3] = {0, 0, 0};
+
+    for (int n = 0; n < L1_SIZE; n++) {
+        for (int n2 = 0; n2 < 3; n2++) {
+            output[n2] += screlu(accumulator[ c][n]) * wdlWeights[n * 3 + n2              ];
+            output[n2] += screlu(accumulator[!c][n]) * wdlWeights[n * 3 + n2 + L1_SIZE * 3];
+        }
+    }
+
+    float sum = 0.0f;
+    float scores[3];
+
+    for (int i = 0; i < 3; i++)
+        sum += (scores[i] = std::exp(double((output[i] / 255) + wdlBias[i]) / double(64 * 255)));
+
+    float q = 0.5f * (scores[1] / sum) + (scores[2] / sum);
+
+    return std::log(q / (1.0f - q)) / (1.0f / 133.0f);
+}
+
 std::tuple<float, float, float> Net::getWDL(Color c) {
     int output[3] = {0, 0, 0};
     std::tuple<float, float, float> tpl;

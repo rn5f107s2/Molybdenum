@@ -44,6 +44,7 @@ public:
 
     void initAccumulator(std::array<u64, 13> &bitboards);
     int calculate(Color c);
+    int wdlEval(Color c);
     std::tuple<float, float, float> getWDL(Color c);
     void loadDefaultNet();
 
