@@ -164,7 +164,7 @@ int SearchState::search(int alpha, int beta, Position &pos, int depth, SearchInf
         return stack->staticEval;
 
     if (depth <= 0)
-        return qsearch(alpha, beta, pos, si, stack);
+        return qsearch<nt>(alpha, beta, pos, si, stack);
 
     if (   !(si.nodeCount.load(std::memory_order_relaxed) & 1023)
         && stop<Hard>(si.st, si))
@@ -417,11 +417,14 @@ int SearchState::search(int alpha, int beta, Position &pos, int depth, SearchInf
     return bestScore;
 }
 
+template<NodeType nt>
 int SearchState::qsearch(int alpha, int beta, Position &pos, SearchInfo &si, SearchStack *stack) {
 
 #ifdef TUNE
     std::array<int, 13> PieceValuesSEE = {tune.SEEPawn, tune.SEEKnight, tune.SEEBishop, tune.SEERook, tune.SEEQueen, 0, tune.SEEPawn, tune.SEEKnight, tune.SEEBishop, tune.SEERook, tune.SEEQueen, 0, 0};
 #endif
+
+    constexpr bool PvNode = nt != NonPvNode;
 
     Move currentMove;
     int staticEval;
@@ -452,6 +455,7 @@ int SearchState::qsearch(int alpha, int beta, Position &pos, SearchInfo &si, Sea
     }
 
     if (   ttHit
+        && !PvNode
         && (    ttBound == EXACT
             || (ttBound == LOWER && ttScore >= beta)
             || (ttBound == UPPER && ttScore <= alpha)))
@@ -483,7 +487,7 @@ int SearchState::qsearch(int alpha, int beta, Position &pos, SearchInfo &si, Sea
         pos.makeMove(currentMove);
         si.nodeCount.fetch_add(1, std::memory_order_relaxed);
 
-        int score = -qsearch(-beta, -alpha, pos, si, stack+1);
+        int score = -qsearch<nt>(-beta, -alpha, pos, si, stack+1);
 
         pos.unmakeMove(currentMove);
 
