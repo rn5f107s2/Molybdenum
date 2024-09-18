@@ -4,7 +4,7 @@ MOLY_DIR=src
 CXX=clang++
 
 DEFAULT_NET_NAME=moly_20240526.nnue
-DEFAULT_WDL_HEAD_NAME=net.nnue
+DEFAULT_WDL_HEAD_NAME=WDLQTargetMSE.nnue
 
 DEFAULT_EXE = $(OBJ_DIR)/Molybdenum
 DATAGEN_EXE = $(OBJ_DIR)/Datagen
