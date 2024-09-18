@@ -105,7 +105,7 @@ inline bool see(Position &pos, int threshold, Move move) {
             continue;
         }
 
-        while (!attackers[stm] && stages[stm] < KING + 1) {
+        while (!attackers[stm] && stages[stm] < KING) {
             stage = PieceType(++stages[stm]);
             attackers[stm] |= getAttacks(stages[stm], to, blockers, !stm) & pos.getPieces(stm, stage) & blockers;
         }
