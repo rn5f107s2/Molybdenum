@@ -4,6 +4,7 @@
 #include "Constants.h"
 #include <array>
 #include <string>
+#include <tuple>
 #include <algorithm>
 #include "BitStuff.h"
 #include "Utility.h"
@@ -25,6 +26,11 @@ struct Weights {
     std::array<int16_t, OUTPUT_SIZE> bias1{};
 };
 
+struct WDLHead {
+    std::array<int16_t, L1_SIZE * 3 * 2> weights1{};
+    std::array<int16_t, 3> bias1{};
+};
+
 class Net {
 public:
     std::array<int16_t , L1_SIZE * INPUT_SIZE> weights0{};
@@ -32,10 +38,13 @@ public:
     std::array<int16_t, L1_SIZE * OUTPUT_SIZE * 2> weights1{};
     std::array<int16_t, OUTPUT_SIZE> bias1{};
     std::array<std::array<int16_t, L1_SIZE>, 2> accumulator{};
+    std::array<int16_t, L1_SIZE * 3 * 2> wdlWeights{};
+    std::array<int16_t, 3> wdlBias{};
     Stack<std::array<std::array<int16_t, L1_SIZE>, 2>, MAXDEPTH> accumulatorStack;
 
     void initAccumulator(std::array<u64, 13> &bitboards);
     int calculate(Color c);
+    std::tuple<float, float, float> getWDL(Color c);
     void loadDefaultNet();
 
     template<Toggle STATE> inline

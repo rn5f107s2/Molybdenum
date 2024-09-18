@@ -4,6 +4,8 @@
 #include "Utility.h"
 #include <cstring>
 #include <fstream>
+#include <tuple>
+#include <cmath>
 
 #ifdef _MSC_VER
 #define PUSHED_MACRO
@@ -22,14 +24,24 @@
 #define EVALFILE // silence syntax highlighting
 #endif
 
+#ifndef WDLFILE
+#define WDLFILE // silence syntax highlighting
+#endif
+
 INCBIN(network, EVALFILE);
+INCBIN(wdlHead, WDLFILE);
+
 const Weights defaultWeights = *reinterpret_cast<const Weights*>(gnetworkData);
+const WDLHead defaultWdl     = *reinterpret_cast<const WDLHead*>(gwdlHeadData);
 
 void Net::loadDefaultNet() {
     weights0 = defaultWeights.weights0;
     weights1 = defaultWeights.weights1;
     bias0 = defaultWeights.bias0;
     bias1 = defaultWeights.bias1;
+
+    wdlWeights = defaultWdl.weights1;
+    wdlBias    = defaultWdl.bias1;
 }
 
 void Net::initAccumulator(std::array<u64, 13> &bitboards) {
@@ -60,4 +72,28 @@ int Net::calculate(Color c) {
     }
 
     return ((output / 255) + bias1[0]) * 133 / (64 * 255);
+}
+
+std::tuple<float, float, float> Net::getWDL(Color c) {
+    int output[3] = {0, 0, 0};
+    std::tuple<float, float, float> tpl;
+
+    for (int n = 0; n < L1_SIZE; n++) {
+        for (int n2 = 0; n2 < 3; n2++) {
+            output[n2] += screlu(accumulator[ c][n]) * wdlWeights[n * 3 + n2              ];
+            output[n2] += screlu(accumulator[!c][n]) * wdlWeights[n * 3 + n2 + L1_SIZE * 3];
+        }
+    }
+
+    float sum = 0.0f;
+    float scores[3];
+
+    for (int i = 0; i < 3; i++)
+        sum += (scores[i] = std::exp(double((output[i] / 255) + wdlBias[i]) / double(64 * 255)));
+
+    std::get<0>(tpl) = scores[0] / sum;
+    std::get<1>(tpl) = scores[1] / sum;
+    std::get<2>(tpl) = scores[2] / sum;
+
+    return tpl;
 }

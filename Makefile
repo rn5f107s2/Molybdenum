@@ -4,12 +4,15 @@ MOLY_DIR=src
 CXX=clang++
 
 DEFAULT_NET_NAME=moly_20240526.nnue
+DEFAULT_WDL_HEAD_NAME=net.nnue
 
 DEFAULT_EXE = $(OBJ_DIR)/Molybdenum
 DATAGEN_EXE = $(OBJ_DIR)/Datagen
 DEFAULT_NET = $(MOLY_DIR)/Nets/$(DEFAULT_NET_NAME)
+DEFAULT_WDL_HEAD = $(MOLY_DIR)/Nets/$(DEFAULT_WDL_HEAD_NAME)
 
 EVALFILE ?= $(DEFAULT_NET)
+WDLFILE ?= $(DEFAULT_WDL_HEAD)
 
 all: $(DEFAULT_EXE)
 
@@ -18,7 +21,7 @@ datagen: $(DATAGEN_EXE)
 CXXFLAGS = -static -Ofast -std=c++17
 CXXFLAGS += -Wall -Wextra -pedantic
 CXXFLAGS += -march=native
-CXXFLAGS += -DEVALFILE=\"$(EVALFILE)\"
+CXXFLAGS += -DEVALFILE=\"$(EVALFILE)\" -DWDLFILE=\"$(WDLFILE)\"
 
 LDFLAGS += -static -Ofast -march=native
 
