@@ -73,6 +73,8 @@ public:
     int startSearch(Position &pos, SearchTime &st, int maxDepth, Move &bestMove = emptyMove);
     int iterativeDeepening(Position  &pos, SearchTime &st, int maxDepth, [[maybe_unused]] Move &bestMove);
     int aspirationWindow(int prevScore, Position &pos, SearchInfo &si, int depth);
+
+    template<NodeType nt>
     int qsearch(int alpha, int beta, Position &pos, SearchInfo &si, SearchStack *stack);
 
     template<NodeType nt>
