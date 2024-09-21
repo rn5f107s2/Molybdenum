@@ -16,6 +16,25 @@
 Tune tune;
 #endif
 
+std::string SearchState::outputWDL(Position &pos) {
+    for (int i = 0; i < pvLength[0]; i++)
+        pos.makeMove(pvMoves[0][i]);
+
+    std::tuple<float, float, float> wdl = pos.net.getWDL(pos.sideToMove);
+
+    for (int i = pvLength[0] - 1; i >= 0; i--)
+        pos.unmakeMove(pvMoves[0][i]);
+
+    std::string values[3] = {std::to_string(int(std::get<2>(wdl) * 1000)), 
+                             std::to_string(int(std::get<1>(wdl) * 1000)),
+                             std::to_string(int(std::get<0>(wdl) * 1000))};
+
+    bool flip = pvLength[0] % 2 == 0;
+
+    return  " wdl " + values[flip ? 0 : 2]
+              + " " + values[1           ]
+              + " " + values[flip ? 2 : 0];
+}
 
 int SearchState::startSearch(Position &pos, SearchTime &st, int maxDepth, Move &bestMove) {
     int score = iterativeDeepening(pos, st, maxDepth, bestMove);
@@ -73,6 +92,8 @@ int SearchState::iterativeDeepening(Position  &pos, SearchTime &st, int maxDepth
 
         uciOutput += " nps ";
         uciOutput += std::to_string((nodeCount / std::max(int(searchTime), 1)) * 1000);
+
+        uciOutput += outputWDL(pos);
 
         uciOutput += " pv ";
         for (int i = 0; i < pvLength[0]; i++)
@@ -463,6 +484,8 @@ int SearchState::qsearch(int alpha, int beta, Position &pos, SearchInfo &si, Sea
 
     int bestScore = staticEval = evaluate(pos);    
 
+    pvLength[stack->plysInSearch] = stack->plysInSearch;
+
     if (bestScore >= beta)
         return bestScore;
 
@@ -499,6 +522,13 @@ int SearchState::qsearch(int alpha, int beta, Position &pos, SearchInfo &si, Sea
 
                 if (score >= beta)
                     return score;
+
+                pvMoves[stack->plysInSearch][stack->plysInSearch] = currentMove;
+
+                for (int nextPly = stack->plysInSearch + 1; nextPly < pvLength[stack->plysInSearch + 1]; nextPly++)
+                    pvMoves[stack->plysInSearch][nextPly] = pvMoves[stack->plysInSearch + 1][nextPly];
+
+                pvLength[stack->plysInSearch] = pvLength[stack->plysInSearch + 1];
             }
         }
     }

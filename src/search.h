@@ -70,6 +70,7 @@ class SearchState {
 public:
 
     void clearHistory();
+    std::string outputWDL(Position &pos);
     int startSearch(Position &pos, SearchTime &st, int maxDepth, Move &bestMove = emptyMove);
     int iterativeDeepening(Position  &pos, SearchTime &st, int maxDepth, [[maybe_unused]] Move &bestMove);
     int aspirationWindow(int prevScore, Position &pos, SearchInfo &si, int depth);
