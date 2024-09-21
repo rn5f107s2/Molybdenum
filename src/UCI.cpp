@@ -44,11 +44,15 @@ void UCI::uci([[maybe_unused]] const std::string &args) {
 #endif
 
         std::cout << "uciok" << std::endl;
-        return;
+        prettyprint = false;
 }
 
 void UCI::isready([[maybe_unused]] const std::string &args) {
     std::cout << "readyok" << std::endl;
+}
+
+void UCI::pretty([[maybe_unused]] const std::string &args) {
+    prettyprint = true;
 }
 
 void UCI::ucinewgame([[maybe_unused]] const std::string &args) {

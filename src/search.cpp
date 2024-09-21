@@ -6,6 +6,7 @@
 #include "Movepicker.h"
 #include "searchUtil.h"
 #include "thread.h"
+#include "Movegen.h"
 
 #include <chrono>
 #include <algorithm>
@@ -15,6 +16,8 @@
 #ifdef TUNE
 Tune tune;
 #endif
+
+bool prettyprint = false;
 
 std::string SearchState::outputWDL(Position &pos) {
     for (int i = 0; i < pvLength[0]; i++)
@@ -57,6 +60,8 @@ int SearchState::iterativeDeepening(Position  &pos, SearchTime &st, int maxDepth
     si.clear();
     si.st = st;
 
+    //prettyInitial();
+
     for (int depth = 1; depth != maxDepth; depth++) {
         score = aspirationWindow(score, pos, si, depth);
 
@@ -67,39 +72,43 @@ int SearchState::iterativeDeepening(Position  &pos, SearchTime &st, int maxDepth
             continue;
 
 #ifndef DATAGEN
-        std::string uciOutput;
-        auto searchTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - si.st.searchStart).count();
-        uciOutput += "info depth ";
-        uciOutput += std::to_string(depth);
+        if (prettyprint)
+            prettyPrint(pos, si, score, depth);
+        else {
+            std::string uciOutput;
+            auto searchTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - si.st.searchStart).count();
+            uciOutput += "info depth ";
+            uciOutput += std::to_string(depth);
 
-        uciOutput += " seldepth ";
-        uciOutput += std::to_string(si.selDepth);
+            uciOutput += " seldepth ";
+            uciOutput += std::to_string(si.selDepth);
 
-        uciOutput += " currmove ";
-        uciOutput += moveToString(si.bestRootMove);
+            uciOutput += " currmove ";
+            uciOutput += moveToString(si.bestRootMove);
 
-        uciOutput += " score ";
-        uciOutput += abs(score) > MAXMATE ? "mate " : "cp ";
-        uciOutput += std::to_string(abs(score) > MAXMATE ? mateInPlies(score) : score);
+            uciOutput += " score ";
+            uciOutput += abs(score) > MAXMATE ? "mate " : "cp ";
+            uciOutput += std::to_string(abs(score) > MAXMATE ? mateInPlies(score) : score);
 
-        u64 nodeCount = thread->threads->nodes();
+            u64 nodeCount = thread->threads->nodes();
 
-        uciOutput += " nodes ";
-        uciOutput += std::to_string(nodeCount);
+            uciOutput += " nodes ";
+            uciOutput += std::to_string(nodeCount);
 
-        uciOutput += " time ";
-        uciOutput += std::to_string(searchTime);
+            uciOutput += " time ";
+            uciOutput += std::to_string(searchTime);
 
-        uciOutput += " nps ";
-        uciOutput += std::to_string((nodeCount / std::max(int(searchTime), 1)) * 1000);
+            uciOutput += " nps ";
+            uciOutput += std::to_string((nodeCount / std::max(int(searchTime), 1)) * 1000);
 
-        uciOutput += outputWDL(pos);
+            uciOutput += outputWDL(pos);
 
-        uciOutput += " pv ";
-        for (int i = 0; i < pvLength[0]; i++)
-            uciOutput += moveToString(pvMoves[0][i]) + " ";
+            uciOutput += " pv ";
+            for (int i = 0; i < pvLength[0]; i++)
+                uciOutput += moveToString(pvMoves[0][i]) + " ";
 
-        std::cout << uciOutput << std::endl;
+            std::cout << uciOutput << std::endl;
+        }
 
         if (stop<Soft>(st, si)) {
             thread->threads->stop();
@@ -534,4 +543,113 @@ int SearchState::qsearch(int alpha, int beta, Position &pos, SearchInfo &si, Sea
     }
 
     return bestScore;
+}
+
+void prettyInitial() {
+    std::cout << std::endl;
+    std::cout << " depth       time       nodes      speed        score" << std::endl;
+    std::cout << "_______________________________________________________________________________" << std::endl;
+}
+
+// This is pretty print, not pretty code
+void SearchState::prettyPrint(Position &pos, SearchInfo &si, int s, int de) {
+    auto searchTime             = std::chrono::steady_clock::now() - si.st.searchStart;
+    auto searchTimeMinutes      = std::chrono::duration_cast<std::chrono::minutes     >(searchTime).count();
+    auto searchTimeSeconds      = std::chrono::duration_cast<std::chrono::seconds     >(searchTime).count();
+    auto searchTimeMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(searchTime).count();
+    u64 nodes                   = thread->threads->nodes();
+    u64 nodesPerMillisecond     = (nodes / (searchTimeMilliseconds + 1));
+    std::string temp            = std::to_string(abs(s) % 100);
+    std::vector<std::string> sanPV;
+
+    zeroPaddString<Front>(temp, 2);
+
+    for (int i = 0; i < pvLength[0]; i++) {
+        sanPV.push_back(pos.moveToSAN(pvMoves[0][i], getAttacks(typeOf(pos.pieceOn(extract<FROM>(pvMoves[0][i]))),
+                                                                extract<TO>(pvMoves[0][i]), 
+                                                                pos.getOccupied(), 
+                                                                pos.sideToMove ^ bool(i + 1))));
+        pos.makeMove(pvMoves[0][i]);
+    }
+
+    std::tuple<float, float, float> wdl = pos.net.getWDL(pos.sideToMove);
+
+    for (int i = pvLength[0] - 1; i >= 0; i--)
+        pos.unmakeMove(pvMoves[0][i]);
+
+    bool flip = pvLength[0] & 1;
+    float w   = flip ? std::get<0>(wdl) : std::get<2>(wdl);
+    float l   = flip ? std::get<2>(wdl) : std::get<0>(wdl);
+    float d   = std::get<1>(wdl);
+    
+    std::string pretty        = "";
+    std::string depth         = std::to_string(de);
+    std::string seperator     = "|";
+    std::string selDepth      = std::to_string(si.selDepth);
+    std::string megaNodes     = std::to_string(nodes / 1000000);
+    std::string decimalNodes  = std::to_string((nodes % 100000) / 10000);
+    std::string dot           = ".";
+    std::string mn            = "Mn";
+    std::string minutes       = std::to_string(searchTimeMinutes % 60);
+    std::string seconds       = std::to_string(searchTimeSeconds % 60);
+    std::string milliseconds  = std::to_string((searchTimeMilliseconds % 10000) / 1000);
+    std::string mnps          = std::to_string(nodesPerMillisecond / 1000);
+    std::string decimalMnps   = std::to_string(nodesPerMillisecond % 1000 / 100);
+    std::string scorePrefix   = s > 0 ? "+" : "-";
+    std::string matePrefix    = abs(s) >= MAXMATE ? "M" : "";
+    std::string score         = std::to_string(abs(s) >= MAXMATE ? mateInPlies(s) : (abs(s) / 100));
+    std::string scoreDecimal  = abs(s) >= MAXMATE ? "" : ("." + temp);
+    std::string completeScore = scorePrefix + matePrefix + score + scoreDecimal; 
+    std::string wPercentage   = std::to_string(int(std::roundf(w * 100.0f))) + "% ";
+    std::string dPercentage   = std::to_string(int(std::roundf(d * 100.0f))) + "% ";
+    std::string lPercentage   = std::to_string(int(std::roundf(l * 100.0f))) + "% ";
+
+    paddString<Front>(depth    , 3);
+    paddString<Back >(selDepth , 3);
+    paddString<Front>(megaNodes, 5);
+    paddString<Front>(minutes, 5);
+    zeroPaddString<Front>(seconds, 2);
+    paddString<Front>(mnps, 6);
+    paddString<Front>(completeScore, 11);
+    paddString<Back>(completeScore, completeScore.size() + 6);
+    paddString<Front>(wPercentage, 5);
+    paddString<Front>(dPercentage, 5);
+    paddString<Front>(lPercentage, 5);
+
+    wPercentage = "W:" + wPercentage;
+    dPercentage = "D:" + dPercentage;
+    lPercentage = "L:" + lPercentage;
+
+    paddString<Back>(lPercentage, 13);
+
+    int evalColorTones[11] = {88, 124, 196, 202, 208, 229, 106, 64, 76, 28, 22};
+    int evalColorIndex     = std::clamp(5+ (s / 25), 0, 10);
+
+    colorString<Foreground>(wPercentage, 15);
+    colorString<Foreground>(dPercentage, 8);
+    colorString<Foreground>(lPercentage, 16);
+    colorString<Foreground>(completeScore, evalColorTones[evalColorIndex]);
+
+    colorString<Foreground>(sanPV[0], 15);
+    sanPV[0] = "\033[1m" + sanPV[0] + "\033[0m";
+
+    for (size_t i = 1; i < sanPV.size(); i++)
+        colorString<Foreground>(sanPV[i], 242);
+
+    // Eval bar for wdl? Current issue inability to find a way to display percentages on top of bars in a way that make sense
+
+    pretty += depth + seperator + selDepth;
+    pretty += minutes + "m " + seconds + "." + milliseconds + "s ";
+    pretty += megaNodes + dot + decimalNodes + mn;
+    pretty += mnps + dot + decimalMnps + "Mn/s";
+
+    colorString<Foreground>(pretty, 246);
+
+    pretty += completeScore;
+    pretty += wPercentage + dPercentage + lPercentage;
+
+    for (auto &move : sanPV)
+        pretty += move;
+
+    std::cout << pretty << std::endl;
 }

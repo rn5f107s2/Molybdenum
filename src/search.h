@@ -17,6 +17,8 @@
 extern Tune tune;
 #endif
 
+extern bool prettyprint;
+
 class Thread;
 
 struct SearchInfo {
@@ -83,6 +85,8 @@ public:
 
     Thread* thread;
     SearchInfo si;
+
+    void prettyPrint(Position &pos, SearchInfo &si, int score, int depth);
 };
 
 inline std::array<double, 256> initReductions() {
@@ -111,5 +115,7 @@ bool stop(SearchTime &st, SearchInfo &si) {
     return    (std::chrono::steady_clock::now() > (si.st.searchStart + si.st.thinkingTime[LT]) && st.limit == Time)
               || (st.limit == Nodes && si.nodeCount >= st.nodeLimit);
 }
+
+void prettyInitial();
 
 #endif //MOLYBDENUM_SEARCH_H
