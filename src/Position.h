@@ -3,6 +3,7 @@
 
 #include <string>
 #include <array>
+
 #include "Constants.h"
 #include "BitStuff.h"
 #include "Move.h"
@@ -40,6 +41,8 @@ class Position {
         inline Piece pieceOn(int sq);
         inline u64 getOccupied();
         template<Color c> u64 getOccupied();
+        inline std::string moveToSAN(Move move, u64 attacks);
+        inline int ambigious(Move move, u64 attacks);
     private:
         Stack<Piece>  capturedHistory;
         Stack<int>  plys50mrHistory;
@@ -92,5 +95,58 @@ inline bool Position::isCapture(Move move) {
     return pieceLocations[to] != NO_PIECE;
 }
 
+inline std::string Position::moveToSAN(Move move, u64 attacks) {
+    int from   = extract<FROM>(move);
+    int to     = extract<TO  >(move);
+
+    if (extract<FLAG>(move) == CASTLING)
+        return from > to ? "0-0 " : "0-0-0 ";
+
+    std::string piece;
+    std::string toSquare;
+
+    if (typeOf(pieceOn(from)) != PAWN) {
+        piece += std::toupper(pieceToChar(typeOf(pieceOn(from))));
+
+        int a = ambigious(move, attacks);
+
+        if (a & 1)
+            piece += char('a' + (fileOf(from)));
+
+        if (a & 2)
+            piece += char('a' + (rankOf(from)));
+
+        if (isCapture(move))
+            piece += "x";
+    } else {
+        if (isCapture(move) || extract<FLAG>(move) == ENPASSANT) {
+            piece += char('a' + (fileOf(from)));
+            piece += 'x';
+        }
+    }
+   
+
+    return piece + char('a' + (fileOf(to))) + char('1' + (rankOf(to))) + " ";
+}
+
+inline int Position::ambigious(Move move, u64 attacks) {
+    int from = extract<FROM>(move);
+    int to   = extract<TO  >(move);
+    Piece pc = pieceOn(from);
+
+    u64 pieces  = getPieces(sideToMove, PieceType(typeOf(pc))) ^ (1ULL << from);
+    u64 overlap = attacks & pieces;
+
+    if (!overlap)
+        return 0;
+
+    if (!(lFIleOf(to) & overlap))
+        return 1;
+
+    if (!(lRankOf(to) & overlap))
+        return 2;
+
+    return 3;
+}
 
 #endif //MOLYBDENUM_POSITION_H

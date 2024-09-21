@@ -3,6 +3,7 @@
 
 #include <array>
 #include <string>
+#include <iostream>
 #include "Constants.h"
 
 constexpr int MAX_STACK_SIZE = 6000; //Longer then the longest possible chess game
@@ -138,6 +139,42 @@ inline u64 stringToSquare(std::string epSquare) {
 
 inline int stringRoRule50(const std::string& rule50) {
     return std::stoi(rule50);
+}
+
+enum PaddType {
+    Back, Front, Equal
+};
+
+enum ColorType {
+    Foreground, Background
+};
+
+template<PaddType PT>
+inline void paddString(std::string &s, size_t c) {
+    if constexpr (PT != Equal) {
+        for (size_t size = s.length(); size < c; size++)
+            s = (PT == Front) ? (" " + s) : (s + " ");
+
+        return;
+    }
+
+    paddString<Front>(s, c / 2);
+    paddString<Back >(s, c    );
+}
+
+template<PaddType PT>
+inline void zeroPaddString(std::string &s, size_t c) {
+    for (size_t size = s.length(); size < c; size++)
+        s = PT ? ("0" + s) : (s + "0");
+}
+
+template<ColorType ct>
+inline void colorString(std::string &s, int c) {
+    std::string reset     =  "\u001b[0m";
+    std::string prefix[2] = {"\u001b[38;5;", "\u001b[48;5;"};
+    std::string color     = prefix[ct] + std::to_string(c) + "m";
+    
+    s = color + s + reset;
 }
 
 #endif //MOLYBDENUM_UTILITY_H
