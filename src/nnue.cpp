@@ -45,6 +45,8 @@ void Net::loadDefaultNet() {
     bias1    = defaultWeights.bias1;
     weights2 = defaultWeights.weights2;
     bias2    = defaultWeights.bias2;
+    weights3 = defaultWeights.weights3;
+    bias3    = defaultWeights.bias3;
 
     wdlWeights = defaultWdl.weights1;
     wdlBias    = defaultWdl.bias1;
@@ -70,18 +72,23 @@ void Net::initAccumulator(std::array<u64, 13> &bitboards) {
 }
 
 int Net::calculate(Color c) {
-    float out = bias2[0];
-    std::array<float, L2_SIZE> output = bias1;
+    float out = bias3[0];
+    std::array<float, L2_SIZE> l1Out = bias1;
+    std::array<float, L3_SIZE> l2Out = bias2;
 
     for (int n = 0; n < L1_SIZE; n++) {
         for (int m = 0; m < L2_SIZE; m++) {
-            output[m] += screlu(float(accumulator[ c][n]) / 255.0f) * weights1[n * L2_SIZE + m                    ];
-            output[m] += screlu(float(accumulator[!c][n]) / 255.0f) * weights1[n * L2_SIZE + m + L1_SIZE * L2_SIZE];
+            l1Out[m] += screlu(float(accumulator[ c][n]) / 255.0f) * weights1[n * L2_SIZE + m                    ];
+            l1Out[m] += screlu(float(accumulator[!c][n]) / 255.0f) * weights1[n * L2_SIZE + m + L1_SIZE * L2_SIZE];
         }
     }
 
     for (int n = 0; n < L2_SIZE; n++)
-        out += screlu(output[n]) * weights2[n];
+        for (int m = 0; m < L3_SIZE; m++)
+            l2Out[m] += relu(l1Out[n]) * weights2[n * L3_SIZE + m];
+
+    for (int n = 0; n < L3_SIZE; n++)
+        out += screlu(l2Out[n]) * weights3[n];
 
     return int(out * 133.0f);
 }

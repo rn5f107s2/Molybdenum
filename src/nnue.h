@@ -15,7 +15,8 @@ enum Toggle {
 
 static const int INPUT_SIZE = 12 * 64;
 static const int L1_SIZE = 256;
-static const int L2_SIZE = 8;
+static const int L2_SIZE = 2;
+static const int L3_SIZE = 16;
 static const int OUT_SIZE = 1;
 
 struct Weights {
@@ -23,8 +24,10 @@ struct Weights {
     std::array<float, L1_SIZE> bias0{};
     std::array<float, L1_SIZE * L2_SIZE * 2> weights1{};
     std::array<float, L2_SIZE> bias1{};
-    std::array<float, L2_SIZE * OUT_SIZE> weights2{};
-    std::array<float, OUT_SIZE> bias2{};
+    std::array<float, L2_SIZE * L3_SIZE> weights2{};
+    std::array<float, L3_SIZE> bias2{};
+    std::array<float, L3_SIZE * OUT_SIZE> weights3{};
+    std::array<float, OUT_SIZE> bias3{};
 };
 
 struct WDLHead {
@@ -38,8 +41,11 @@ public:
     std::array<int16_t, L1_SIZE> bias0{};
     std::array<float, L1_SIZE * L2_SIZE * 2> weights1{};
     std::array<float, L2_SIZE> bias1{};
-    std::array<float, L2_SIZE * OUT_SIZE> weights2{};
-    std::array<float, OUT_SIZE> bias2{};
+    std::array<float, L2_SIZE * L3_SIZE> weights2{};
+    std::array<float, L3_SIZE> bias2{};
+    std::array<float, L3_SIZE * OUT_SIZE> weights3;
+    std::array<float, OUT_SIZE> bias3;
+
     std::array<std::array<int16_t, L1_SIZE>, 2> accumulator{};
     std::array<int16_t, L1_SIZE * 3 * 2> wdlWeights{};
     std::array<int16_t, 3> wdlBias{};
@@ -65,6 +71,10 @@ inline int screlu(int16_t input) {
 inline float screlu(float input) {
     float clamped = std::clamp(input, 0.0f, 1.0f);
     return clamped * clamped;
+}
+
+inline float relu(float input) {
+    return std::max(input, 0.0f);
 }
 
 template<Color C> inline
