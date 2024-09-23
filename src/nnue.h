@@ -74,7 +74,7 @@ inline float screlu(float input) {
 }
 
 inline float leakyrelu(float input) {
-    return std::max(input, 0.01f * input);
+    return std::max(input, 0.1f * input);
 }
 
 template<Color C> inline
