@@ -85,7 +85,7 @@ int Net::calculate(Color c) {
 
     for (int n = 0; n < L2_SIZE; n++)
         for (int m = 0; m < L3_SIZE; m++)
-            l2Out[m] += relu(l1Out[n]) * weights2[n * L3_SIZE + m];
+            l2Out[m] += leakyrelu(l1Out[n]) * weights2[n * L3_SIZE + m];
 
     for (int n = 0; n < L3_SIZE; n++)
         out += screlu(l2Out[n]) * weights3[n];
