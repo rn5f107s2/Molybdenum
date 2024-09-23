@@ -73,8 +73,8 @@ inline float screlu(float input) {
     return clamped * clamped;
 }
 
-inline float leakyrelu(float input) {
-    return std::max(input, 0.1f * input);
+inline float leakysrelu(float input) {
+    return input > 0.0f ? (input * input) : (0.1 * input); 
 }
 
 template<Color C> inline
