@@ -36,7 +36,7 @@ class Net {
 public:
     std::array<int16_t , L1_SIZE * INPUT_SIZE> weights0{};
     std::array<int16_t, L1_SIZE> bias0{};
-    std::array<float, L1_SIZE * L2_SIZE * 2> weights1{};
+    std::array<float, 64 * 4 * 2> weights1{};
     std::array<float, L2_SIZE> bias1{};
     std::array<float, L2_SIZE * OUT_SIZE> weights2{};
     std::array<float, OUT_SIZE> bias2{};
