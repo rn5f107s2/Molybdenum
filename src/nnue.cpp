@@ -6,6 +6,7 @@
 #include <fstream>
 #include <tuple>
 #include <cmath>
+#include <iomanip>
 
 #ifdef _MSC_VER
 #define PUSHED_MACRO
@@ -74,14 +75,14 @@ int Net::calculate(Color c) {
     std::array<float, L2_SIZE> output = bias1;
 
     for (int n = 0; n < L1_SIZE; n++) {
-        for (int m = 0; m < L2_SIZE; m++) {
-            output[m] += screlu(float(accumulator[ c][n]) / 255.0f) * weights1[n * L2_SIZE + m                    ];
-            output[m] += screlu(float(accumulator[!c][n]) / 255.0f) * weights1[n * L2_SIZE + m + L1_SIZE * L2_SIZE];
-        }
+        int m = n / 64;
+
+        output[m] += screlu(float(accumulator[ c][n]) / 255.0f) * weights1[n * L2_SIZE + m                    ];
+        output[m] += screlu(float(accumulator[!c][n]) / 255.0f) * weights1[n * L2_SIZE + m + L1_SIZE * L2_SIZE];
     }
 
     for (int n = 0; n < L2_SIZE; n++)
-        out += screlu(output[n]) * weights2[n];
+        out += output[n] * weights2[n];
 
     return int(out * 133.0f);
 }
