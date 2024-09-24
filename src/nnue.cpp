@@ -74,11 +74,24 @@ int Net::calculate(Color c) {
     float out = bias2[0];
     std::array<float, L2_SIZE> output = bias1;
 
-    for (int n = 0; n < L1_SIZE; n++) {
-        int m = n / 64;
+    for (int n = 0; n < 64; n++) {
+        output[0] += screlu(float(accumulator[ c][n]) / 255.0f) * weights1[n * L2_SIZE + 0                    ];
+        output[0] += screlu(float(accumulator[!c][n]) / 255.0f) * weights1[n * L2_SIZE + 0 + L1_SIZE * L2_SIZE];
+    }
 
-        output[m] += screlu(float(accumulator[ c][n]) / 255.0f) * weights1[n * L2_SIZE + m                    ];
-        output[m] += screlu(float(accumulator[!c][n]) / 255.0f) * weights1[n * L2_SIZE + m + L1_SIZE * L2_SIZE];
+    for (int n = 64; n < 128; n++) {
+        output[1] += screlu(float(accumulator[ c][n]) / 255.0f) * weights1[n * L2_SIZE + 1                    ];
+        output[1] += screlu(float(accumulator[!c][n]) / 255.0f) * weights1[n * L2_SIZE + 1 + L1_SIZE * L2_SIZE];
+    }
+
+    for (int n = 128; n < 192; n++) {
+        output[2] += screlu(float(accumulator[ c][n]) / 255.0f) * weights1[n * L2_SIZE + 2                    ];
+        output[2] += screlu(float(accumulator[!c][n]) / 255.0f) * weights1[n * L2_SIZE + 2 + L1_SIZE * L2_SIZE];
+    }
+
+    for (int n = 192; n < 256; n++) {
+        output[3] += screlu(float(accumulator[ c][n]) / 255.0f) * weights1[n * L2_SIZE + 3                    ];
+        output[3] += screlu(float(accumulator[!c][n]) / 255.0f) * weights1[n * L2_SIZE + 3 + L1_SIZE * L2_SIZE];
     }
 
     for (int n = 0; n < L2_SIZE; n++)
