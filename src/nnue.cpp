@@ -53,6 +53,8 @@ void Net::loadDefaultNet() {
     bias1    = defaultWeights.bias1;
     weights2 = defaultWeights.weights2;
     bias2    = defaultWeights.bias2;
+    weights3 = defaultWeights.weights3;
+    bias3    = defaultWeights.bias3;
 
     wdlWeights = defaultWdl.weights1;
     wdlBias    = defaultWdl.bias1;
@@ -78,52 +80,57 @@ void Net::initAccumulator(std::array<u64, 13> &bitboards) {
 }
 
 int Net::calculate(Color c) {
-    float out = bias2[0];
-    std::array<float, L2_SIZE> output = bias1;
+    float out = bias3[0];
+    std::array<float, L2_SIZE> l1Out = bias1;
+    std::array<float, L3_SIZE> l2Out = bias2;
 
     // I have absoluetly no clue why I have to manually unroll this, but without the speed is absolute shit
     for (int n = 0; n < 32; n++) {
-        output[0] += screlu(float(accumulator[ c][n]) / 255.0f) * weights1[n          ];
-        output[0] += screlu(float(accumulator[!c][n]) / 255.0f) * weights1[n + L1_SIZE];
+        l1Out[0] += screlu(float(accumulator[ c][n]) / 255.0f) * weights1[n          ];
+        l1Out[0] += screlu(float(accumulator[!c][n]) / 255.0f) * weights1[n + L1_SIZE];
     }
 
     for (int n = 32; n < 64; n++) {
-        output[1] += screlu(float(accumulator[ c][n]) / 255.0f) * weights1[n          ];
-        output[1] += screlu(float(accumulator[!c][n]) / 255.0f) * weights1[n + L1_SIZE];
+        l1Out[1] += screlu(float(accumulator[ c][n]) / 255.0f) * weights1[n          ];
+        l1Out[1] += screlu(float(accumulator[!c][n]) / 255.0f) * weights1[n + L1_SIZE];
     }
 
     for (int n = 64; n < 96; n++) {
-        output[2] += screlu(float(accumulator[ c][n]) / 255.0f) * weights1[n          ];
-        output[2] += screlu(float(accumulator[!c][n]) / 255.0f) * weights1[n + L1_SIZE];
+        l1Out[2] += screlu(float(accumulator[ c][n]) / 255.0f) * weights1[n          ];
+        l1Out[2] += screlu(float(accumulator[!c][n]) / 255.0f) * weights1[n + L1_SIZE];
     }
 
     for (int n = 96; n < 128; n++) {
-        output[3] += screlu(float(accumulator[ c][n]) / 255.0f) * weights1[n          ];
-        output[3] += screlu(float(accumulator[!c][n]) / 255.0f) * weights1[n + L1_SIZE];
+        l1Out[3] += screlu(float(accumulator[ c][n]) / 255.0f) * weights1[n          ];
+        l1Out[3] += screlu(float(accumulator[!c][n]) / 255.0f) * weights1[n + L1_SIZE];
     }
 
     for (int n = 128; n < 160; n++) {
-        output[4] += screlu(float(accumulator[ c][n]) / 255.0f) * weights1[n          ];
-        output[4] += screlu(float(accumulator[!c][n]) / 255.0f) * weights1[n + L1_SIZE];
+        l1Out[4] += screlu(float(accumulator[ c][n]) / 255.0f) * weights1[n          ];
+        l1Out[4] += screlu(float(accumulator[!c][n]) / 255.0f) * weights1[n + L1_SIZE];
     }
 
     for (int n = 160; n < 192; n++) {
-        output[5] += screlu(float(accumulator[ c][n]) / 255.0f) * weights1[n          ];
-        output[5] += screlu(float(accumulator[!c][n]) / 255.0f) * weights1[n + L1_SIZE];
+        l1Out[5] += screlu(float(accumulator[ c][n]) / 255.0f) * weights1[n          ];
+        l1Out[5] += screlu(float(accumulator[!c][n]) / 255.0f) * weights1[n + L1_SIZE];
     }
 
     for (int n = 192; n < 224; n++) {
-        output[6] += screlu(float(accumulator[ c][n]) / 255.0f) * weights1[n          ];
-        output[6] += screlu(float(accumulator[!c][n]) / 255.0f) * weights1[n + L1_SIZE];
+        l1Out[6] += screlu(float(accumulator[ c][n]) / 255.0f) * weights1[n          ];
+        l1Out[6] += screlu(float(accumulator[!c][n]) / 255.0f) * weights1[n + L1_SIZE];
     }
 
     for (int n = 224; n < 256; n++) {
-        output[7] += screlu(float(accumulator[ c][n]) / 255.0f) * weights1[n          ];
-        output[7] += screlu(float(accumulator[!c][n]) / 255.0f) * weights1[n + L1_SIZE];
+        l1Out[7] += screlu(float(accumulator[ c][n]) / 255.0f) * weights1[n          ];
+        l1Out[7] += screlu(float(accumulator[!c][n]) / 255.0f) * weights1[n + L1_SIZE];
     }
 
     for (int n = 0; n < L2_SIZE; n++)
-        out += output[n] * weights2[n];
+        for (int m = 0; m < L3_SIZE; m++)
+            l2Out[m] += leakysrelu(l1Out[n]) * weights2[n * L3_SIZE + m];
+
+    for (int n = 0; n < L3_SIZE; n++)
+        out += screlu(l2Out[n]) * weights3[n];
 
     return int(out * 133.0f);
 }
