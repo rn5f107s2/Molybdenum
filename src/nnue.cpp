@@ -88,7 +88,7 @@ int Net::calculate(Color c) {
             l2Out[m] += screlu(l1Out[n]) * weights2[n * L3_SIZE + m];
 
     for (int i = 0; i < L3_SIZE; i++)
-        out += l2Out[i] * weights3[i];
+        out += screlu(l2Out[i]) * weights3[i];
 
     return int(out * 133.0f);
 }
