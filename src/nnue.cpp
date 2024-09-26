@@ -35,10 +35,18 @@ const Weights defaultWeights = *reinterpret_cast<const Weights*>(gnetworkData);
 const WDLHead defaultWdl     = *reinterpret_cast<const WDLHead*>(gwdlHeadData);
 
 void Net::loadDefaultNet() {
-    weights0 = defaultWeights.weights0;
-    weights1 = defaultWeights.weights1;
-    bias0 = defaultWeights.bias0;
-    bias1 = defaultWeights.bias1;
+    for (size_t i = 0; i < defaultWeights.weights0.size(); i++)
+        weights0[i] = int16_t(defaultWeights.weights0[i] * 255.0f);
+
+    for (size_t i = 0; i < defaultWeights.weights1.size(); i++)
+        weights1[i] = int16_t(defaultWeights.weights1[i] * 64.0f);
+
+    for (size_t i = 0; i < defaultWeights.bias0.size(); i++)
+        bias0[i] = int16_t(defaultWeights.bias0[i] * 255.0f);
+
+
+    for (size_t i = 0; i < defaultWeights.bias1.size(); i++)
+        bias1[i] = int16_t(defaultWeights.bias1[i] * 255.0f * 64.0f);
 
     wdlWeights = defaultWdl.weights1;
     wdlBias    = defaultWdl.bias1;
