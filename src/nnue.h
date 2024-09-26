@@ -14,7 +14,7 @@ enum Toggle {
 };
 
 static const int INPUT_SIZE = 12 * 64;
-static const int L1_SIZE = 256;
+static const int L1_SIZE = 512;
 static const int L2_SIZE = 8;
 static const int L3_SIZE = 16;
 static const int OUT_SIZE = 1;
@@ -39,7 +39,7 @@ class Net {
 public:
     std::array<int16_t , L1_SIZE * INPUT_SIZE> weights0{};
     std::array<int16_t, L1_SIZE> bias0{};
-    std::array<float, 64 * 4 * 2> weights1{};
+    std::array<float, 64 * 8 * 2> weights1{};
     std::array<float, L2_SIZE> bias1{};
     std::array<float, L2_SIZE * L3_SIZE> weights2{};
     std::array<float, L3_SIZE> bias2{};
