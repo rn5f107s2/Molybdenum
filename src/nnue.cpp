@@ -43,7 +43,7 @@ void Net::loadDefaultNet() {
         bias0[i] = int16_t(defaultWeights.bias0[i] * 255);
 
     int idx = 0;
-    const int bc = 4;
+    const int bc = 8;
     const int bs = 64;
 
     for (size_t i = 0; i < defaultWeights.weights1.size(); i++)
@@ -104,8 +104,28 @@ int Net::calculate(Color c) {
         output[3] += screlu(float(accumulator[!c][n]) / 255.0f) * weights1[n + L1_SIZE];
     }
 
+    for (int n = 256; n < 320; n++) {
+        output[4] += screlu(float(accumulator[ c][n]) / 255.0f) * weights1[n          ];
+        output[4] += screlu(float(accumulator[!c][n]) / 255.0f) * weights1[n + L1_SIZE];
+    }
+
+    for (int n = 320; n < 384; n++) {
+        output[5] += screlu(float(accumulator[ c][n]) / 255.0f) * weights1[n          ];
+        output[5] += screlu(float(accumulator[!c][n]) / 255.0f) * weights1[n + L1_SIZE];
+    }
+
+    for (int n = 384; n < 448; n++) {
+        output[6] += screlu(float(accumulator[ c][n]) / 255.0f) * weights1[n          ];
+        output[6] += screlu(float(accumulator[!c][n]) / 255.0f) * weights1[n + L1_SIZE];
+    }
+
+    for (int n = 448; n < 512; n++) {
+        output[7] += screlu(float(accumulator[ c][n]) / 255.0f) * weights1[n          ];
+        output[7] += screlu(float(accumulator[!c][n]) / 255.0f) * weights1[n + L1_SIZE];
+    }
+
     for (int n = 0; n < L2_SIZE; n++)
-        out += output[n] * weights2[n];
+        out += leakysrelu(output[n]) * weights2[n];
 
     return int(out * 133.0f);
 }

@@ -14,8 +14,8 @@ enum Toggle {
 };
 
 static const int INPUT_SIZE = 12 * 64;
-static const int L1_SIZE = 256;
-static const int L2_SIZE = 4;
+static const int L1_SIZE = 512;
+static const int L2_SIZE = 8;
 static const int OUT_SIZE = 1;
 
 struct Weights {
@@ -36,7 +36,7 @@ class Net {
 public:
     std::array<int16_t , L1_SIZE * INPUT_SIZE> weights0{};
     std::array<int16_t, L1_SIZE> bias0{};
-    std::array<float, 64 * 4 * 2> weights1{};
+    std::array<float, 64 * 8 * 2> weights1{};
     std::array<float, L2_SIZE> bias1{};
     std::array<float, L2_SIZE * OUT_SIZE> weights2{};
     std::array<float, OUT_SIZE> bias2{};
@@ -65,6 +65,10 @@ inline int screlu(int16_t input) {
 inline float screlu(float input) {
     float clamped = std::clamp(input, 0.0f, 1.0f);
     return clamped * clamped;
+}
+
+inline float leakysrelu(float input) {
+    return input > 0.0f ? input * input : 0.1f * input;
 }
 
 template<Color C> inline
