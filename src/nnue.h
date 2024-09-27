@@ -72,8 +72,8 @@ inline float screlu(float input) {
     return clamped * clamped;
 }
 
-inline float leakysrelu(float input) {
-    return input > 0 ? input * input : input * 0.1f;
+inline float mscrelu(float input) {
+    return std::clamp(std::abs(input) * input, -1.0f, 1.0f);
 }
 
 inline float relu(float input) {
