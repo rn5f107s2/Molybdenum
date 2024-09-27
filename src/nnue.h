@@ -76,6 +76,10 @@ inline float leakysrelu(float input) {
     return input > 0 ? input * input : input * 0.1f;
 }
 
+inline float relu(float input) {
+    return std::max(input, 0.0f);
+}
+
 template<Color C> inline
 int index(int pc, int sq) {
     int square = C ? sq : sq ^ 56;
