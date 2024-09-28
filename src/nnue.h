@@ -17,6 +17,7 @@ static const int INPUT_SIZE = 12 * 64;
 static const int L1_SIZE = 256;
 static const int L2_SIZE = 4;
 static const int L3_SIZE = 16;
+static const int L4_SIZE = 4;
 static const int OUT_SIZE = 1;
 
 struct Weights {
@@ -26,8 +27,10 @@ struct Weights {
     std::array<float, L2_SIZE> bias1{};
     std::array<float, L2_SIZE * L3_SIZE> weights2{};
     std::array<float, L3_SIZE> bias2{};
-    std::array<float, L3_SIZE * OUT_SIZE> weights3{};
-    std::array<float, OUT_SIZE> bias3{};
+    std::array<float, L3_SIZE * L4_SIZE> weights3{};
+    std::array<float, L4_SIZE> bias3{};
+    std::array<float, L4_SIZE * OUT_SIZE> weights4{};
+    std::array<float, OUT_SIZE> bias4{};
 };
 
 struct WDLHead {
@@ -43,8 +46,10 @@ public:
     std::array<float, L2_SIZE> bias1{};
     std::array<float, L2_SIZE * L3_SIZE> weights2{};
     std::array<float, L3_SIZE> bias2{};
-    std::array<float, L3_SIZE * OUT_SIZE> weights3{};
-    std::array<float, OUT_SIZE> bias3{};
+    std::array<float, L3_SIZE * L4_SIZE> weights3{};
+    std::array<float, L4_SIZE> bias3{};
+    std::array<float, L4_SIZE * OUT_SIZE> weights4{};
+    std::array<float, OUT_SIZE> bias4{};
     std::array<std::array<int16_t, L1_SIZE>, 2> accumulator{};
     std::array<int16_t, L1_SIZE * 3 * 2> wdlWeights{};
     std::array<int16_t, 3> wdlBias{};

@@ -55,6 +55,8 @@ void Net::loadDefaultNet() {
     bias2    = defaultWeights.bias2;
     weights3 = defaultWeights.weights3;
     bias3    = defaultWeights.bias3;
+    weights4 = defaultWeights.weights4;
+    bias4    = defaultWeights.bias4;
 
     wdlWeights = defaultWdl.weights1;
     wdlBias    = defaultWdl.bias1;
@@ -80,9 +82,10 @@ void Net::initAccumulator(std::array<u64, 13> &bitboards) {
 }
 
 int Net::calculate(Color c) {
-    float out = bias3[0];
+    float out = bias4[0];
     std::array<float, L2_SIZE> l1Out = bias1;
     std::array<float, L3_SIZE> l2Out = bias2;
+    std::array<float, L4_SIZE> l3Out = bias3;
 
     // I have absoluetly no clue why I have to manually unroll this, but without the speed is absolute shit
     for (int n = 0; n < 64; n++) {
@@ -110,7 +113,11 @@ int Net::calculate(Color c) {
             l2Out[m] += mscrelu(l1Out[n]) * weights2[n * L3_SIZE + m];
 
     for (int n = 0; n < L3_SIZE; n++)
-        out += screlu(l2Out[n]) * weights3[n];
+        for (int m = 0; m < L4_SIZE; m++)
+            l3Out[m] += screlu(l2Out[n]) * weights3[n * L4_SIZE + m];
+
+    for (int i = 0; i < L4_SIZE; i++)
+        out += (l3Out[i] + l1Out[i]) * weights4[i];
 
     return int(out * 133.0f);
 }
