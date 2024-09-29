@@ -16,7 +16,7 @@ enum Toggle {
 static const int INPUT_SIZE = 12 * 64;
 static const int L1_SIZE = 256;
 static const int L2_SIZE = 8;
-static const int L3_SIZE = 8;
+static const int L3_SIZE = 16;
 static const int OUT_SIZE = 1;
 
 struct Weights {
@@ -75,6 +75,10 @@ inline float screlu(float input) {
 
 inline float leakysrelu(float input) {
     return input > 0 ? input * input : input * 0.1f;
+}
+
+inline float mscrelu(float input) {
+    return std::clamp(std::abs(input) * input, -1.0f, 1.0f);
 }
 
 template<Color C> inline
