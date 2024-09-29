@@ -43,7 +43,7 @@ void Net::loadDefaultNet() {
         bias0[i] = int16_t(defaultWeights.bias0[i] * 255);
 
     int idx = 0;
-    const int bc = 4;
+    const int bc = 8;
     const int bs = 64;
 
     for (size_t i = 0; i < defaultWeights.weights1.size(); i++)
@@ -87,30 +87,30 @@ int Net::calculate(Color c) {
     // I have absoluetly no clue why I have to manually unroll this, but without the speed is absolute shit
     for (int n = 0; n < 64; n++) {
         l1Out[0] += screlu(float(accumulator[ c][n]) / 255.0f) * weights1[n          ];
-        l1Out[0] += screlu(float(accumulator[!c][n]) / 255.0f) * weights1[n + L1_SIZE];
+        l1Out[4] += screlu(float(accumulator[!c][n]) / 255.0f) * weights1[n + L1_SIZE];
     }
 
     for (int n = 64; n < 128; n++) {
         l1Out[1] += screlu(float(accumulator[ c][n]) / 255.0f) * weights1[n          ];
-        l1Out[1] += screlu(float(accumulator[!c][n]) / 255.0f) * weights1[n + L1_SIZE];
+        l1Out[5] += screlu(float(accumulator[!c][n]) / 255.0f) * weights1[n + L1_SIZE];
     }
 
     for (int n = 128; n < 192; n++) {
         l1Out[2] += screlu(float(accumulator[ c][n]) / 255.0f) * weights1[n          ];
-        l1Out[2] += screlu(float(accumulator[!c][n]) / 255.0f) * weights1[n + L1_SIZE];
+        l1Out[6] += screlu(float(accumulator[!c][n]) / 255.0f) * weights1[n + L1_SIZE];
     }
 
     for (int n = 192; n < 256; n++) {
         l1Out[3] += screlu(float(accumulator[ c][n]) / 255.0f) * weights1[n          ];
-        l1Out[3] += screlu(float(accumulator[!c][n]) / 255.0f) * weights1[n + L1_SIZE];
+        l1Out[7] += screlu(float(accumulator[!c][n]) / 255.0f) * weights1[n + L1_SIZE];
     }
 
     for (int n = 0; n < L2_SIZE; n++)
         for (int m = 0; m < L3_SIZE; m++)
-            l2Out[m] += leakysrelu(l1Out[n]) * weights2[n * L3_SIZE + m];
+            l2Out[m] += mscrelu(l1Out[n]) * weights2[n * L3_SIZE + m];
 
     for (int n = 0; n < L3_SIZE; n++)
-        out += leakysrelu(l2Out[n]) * weights3[n];
+        out += screlu(l2Out[n]) * weights3[n];
 
     return int(out * 133.0f);
 }
