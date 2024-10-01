@@ -69,6 +69,8 @@ class SearchState {
     std::array<std::array<Move, MAXDEPTH>, MAXDEPTH> pvMoves;
     std::array<int, MAXDEPTH> pvLength;
 
+    int currentPvDepth;
+
 public:
 
     void clearHistory();

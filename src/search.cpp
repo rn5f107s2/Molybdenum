@@ -59,10 +59,13 @@ int SearchState::iterativeDeepening(Position  &pos, SearchTime &st, int maxDepth
     int prevScore = 0;
     si.clear();
     si.st = st;
+    currentPvDepth = 0;
 
     //prettyInitial();
 
     for (int depth = 1; depth != maxDepth; depth++) {
+        currentPvDepth = std::min(currentPvDepth, depth + 3);
+
         score = aspirationWindow(score, pos, si, depth);
 
         if (si.stop.load(std::memory_order_relaxed))
@@ -136,6 +139,8 @@ int SearchState::aspirationWindow(int prevScore, Position &pos, SearchInfo &si, 
     int alpha = -INFINITE;
     int beta  =  INFINITE;
 
+    int initialPvDepth = currentPvDepth;
+
     if (depth >= 2) {
         alpha = std::max(-INFINITE, prevScore - delta);
         beta  = std::min( INFINITE, prevScore + delta);
@@ -158,6 +163,9 @@ int SearchState::aspirationWindow(int prevScore, Position &pos, SearchInfo &si, 
             alpha = std::max(score - delta, -INFINITE);
 
         si.selDepth = 0;
+
+        currentPvDepth = initialPvDepth;
+        currentPvDepth = std::min(currentPvDepth, depth + 3);
 
         score = search<Root>(alpha, beta, pos, depth, si, &stack[2]);
     }
@@ -350,7 +358,8 @@ int SearchState::search(int alpha, int beta, Position &pos, int depth, SearchInf
             if (   score > singBeta
                 && stack->currMove) 
                 mp.setPrioMove(stack->currMove);
-        }
+        } else if (PvNode && stack->plysInSearch + (depth * 4) < currentPvDepth)
+            extensions = 1;
 
         prefetchTTEntry(pos, pc, from, to, capture);
 
@@ -429,6 +438,9 @@ int SearchState::search(int alpha, int beta, Position &pos, int depth, SearchInf
         if (!pos.isCapture(currentMove))
             historyUpdates.push(currentMove);
     }
+
+    if (PvNode && exact)
+        currentPvDepth = std::max(currentPvDepth, stack->plysInSearch);
 
     if (ROOT && exact)
         si.bestRootMove = bestMove;
