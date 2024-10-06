@@ -24,6 +24,8 @@ struct Weights {
     std::array<float, L1_SIZE> bias0{};
     std::array<float, L1_SIZE * L2_SIZE * 2> weights1{};
     std::array<float, L2_SIZE> bias1{};
+    std::array<float, L2_SIZE * OUT_SIZE> weightsS{};
+    std::array<float, OUT_SIZE> biasS{};
     std::array<float, L2_SIZE * L3_SIZE> weights2{};
     std::array<float, L3_SIZE> bias2{};
     std::array<float, L3_SIZE * OUT_SIZE> weights3{};
@@ -39,8 +41,10 @@ class Net {
 public:
     std::array<int16_t , L1_SIZE * INPUT_SIZE> weights0{};
     std::array<int16_t, L1_SIZE> bias0{};
-    std::array<float, 64 * 4 * 2> weights1{};
+    std::array<float, 32 * 8 * 2> weights1{};
     std::array<float, L2_SIZE> bias1{};
+    std::array<float, L2_SIZE * OUT_SIZE> weightsS{};
+    std::array<float, OUT_SIZE> biasS{};
     std::array<float, L2_SIZE * L3_SIZE> weights2{};
     std::array<float, L3_SIZE> bias2{};
     std::array<float, L3_SIZE * OUT_SIZE> weights3{};
