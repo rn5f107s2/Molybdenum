@@ -33,6 +33,8 @@ struct WDLHead {
 
 class Net {
 public:
+    std::array<float, 1385> weights;
+    std::array<float, 512> accumulatorConv;
     std::array<int16_t , L1_SIZE * INPUT_SIZE> weights0{};
     std::array<int16_t, L1_SIZE> bias0{};
     std::array<int16_t, L1_SIZE * OUTPUT_SIZE * 2> weights1{};
@@ -42,7 +44,7 @@ public:
     std::array<int16_t, 3> wdlBias{};
     Stack<std::array<std::array<int16_t, L1_SIZE>, 2>, MAXDEPTH> accumulatorStack;
 
-    void initAccumulator(std::array<u64, 13> &bitboards);
+    void initAccumulator(std::array<u64, 13> &bitboards, Color c = true);
     int calculate(Color c);
     std::tuple<float, float, float> getWDL(Color c);
     void loadDefaultNet();
@@ -69,6 +71,7 @@ int index(int pc, int sq) {
 
 template<Toggle STATE> inline
 void Net::toggleFeature(int piece, int square) {
+    return;
     int indexWhite = index<WHITE>(piece, square);
     int indexBlack = index<BLACK>(piece, square);
 
