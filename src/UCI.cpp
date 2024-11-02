@@ -48,6 +48,9 @@ void UCI::uci([[maybe_unused]] const std::string &args) {
 }
 
 void UCI::isready([[maybe_unused]] const std::string &args) {
+    if (threads.done())
+        threads.join();
+
     std::cout << "readyok" << std::endl;
 }
 
@@ -207,10 +210,15 @@ void UCI::start(int argc, char** argv) {
         std::string in = argv[i];
 
         if (in == "quit")
-            return;
+            break;
 
         handleInput(in);
+
+        // If a search was started, wait for it to finish
+        while (!threads.done());
     }
+
+    threads.join();
 }
 
 void UCI::loop() {    
@@ -220,7 +228,7 @@ void UCI::loop() {
 
         if (input == "quit") {
             threads.stop();
-            while (!threads.done()) {}
+            threads.join();
             return;
         }
 

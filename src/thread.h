@@ -24,7 +24,6 @@ public:
     void stop();
     void clear();
     void initSearchInfo(SearchTime st);
-    void detach();
     bool done();
     int id() const;
     u64  nodes();
