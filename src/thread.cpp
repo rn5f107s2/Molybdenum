@@ -23,12 +23,6 @@ void Thread::initSearchInfo(SearchTime st) {
     state.si.st = st;
 }
 
-void Thread::detach() {
-    while (!thread.joinable()) {}
-
-    thread.detach();
-}
-
 int Thread::id() const {
     return threadId;
 }
@@ -42,6 +36,10 @@ u64 Thread::nodes() {
 }
 
 void ThreadPool::start(Position &pos, SearchTime &st, int depth) {
+    // Threads should already be joined if isready was sent after the last search ended, however in order to not
+    // rely on that, also join threads here
+    join();
+
     // Before starting the threads set all of them to searching, to avoid the mainthread stopping search
     // while other threads havent been started yet, also reset SearchInfo here, to avoid reading old nodecounts
     for (auto &t : threads) {
