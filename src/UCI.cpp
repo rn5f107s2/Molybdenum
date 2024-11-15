@@ -16,7 +16,7 @@
 #include "UCIOptions.h"
 #include "bench.h"
 #include "nnue.h"
-#include "Datagen/Datagen.h"
+#include "Datagen/Newgen.h"
 #include "thread.h"
 
 void UCI::d([[maybe_unused]] const std::string &args) {
@@ -203,6 +203,7 @@ void UCI::stop([[maybe_unused]] const std::string &args) {
 }
 
 void UCI::start(int argc, char** argv) {
+#ifndef DATAGEN
     if (argc == 1)
         return loop();
 
@@ -219,6 +220,15 @@ void UCI::start(int argc, char** argv) {
     }
 
     threads.join();
+#else
+    if (argc != 4) {
+        std::cout << "Expected three arguments: FilePrefix Seed BatchSize" << std::endl;
+        return;
+    }
+
+    ::start(argv[1], std::stoull(argv[2]), std::stoi(argv[3]));
+
+#endif
 }
 
 void UCI::loop() {    

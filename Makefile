@@ -31,12 +31,12 @@ endif
 
 SOURCES := $(wildcard $(SRC_DIR)/*.cpp)
 OBJECTS := $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SOURCES))
-DG_OBJECTS := $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%_dg.o, $(SOURCES)) $(OBJ_DIR)/Datagen.o
+DG_OBJECTS := $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%_dg.o, $(SOURCES)) $(OBJ_DIR)/Newgen.o
 
 $(OBJ_DIR)/%_dg.o: $(SRC_DIR)/%.cpp
 	$(CXX) -I$(SRC_DIR) $(CXXFLAGS) -DDATAGEN -c $< -o $@
 
-$(OBJ_DIR)/Datagen.o: $(SRC_DIR)/Datagen/Datagen.cpp
+$(OBJ_DIR)/Newgen.o: $(SRC_DIR)/Datagen/Newgen.cpp
 	$(CXX) -I$(SRC_DIR) $(CXXFLAGS) -DDATAGEN -c $< -o $@
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
