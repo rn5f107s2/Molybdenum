@@ -196,7 +196,11 @@ int SearchState::search(int alpha, int beta, Position &pos, int depth, SearchInf
 
     if (   !(si.nodeCount.load(std::memory_order_relaxed) & 1023)
         && stop<Hard>(si.st, si))
+#ifndef DATAGEN
         thread->threads->stop();
+#else
+        si.stop.store(true, std::memory_order_relaxed);
+#endif
 
     if (si.stop.load(std::memory_order_relaxed) && !(ROOT && depth == (1 + check)))
         return DRAW;

@@ -1,5 +1,3 @@
-#define DATAGEN
-
 #ifdef DATAGEN
 
 #include "Newgen.h"
@@ -7,14 +5,13 @@
 
 void start(const std::string &filePrefix, u64 initialSeed, int batchSize) {
     Position pos;
-    ThreadPool tp;
+    Thread t(nullptr, 0);
     SearchState state;
     std::mt19937 random(initialSeed);
 
-    tp.set(1);
-
     state.si.st.limit = Nodes;
-    state.thread = tp.get(0);
+    state.thread = &t;
+    pos.net.loadDefaultNet();
 
     loop(state, pos, filePrefix, random, batchSize);
 }
@@ -47,21 +44,19 @@ void createExit(SearchState &state, Position &pos, std::mt19937 &random) {
         pos.setBoard("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 
         for (int i = 0; i < exitDepth; i++) {
-            MoveList ml; 
-            generateMoves<false>(pos, ml);
+            MoveList ml;
+            u64 ksq = pos.getPieces(pos.sideToMove, KING);
+            u64 checkers = attackersTo<false, false>(lsb(ksq),pos.getOccupied(), pos.sideToMove ? BLACK_PAWN : WHITE_PAWN, pos);
+            generateMoves<false>(pos, ml, checkers);
 
             if (!ml.length)
                 break;
 
-            std::cout << "Alive" << std::endl;
             Move randomMove = ml.moves[randomSegements[i % 4] % ml.length].move;
-            std::cout << "Still alive" << std::endl;
 
             pos.makeMove(randomMove);
             pos.movecount++;
         }
-
-        pos.printBoard();
 
     } while(!verifyExit(state, pos));
 }
@@ -116,13 +111,15 @@ void playGame(SearchState &state, Position &pos, std::ofstream &out) {
 
         if (   adjCounter[1] >= DADJ_MOVECOUNT 
             || pos.plys50moveRule >= 100 
-            || pos.hasRepeated(0)) 
+            || pos.hasRepeated(0)
+            || (pos.phase <= 3 && !(pos.getPieces(PAWN)))) 
         {
             result = 1;
             break;
         }
 
         pos.makeMove(bestMove);
+        pos.net.initAccumulator(pos.bitBoards);
         pos.movecount++;
     }
 

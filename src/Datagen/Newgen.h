@@ -1,5 +1,3 @@
-#define DATAGEN
-
 #ifdef DATAGEN
 
 #ifndef MOLYBDENUM_DATAGEN_H_2
