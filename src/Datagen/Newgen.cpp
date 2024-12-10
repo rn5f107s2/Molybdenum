@@ -106,10 +106,6 @@ int playGame(SearchState &state, Position &pos, std::ofstream &out) {
             break;
         }
 
-        fens.push(pos.fen());
-        scores.push(score);
-        bestMoves.push(bestMove);
-
         if (abs(score) >= WADJ_SCORE) {
             adjCounter[0]++;
         } else {
@@ -131,6 +127,10 @@ int playGame(SearchState &state, Position &pos, std::ofstream &out) {
             result = 1;
             break;
         }
+
+        fens.push(pos.fen());
+        scores.push(pos.sideToMove ? score : -score);
+        bestMoves.push(bestMove);
 
         pos.makeMove(bestMove);
         pos.net.initAccumulator(pos.bitBoards);
