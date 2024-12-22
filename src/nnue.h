@@ -52,7 +52,7 @@ inline int screlu(int16_t input) {
 
 template<Color C> inline
 int index(int pc, int sq) {
-    int square = C ? sq : sq ^ 56;
+    int square = C ? sq ^ 7 : sq ^ 63;
     int piece  = C ? pc : makePiece(typeOf(pc), !colorOf(pc));
 
     return piece * 64 + square;
