@@ -258,7 +258,7 @@ int SearchState::search(int alpha, int beta, Position &pos, int depth, SearchInf
         && !check
         && !excluded
         && depth >= 2
-        && (stack-1)->currMove != NULL_MOVE
+        && ((stack-1)->currMove != NULL_MOVE || (stack-2)->currMove != NULL_MOVE)
         && stack->staticEval >= beta
         && beta > -MAXMATE) {
 
