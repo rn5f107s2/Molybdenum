@@ -3,7 +3,7 @@ OBJ_DIR=build
 MOLY_DIR=src
 CXX=clang++
 
-DEFAULT_NET_NAME=mcabBaseline-40.bin
+DEFAULT_NET_NAME=k64.nnue
 
 DEFAULT_EXE = $(OBJ_DIR)/Molybdenum
 DATAGEN_EXE = $(OBJ_DIR)/Datagen

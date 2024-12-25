@@ -13,7 +13,7 @@ enum Toggle {
 };
 
 static const int INPUT_SIZE = 12 * 64;
-static const int L1_SIZE = 32;
+static const int L1_SIZE = 64;
 static const int OUTPUT_SIZE = 1;
 static const int NET_SIZE = 3;
 static const std::array<int, NET_SIZE> LAYER_SIZE = {INPUT_SIZE, L1_SIZE, OUTPUT_SIZE};
@@ -52,7 +52,7 @@ inline int screlu(int16_t input) {
 
 template<Color C> inline
 int index(int pc, int sq) {
-    int square = C ? sq : sq ^ 56;
+    int square = C ? sq ^ 7 : sq ^ 63;
     int piece  = C ? pc : makePiece(typeOf(pc), !colorOf(pc));
 
     return piece * 64 + square;
