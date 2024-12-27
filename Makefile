@@ -1,6 +1,7 @@
 DEFAULT_EXE=localengine
 
-TARGET ?= $(DEFAULT_EXE)
+CWD := $(shell pwd)
+EXE ?= $(DEFAULT_EXE)
 
 all:
-	cd ~/localengine && make EXE=$(TARGET)
+	cd ~/localengine && make EXE=$(CWD)/$(EXE)
