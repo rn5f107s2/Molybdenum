@@ -299,7 +299,7 @@ int SearchState::search(int alpha, int beta, Position &pos, int depth, SearchInf
 
         double red = lmrReduction(depth, moveCount, improving);
         int reductions = int(red);
-        int expectedDepth = std::max(depth - reductions, 1);
+        int expectedDepth = std::max(depth - reductions, 1) - check;
         int history = (*(stack-1)->contHist)[pc][to] + mainHistory[pos.sideToMove][from][to];
         
         stack->quarterRed = (red - reductions) * 4;
