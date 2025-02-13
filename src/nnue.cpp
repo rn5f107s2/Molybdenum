@@ -87,8 +87,8 @@ void Net::updateGradients(Color stm, int eval, int target) {
 
     positionUpdates++;
 
-    //if (positionUpdates == 8196)
-    //    updateWeights(0.0001f);
+    if (positionUpdates == std::numeric_limits<int>::max())
+        updateWeights(0.0001f);
 }
 
 void Net::updateWeights(float lr) {
