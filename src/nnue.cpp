@@ -74,6 +74,24 @@ int Net::calculate(Color c) {
     return ((output / 255) + bias1[0]) * 133 / (64 * 255);
 }
 
+void Net::updateGradients(int eval, int target) {
+    float error = sigmoid(target) - sigmoid(eval);
+    float mse   = std::abs(error) * error;
+
+    biases1Gradient[0] += mse;
+    positionUpdates++;
+
+    if (positionUpdates == 8196)
+        updateWeights(0.0001f);
+}
+
+void Net::updateWeights(float lr) {
+    int update = (biases1Gradient[0] * lr) * 255 * 64;
+    bias1[0] += update;
+    biases1Gradient[0] = 0;
+    positionUpdates = 0;
+}
+
 std::tuple<float, float, float> Net::getWDL(Color c) {
     int output[3] = {0, 0, 0};
     std::tuple<float, float, float> tpl;

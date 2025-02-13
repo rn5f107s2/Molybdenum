@@ -1,12 +1,14 @@
 #ifndef MOLYBDENUM_NNUE_H
 #define MOLYBDENUM_NNUE_H
 
-#include "Constants.h"
 #include <array>
 #include <string>
 #include <tuple>
 #include <algorithm>
+#include <cmath>
+
 #include "BitStuff.h"
+#include "Constants.h"
 #include "Utility.h"
 
 enum Toggle {
@@ -42,8 +44,14 @@ public:
     std::array<int16_t, 3> wdlBias{};
     Stack<std::array<std::array<int16_t, L1_SIZE>, 2>, MAXDEPTH> accumulatorStack;
 
+    std::array<float, OUTPUT_SIZE> biases1Gradient;
+
+    int positionUpdates = 0;
+
     void initAccumulator(std::array<u64, 13> &bitboards);
     int calculate(Color c);
+    void updateGradients(int eval, int target);
+    void updateWeights(float lr);
     std::tuple<float, float, float> getWDL(Color c);
     void loadDefaultNet();
 
@@ -90,6 +98,10 @@ inline void Net::pushAccToStack() {
 inline void Net::popAccStack() {
     accumulatorStack.pop();
     accumulator = accumulatorStack.top();
+}
+
+inline float sigmoid(int val) {
+    return 1.0f / (1.0f + std::exp(-val * 133));
 }
 
 

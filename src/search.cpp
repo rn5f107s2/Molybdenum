@@ -411,6 +411,9 @@ int SearchState::search(int alpha, int beta, Position &pos, int depth, SearchInf
                     if (!pos.isCapture(bestMove))
                         updateHistory(mainHistory[pos.sideToMove], *(stack-1)->contHist, *(stack-2)->contHist, bestMove, historyUpdates, depth, pos, (stack-1)->currMove && (stack-1)->currMove != NULL_MOVE, (stack-2)->currMove && (stack-2)->currMove != NULL_MOVE);
 
+                    if (depth == 3 && !pos.isCapture(bestMove) && stack->staticEval < score)
+                        pos.net.updateGradients(stack->staticEval, score);
+
                     TT.save(tte, key, bestScore, LOWER, bestMove, depth, stack->plysInSearch);
                     return bestScore;
                 }
@@ -427,6 +430,9 @@ int SearchState::search(int alpha, int beta, Position &pos, int depth, SearchInf
         if (!pos.isCapture(currentMove))
             historyUpdates.push(currentMove);
     }
+
+    if (depth == 3 && !pos.isCapture(bestMove) && stack->staticEval > score)
+        pos.net.updateGradients(stack->staticEval, score);
 
     if (ROOT && exact)
         si.bestRootMove = bestMove;
