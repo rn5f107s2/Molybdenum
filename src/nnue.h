@@ -44,13 +44,14 @@ public:
     std::array<int16_t, 3> wdlBias{};
     Stack<std::array<std::array<int16_t, L1_SIZE>, 2>, MAXDEPTH> accumulatorStack;
 
+    std::array<float, L1_SIZE * OUTPUT_SIZE * 2> weights1Gradient;
     std::array<float, OUTPUT_SIZE> biases1Gradient;
 
     int positionUpdates = 0;
 
     void initAccumulator(std::array<u64, 13> &bitboards);
     int calculate(Color c);
-    void updateGradients(int eval, int target);
+    void updateGradients(Color stm, int eval, int target);
     void updateWeights(float lr);
     std::tuple<float, float, float> getWDL(Color c);
     void loadDefaultNet();

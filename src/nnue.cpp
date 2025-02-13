@@ -74,11 +74,17 @@ int Net::calculate(Color c) {
     return ((output / 255) + bias1[0]) * 133 / (64 * 255);
 }
 
-void Net::updateGradients(int eval, int target) {
+void Net::updateGradients(Color stm, int eval, int target) {
     float error = sigmoid(target) - sigmoid(eval);
     float mse   = std::abs(error) * error;
 
     biases1Gradient[0] += mse;
+
+    for (int i = 0; i < L1_SIZE; i++) {
+        weights1Gradient[i          ] += mse * (screlu(accumulator[ stm][i]) / 255 / 255);
+        weights1Gradient[i + L1_SIZE] += mse * (screlu(accumulator[!stm][i]) / 255 / 255);
+    }
+
     positionUpdates++;
 
     if (positionUpdates == 8196)
@@ -88,6 +94,14 @@ void Net::updateGradients(int eval, int target) {
 void Net::updateWeights(float lr) {
     int update = (biases1Gradient[0] * lr) * 255 * 64;
     bias1[0] += update;
+
+    for (int i = 0; i < L1_SIZE; i++) {
+        weights1[i          ] += (weights1Gradient[i          ] * lr) * 64;
+        weights1[i + L1_SIZE] += (weights1Gradient[i + L1_SIZE] * lr) * 64;
+    }
+
+    memset(&weights1Gradient, 0, L1_SIZE * OUTPUT_SIZE * 2 * sizeof(float));
+
     biases1Gradient[0] = 0;
     positionUpdates = 0;
 }
