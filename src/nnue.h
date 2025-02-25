@@ -44,6 +44,8 @@ public:
     std::array<int16_t, 3> wdlBias{};
     Stack<std::array<std::array<int16_t, L1_SIZE>, 2>, MAXDEPTH> accumulatorStack;
 
+    float skip;
+
     void initAccumulator(std::array<u64, 13> &bitboards, Color c = true);
     int calculate(Color c);
     std::tuple<float, float, float> getWDL(Color c);
