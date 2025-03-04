@@ -42,6 +42,9 @@ public:
     void clear();
     void freeMemory();
     void resize(int newMB);
+    bool isInPool(Node* adress);
+    bool isFull();
+    void cleanChildren();
 };
 
 float uct(uint32_t pVisits, uint32_t visits, float score, float policy, bool root, float pq, float bestq);
