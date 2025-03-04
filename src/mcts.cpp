@@ -12,21 +12,27 @@
 
 void rootSearch(Position &pos, SearchTime &st) {
     Node       root;
-    NodePool   pool(256);
+    NodePool   right(1), left(1);
+    NodePool*  activeHalf = &right;
     SearchInfo si;
     si.clear();
     si.st = st;
     pos.policyNet.loadDefault();
     root.visits = 1;
 
-    while (   (int((pool.currIdx) + 218) < pool.limit) 
-           && ((si.nodeCount & 511) || !stop<Soft>(st, si)))
+    while (((si.nodeCount & 511) || !stop<Soft>(st, si)))
     {
+        if (activeHalf->isFull()) {
+            activeHalf->cleanChildren();
+            activeHalf = (activeHalf == &right) ? &left : &right;
+            activeHalf->clear();
+        }
+
         if (   st.limit == Nodes
             && si.nodeCount >= st.nodeLimit)
             break;
 
-        root.search(pos, pool, 0);
+        root.search(pos, *activeHalf, 0);
         si.nodeCount++;
     }
 
@@ -52,13 +58,15 @@ void rootSearch(Position &pos, SearchTime &st) {
     std::cout << "info depth 1 nodes " << si.nodeCount << " score cp " << int((bestRes - 0.5f) * 1200) << std::endl;
     std::cout << "bestmove " << moveToString(bestMove) << std::endl;
 
-    pool.freeMemory();
+    right.freeMemory(), left.freeMemory();
 }
 
 NodePool::NodePool(int mb) : sizeMB(mb), 
                              limit((mb * 1024 * 1024) / sizeof(Node)),
                              currIdx(0) {
     memory = reinterpret_cast<Node*>(malloc(limit * sizeof(Node)));
+
+    clear();
 }
 
 Node* NodePool::allocate(int nNodes) {
@@ -69,8 +77,13 @@ Node* NodePool::allocate(int nNodes) {
 }
 
 void NodePool::clear() {
-    free(memory);
-    memory = reinterpret_cast<Node*>(malloc(limit * sizeof(Node)));
+    memset(memory, 0, sizeof(Node) * limit);
+
+    currIdx = 0;
+}
+
+bool NodePool::isFull() {
+    return currIdx + 256 > limit;
 }
 
 void NodePool::freeMemory() {
@@ -85,6 +98,16 @@ void NodePool::resize(int newMB) {
     currIdx = 0;
 
     memory = reinterpret_cast<Node*>(malloc(limit * sizeof(Node)));
+}
+
+bool NodePool::isInPool(Node* adress) {
+    return adress >= memory && adress < memory + limit;
+}
+
+void NodePool::cleanChildren() {
+    for (int i = 0; i < limit; i++)
+        if (!isInPool(memory[i].children))
+            memory[i].children = nullptr;
 }
 
 float uct(uint32_t pVisits, uint32_t visits, float score, float policy, bool root, float pq, float bq) {
@@ -102,10 +125,20 @@ float fpu(float pq, float bq) {
 }
 
 float Node::search(Position &pos, NodePool &pool, int ply) {
-    if (!visits && ply)
+    if (children && !pool.isInPool(children)) {
+        Node* newChildren = pool.allocate(cCount);
+
+        for (int i = 0; i < cCount; i++) {
+            memcpy(&newChildren[i], &children[i], sizeof(Node));
+        }
+
+        children = newChildren;
+    }
+
+    if (!visits || pool.isFull())
         return rollout(pos);
 
-    if (visits <= 1)
+    if (!children)
         expand(pos, pool, ply);
 
     if (!cCount) {
