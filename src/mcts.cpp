@@ -12,7 +12,7 @@
 
 void rootSearch(Position &pos, SearchTime &st) {
     Node       root;
-    NodePool   pool(256);
+    NodePool   pool(2);
     SearchInfo si;
     si.clear();
     si.st = st;
@@ -59,6 +59,8 @@ NodePool::NodePool(int mb) : sizeMB(mb),
                              limit((mb * 1024 * 1024) / sizeof(Node)),
                              currIdx(0) {
     memory = reinterpret_cast<Node*>(malloc(limit * sizeof(Node)));
+
+    memset(memory, 0, sizeof(Node) * limit);
 }
 
 Node* NodePool::allocate(int nNodes) {
