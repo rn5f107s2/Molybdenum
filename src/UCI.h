@@ -7,6 +7,7 @@
 #include "tune.h"
 #include "UCIOptions.h"
 #include "thread.h"
+#include "mcts.h"   
 
 #include <unordered_map>
 #include <vector>
@@ -16,6 +17,7 @@ class UCI {
 
 private:
     Position   internalBoard;
+    MCTSState  state;
     UCIOptions options = UCIOptions(this);
     std::unordered_map<std::string, void(UCI::*)(const std::string&)> commands;
 
@@ -30,7 +32,7 @@ private:
 public:
     ThreadPool threads;
 
-    UCI() {
+    UCI() : state(512) {
         internalBoard.net.loadDefaultNet();
         internalBoard.setBoard(defaultFEN);
 

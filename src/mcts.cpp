@@ -10,31 +10,27 @@
 #include <cmath>
 #include <iomanip>
 
-void rootSearch(Position &pos, SearchTime &st) {
-    int size = 512;
-
-    Node       root;
-    NodePool   right(size / 2), left(size / 2);
-    NodePool*  activeHalf = &right;
+void rootSearch(MCTSState &state, Position &pos, SearchTime &st) {
     SearchInfo si;
     si.clear();
     si.st = st;
     pos.policyNet.loadDefault();
-    root.visits = 1;
+
+    state.initRoot(pos);
 
     while (((si.nodeCount & 511) || !stop<Soft>(st, si)))
     {
-        if (activeHalf->isFull()) {
-            activeHalf->cleanChildren();
-            activeHalf = (activeHalf == &right) ? &left : &right;
-            activeHalf->clear();
+        if (state.activeHalf->isFull()) {
+            state.activeHalf->cleanChildren();
+            state.activeHalf = (state.activeHalf == &state.right) ? &state.left : &state.right;
+            state.activeHalf->clear();
         }
 
         if (   st.limit == Nodes
             && si.nodeCount >= st.nodeLimit)
             break;
 
-        root.search(pos, *activeHalf, 0);
+        state.root.search(pos, *state.activeHalf, 0);
         si.nodeCount++;
     }
 
@@ -43,30 +39,40 @@ void rootSearch(Position &pos, SearchTime &st) {
     float bestRes;
     Move  bestMove;
 
-    for (int j = 0; j < root.cCount; j++) {
-        float thisRes = root.children[j].result / root.children[j].visits;
+    for (int j = 0; j < state.root.cCount; j++) {
+        float thisRes = state.root.children[j].result / state.root.children[j].visits;
 
-        std::cout << "info string move: " << moveToString(root.children[j].move) 
+        std::cout << "info string move: " << moveToString(state.root.children[j].move) 
                                           << " Q: " << std::setprecision(3) << thisRes
-                                          << " Visits: " << root.children[j].visits << std::endl;
+                                          << " Visits: " << state.root.children[j].visits << std::endl;
 
         if (thisRes <= bestRes)
             continue;
 
         bestRes  = thisRes;
-        bestMove = root.children[j].move;
+        bestMove = state.root.children[j].move;
     }
 
     std::cout << "info depth 1 nodes " << si.nodeCount << " score cp " << int((bestRes - 0.5f) * 1200) << std::endl;
     std::cout << "bestmove " << moveToString(bestMove) << std::endl;
 
-    right.freeMemory(), left.freeMemory();
+    state.lastBest = bestMove;
+    state.prevPos->setBoard(pos.fen());
 }
 
 NodePool::NodePool(int mb) : sizeMB(mb), 
                              limit((mb * 1024 * 1024) / sizeof(Node)),
                              currIdx(0) {
     memory = reinterpret_cast<Node*>(malloc(limit * sizeof(Node)));
+
+    clear();
+}
+
+NodePool::NodePool() {
+    sizeMB  = 512;
+    limit   = 512 * 1024 * 1024 / sizeof(Node); 
+    currIdx = 0;
+    memory  = reinterpret_cast<Node*>(malloc(limit * sizeof(Node)));
 
     clear();
 }
@@ -233,4 +239,15 @@ Node* Node::select(bool root) {
     }
 
     return (bestIndex != -1 ? &children[bestIndex] : nullptr);
+}
+
+Node* Node::find(Move move) {
+    if (!children)
+        return nullptr;
+
+    for (int i = 0; i < cCount; i++)
+        if (children[i].move == move)
+            return &children[i];
+
+    return nullptr;
 }

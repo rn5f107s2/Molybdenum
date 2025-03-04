@@ -183,7 +183,7 @@ void UCI::go([[maybe_unused]] const std::string &args) {
     }
 
     //threads.start(internalBoard, st, depth);
-    rootSearch(internalBoard, st);
+    rootSearch(state, internalBoard, st);
 }
 
 void UCI::stop([[maybe_unused]] const std::string &args) {
