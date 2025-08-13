@@ -309,8 +309,16 @@ int SearchState::search(int alpha, int beta, Position &pos, int depth, SearchInf
             extensions = 1;
 
         if (   score > singBeta
-            && stack->currMove) 
-            mp.setPrioMove(stack->currMove);
+            && stack->currMove)
+        {
+            bool replaceTTM = score >= beta && ttScore <= alpha && ttBound == LOWER;
+
+            Move prioMove  = replaceTTM ? ttMove : stack->currMove;
+            Move newTTMove = replaceTTM ? stack->currMove : ttMove;
+
+            mp.setPrioMove(prioMove);
+            mp.setTTMove(ttMove = newTTMove);
+        }
     }
 
     while ((currentMove = mp.pickMove())) {

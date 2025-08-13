@@ -155,5 +155,8 @@ class Movepicker {
             prioMove = pm;
             searchedPrio = false;
         }
-        
+
+        inline void setTTMove(Move ttm) {
+            ttMove = ttm;
+        }
 };
