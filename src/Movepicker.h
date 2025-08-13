@@ -38,6 +38,7 @@ class Movepicker {
         bool scored = false;
         bool root   = false;
         bool searchedPrio = true;
+        bool searchedTTM  = false;
 
     public:
         Movepicker(Position *p, Move ttm, 
@@ -56,11 +57,20 @@ class Movepicker {
             pos  = p;
             root = r;
 
+            searchedTTM = !ttm;
 
             generateMoves<qsearch>(*pos, ml, checkers);
 
             currentMove = &ml.moves[0];
             endMoveList = &ml.moves[ml.length];;
+        }
+
+        inline bool isLegal(Move m) {
+            for (int i = 0; i < ml.length; i++)
+                if (ml.moves[i].move == m)
+                    return true;
+
+            return false;
         }
 
         inline Move scoreMoves() {
@@ -126,13 +136,12 @@ class Movepicker {
         }
 
         inline Move pickMove() {
-
-            if (!searchedPrio) {
+            if (!searchedPrio && searchedTTM) {
                 searchedPrio = true;
                 return prioMove;
             }
 
-            if (!scored && (scored = true))
+            if (!scored && (scored = true) && (searchedTTM = true))
                 return scoreMoves();
 
             if (currentMove == endMoveList)

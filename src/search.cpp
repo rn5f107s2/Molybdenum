@@ -286,8 +286,35 @@ int SearchState::search(int alpha, int beta, Position &pos, int depth, SearchInf
                                             &mainHistory[pos.sideToMove], 
                                             &*(stack-1)->contHist, 
                                             &*(stack-2)->contHist, checkers, ROOT);
+
+    if (   depth >= 8
+        && !ROOT
+        && ttHit
+        && ttBound != UPPER
+        && ttDepth >= depth - 3
+        && !excluded
+        && mp.isLegal(ttMove)) {
+            
+        int singDepth = depth / 2;
+        int singBeta  = ttScore - 12 + std::min(si.rootMoveCount * 2, 12); 
+
+        stack->excluded = ttMove;
+        stack->currMove = NO_MOVE;
+
+        score = search<nt>(singBeta - 1, singBeta, pos, singDepth, si, stack);
+
+        stack->excluded = NO_MOVE;
+
+        if (score < singBeta)
+            extensions = 1;
+
+        if (   score > singBeta
+            && stack->currMove) 
+            mp.setPrioMove(stack->currMove);
+    }
+
     while ((currentMove = mp.pickMove())) {
-        extensions = depth + moveCount <= 13 ? extensions : 0;
+        extensions = !moveCount || (depth + moveCount <= 13) ? extensions : 0;
     
         if (currentMove == excluded)
             continue;
@@ -323,32 +350,6 @@ int SearchState::search(int alpha, int beta, Position &pos, int depth, SearchInf
             && depth <= 6
             && history < -6011 * expectedDepth - (-6305 * stack->quarterRed) / 4)
             continue;
-
-        if (   depth >= 8
-            && !ROOT
-            && ttHit
-            && currentMove == ttMove
-            && ttBound != UPPER
-            && ttDepth >= depth - 3
-            && !excluded) {
-            
-            int singDepth = depth / 2;
-            int singBeta  = ttScore - 12 + std::min(si.rootMoveCount * 2, 12); 
-
-            stack->excluded = ttMove;
-            stack->currMove = NO_MOVE;
-
-            score = search<nt>(singBeta - 1, singBeta, pos, singDepth, si, stack);
-
-            stack->excluded = NO_MOVE;
-
-            if (score < singBeta)
-                extensions = 1;
-
-            if (   score > singBeta
-                && stack->currMove) 
-                mp.setPrioMove(stack->currMove);
-        }
 
         prefetchTTEntry(pos, pc, from, to, capture);
 
