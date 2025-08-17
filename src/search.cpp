@@ -18,6 +18,8 @@ Tune tune;
 #endif
 
 bool prettyprint = false;
+int PV_WINDOW = 10;
+int MultiPV = 3;
 
 std::string SearchState::outputWDL(Position &pos, RootMove& rm) {
     for (int i = 0; i < rm.pvLength; i++)
@@ -107,6 +109,7 @@ int SearchState::aspirationWindow(int prevScore, Position &pos, SearchInfo &si, 
     int delta = std::clamp(79 - depth * depth, 23, 34);
     int alpha = -INFINITE;
     int beta  =  INFINITE;
+    PV_WINDOW = 10;
 
     if (depth >= 2) {
         alpha = std::max(-INFINITE, prevScore - delta);
@@ -121,8 +124,21 @@ int SearchState::aspirationWindow(int prevScore, Position &pos, SearchInfo &si, 
 
     int score = search<Root>(alpha, beta, pos, depth, si, &stack[2]);
 
-    while ((score >= beta || score <= alpha) && !stop<Hard>(si.st, si)) {
+    auto usableRootMoves = [&](int window) {
+        int i;
+
+        si.rootMoves.sort();
+
+        for (i = 1; i < si.rootMoves.length && si.rootMoves[i].scoreBound == EXACT && si.rootMoves[i].score + window >= si.rootMoves[0].score; i++);
+
+        return i;
+    };
+
+    while ((score >= beta || score <= alpha || usableRootMoves(PV_WINDOW) < std::min(si.rootMoves.length, MultiPV)) && !stop<Hard>(si.st, si)) {
         delta *= 1.23;
+
+        if (score > alpha && score < beta)
+            PV_WINDOW *= 2;
 
         if (score >= beta)
             beta = std::max(score + delta, INFINITE);
@@ -280,6 +296,7 @@ int SearchState::search(int alpha, int beta, Position &pos, int depth, SearchInf
 
         if (   !capture
             && bestScore > -MAXMATE
+            && !ROOT
             && depth <= 4
             && moveCount > (3 + improving) * (11 * depth - ((stack-1)->quarterRed * 10) / 4) / 4)
             continue;
