@@ -58,8 +58,6 @@ int SearchState::iterativeDeepening(Position  &pos, SearchTime &st, int maxDepth
     si.clear();
     si.st = st;
 
-    //prettyInitial();
-
     for (int depth = 1; depth != maxDepth; depth++) {
         score = aspirationWindow(score, pos, si, depth);
 
@@ -108,6 +106,17 @@ int SearchState::iterativeDeepening(Position  &pos, SearchTime &st, int maxDepth
             std::cout << uciOutput << std::endl;
         }
 
+        for (int i = 0; i < si.pvs.size(); i++) {
+            std::cout << moveToString(si.pvs[i].move) << " " << si.pvs[i].score << std::endl;
+
+            for (int j = 0; j < si.pvs[i].pvLength; j++)
+                std::cout << moveToString(si.pvs[i].pvMoves[j]) << " ";
+
+            std::cout << std::endl;
+        }
+
+        si.pvs.clear();
+
         if (stop<Soft>(st, si)) {
             thread->threads->stop();
             break;
@@ -138,6 +147,8 @@ int SearchState::aspirationWindow(int prevScore, Position &pos, SearchInfo &si, 
         alpha = std::max(-INFINITE, prevScore - delta);
         beta  = std::min( INFINITE, prevScore + delta);
     }
+
+    delta = std::max(delta, PVWindow);
 
     std::array<SearchStack, STACKSIZE> stack;
     stack[0].contHist = &continuationHistory[NO_PIECE][0];
@@ -171,7 +182,7 @@ int SearchState::search(int alpha, int beta, Position &pos, int depth, SearchInf
     u64 ksq = pos.getPieces(pos.sideToMove, KING);
     u64 checkers = attackersTo<false, false>(lsb(ksq),pos.getOccupied(), pos.sideToMove ? BLACK_PAWN : WHITE_PAWN, pos);
     Move bestMove = 0, currentMove = 0, excluded = NO_MOVE;
-    int bestScore = -INFINITE, score = -INFINITE, moveCount = 0, extensions = 0;
+    int bestScore = -INFINITE, score = -INFINITE, moveCount = 0, extensions = 0, bmBestScore = -INFINITE;
     bool exact = false, check = checkers, ttHit = false, improving, whatAreYouDoing;
     Stack<Move> historyUpdates;
 
@@ -394,7 +405,11 @@ int SearchState::search(int alpha, int beta, Position &pos, int depth, SearchInf
 
         if (score > bestScore) {
             bestScore = score;
-            bestMove = currentMove;
+
+            if (!ROOT || score > bmBestScore) {
+                bestMove = currentMove;
+                bmBestScore = score;
+            }
 
             if(score > alpha) {
                 alpha = score;
@@ -415,13 +430,22 @@ int SearchState::search(int alpha, int beta, Position &pos, int depth, SearchInf
                     return bestScore;
                 }
 
-                pvMoves[stack->plysInSearch][stack->plysInSearch] = bestMove;
+                pvMoves[stack->plysInSearch][stack->plysInSearch] = currentMove;
 
                 for (int nextPly = stack->plysInSearch + 1; nextPly < pvLength[stack->plysInSearch + 1]; nextPly++)
                     pvMoves[stack->plysInSearch][nextPly] = pvMoves[stack->plysInSearch + 1][nextPly];
 
                 pvLength[stack->plysInSearch] = pvLength[stack->plysInSearch + 1];
+
+                if constexpr (ROOT) {
+                    si.pvs.pushBack({.move = currentMove, .score = score, .pvLength = pvLength[0], .pvMoves = pvMoves[0]});
+                }
             }
+        }
+
+        if constexpr (ROOT) {
+            bestScore = std::min(bmBestScore - PVWindow - 1, bestScore);
+            alpha     = std::min(bmBestScore - PVWindow - 1, alpha);
         }
 
         if (!pos.isCapture(currentMove))
@@ -442,7 +466,7 @@ int SearchState::search(int alpha, int beta, Position &pos, int depth, SearchInf
     if (!excluded)
         TT.save(tte, key, bestScore, exact ? EXACT : UPPER, bestMove, depth, stack->plysInSearch);
 
-    return bestScore;
+    return bmBestScore;
 }
 
 template<NodeType nt>

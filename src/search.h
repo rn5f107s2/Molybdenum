@@ -21,6 +21,38 @@ extern bool prettyprint;
 
 class Thread;
 
+static const int PVWindow = 30;
+
+struct PvMove {
+    Move move;
+    int score;
+
+    int pvLength;
+    std::array<Move, MAXDEPTH> pvMoves;
+};
+
+struct PvCollector {
+    int curr = 0;
+    std::array<PvMove, 218> moves;
+
+public:
+    int size() {
+        return curr;
+    }
+
+    void clear() {
+        curr = 0;
+    }
+
+    void pushBack(PvMove pvm) {
+        moves[curr++] = pvm;
+    }
+
+    PvMove& operator[](int i) {
+        return moves[i];
+    }
+};
+
 struct SearchInfo {
     Move bestRootMove = 0;
     SearchTime st;
@@ -28,6 +60,8 @@ struct SearchInfo {
     int selDepth = 0;
 
 public:
+    PvCollector pvs;
+
     std::atomic_uint64_t nodeCount = 0;
     std::atomic_bool stop = false;
 
@@ -69,13 +103,11 @@ class SearchState {
     std::array<std::array<Move, MAXDEPTH>, MAXDEPTH> pvMoves;
     std::array<int, MAXDEPTH> pvLength;
 
-public:
-
-    void clearHistory();
     std::string outputWDL(Position &pos);
-    int startSearch(Position &pos, SearchTime &st, int maxDepth, Move &bestMove = emptyMove);
     int iterativeDeepening(Position  &pos, SearchTime &st, int maxDepth, [[maybe_unused]] Move &bestMove);
     int aspirationWindow(int prevScore, Position &pos, SearchInfo &si, int depth);
+
+    void prettyPrint(Position &pos, SearchInfo &si, int score, int depth);
 
     template<NodeType nt>
     int qsearch(int alpha, int beta, Position &pos, SearchInfo &si, SearchStack *stack);
@@ -83,10 +115,12 @@ public:
     template<NodeType nt>
     int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, SearchStack *stack);
 
+public:
+    void clearHistory();
+    int startSearch(Position &pos, SearchTime &st, int maxDepth, Move &bestMove = emptyMove);
+
     Thread* thread;
     SearchInfo si;
-
-    void prettyPrint(Position &pos, SearchInfo &si, int score, int depth);
 };
 
 inline std::array<double, 256> initReductions() {
