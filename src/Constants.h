@@ -72,6 +72,7 @@ enum Slider {
     BISHOP_S, QUEEN_S, ROOK_S
 };
 
+constexpr int MAXMOVES = 218;
 constexpr int MAXDEPTH  = 220;
 constexpr int STACKSIZE = MAXDEPTH + 3;
 constexpr int INFINITE  = 200000;

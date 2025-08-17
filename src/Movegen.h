@@ -43,7 +43,7 @@ struct MovegenVariables {
 };
 
 struct MoveList {
-    std::array<ScoredMove, 218> moves = {};
+    std::array<ScoredMove, MAXMOVES> moves = {};
     int currentIdx = 0;
     int length = 0;
 };

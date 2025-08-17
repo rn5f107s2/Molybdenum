@@ -21,7 +21,60 @@ extern bool prettyprint;
 
 class Thread;
 
+struct RootMove {
+    Move move;
+    int score;
+
+    TTBound scoreBound;
+
+    int pvLength;
+    std::array<Move, MAXMOVES> pvMoves;
+
+    bool operator>(const RootMove& other) const {
+        return score > other.score || (score == other.score && other.scoreBound == UPPER && scoreBound != UPPER);
+    }
+};
+
+struct RootMoves {
+private:
+    std::array<RootMove, MAXMOVES> rootMoves;
+    int length;
+
+public:
+
+    void init(Position& pos) {
+        MoveList ml;
+        u64 ksq = pos.getPieces(pos.sideToMove, KING);
+        u64 checkers = attackersTo<false, false>(lsb(ksq),pos.getOccupied(), pos.sideToMove ? BLACK_PAWN : WHITE_PAWN, pos);
+        generateMoves<false>(pos, ml, checkers);
+
+        for (int i = 0; i < ml.length; i++)
+            rootMoves[i].move = rootMoves[i].pvMoves[0] = ml.moves[i].move;
+
+        length = ml.length;
+
+    }
+
+    void sort() {
+        std::sort(rootMoves.begin(), rootMoves.begin() + length, std::greater<>());
+    }
+
+    RootMove& get(Move move) {
+        for (int i = 0; i < length; i++)
+            if (rootMoves[i].move == move)
+                return rootMoves[i];
+
+        return rootMoves[0];
+    }
+
+    RootMove& operator[](int idx) {
+        return rootMoves[idx];
+    }
+};
+
 struct SearchInfo {
+    RootMoves rootMoves;
+
     Move bestRootMove = 0;
     SearchTime st;
     int rootMoveCount = 0;
@@ -69,13 +122,12 @@ class SearchState {
     std::array<std::array<Move, MAXDEPTH>, MAXDEPTH> pvMoves;
     std::array<int, MAXDEPTH> pvLength;
 
-public:
-
-    void clearHistory();
     std::string outputWDL(Position &pos);
-    int startSearch(Position &pos, SearchTime &st, int maxDepth, Move &bestMove = emptyMove);
     int iterativeDeepening(Position  &pos, SearchTime &st, int maxDepth, [[maybe_unused]] Move &bestMove);
     int aspirationWindow(int prevScore, Position &pos, SearchInfo &si, int depth);
+
+    void prettyPrint(Position &pos, SearchInfo &si, int score, int depth);
+    void uciPrint(Position& pos, RootMove& rm, int depth);
 
     template<NodeType nt>
     int qsearch(int alpha, int beta, Position &pos, SearchInfo &si, SearchStack *stack);
@@ -83,10 +135,13 @@ public:
     template<NodeType nt>
     int search(int alpha, int beta, Position &pos, int depth, SearchInfo &si, SearchStack *stack);
 
+public:
+
     Thread* thread;
     SearchInfo si;
 
-    void prettyPrint(Position &pos, SearchInfo &si, int score, int depth);
+    void clearHistory();
+    int startSearch(Position &pos, SearchTime &st, int maxDepth, Move &bestMove = emptyMove);
 };
 
 inline std::array<double, 256> initReductions() {
