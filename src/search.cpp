@@ -40,6 +40,7 @@ std::string SearchState::outputWDL(Position &pos) {
 }
 
 int SearchState::startSearch(Position &pos, SearchTime &st, int maxDepth, Move &bestMove) {
+    si.rootMoves.init(pos);
     return iterativeDeepening(pos, st, maxDepth, bestMove);
 }
 
@@ -73,39 +74,8 @@ int SearchState::iterativeDeepening(Position  &pos, SearchTime &st, int maxDepth
         if (prettyprint)
             prettyPrint(pos, si, score, depth);
         else {
-            std::string uciOutput;
-            auto searchTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - si.st.searchStart).count();
-            uciOutput += "info depth ";
-            uciOutput += std::to_string(depth);
-
-            uciOutput += " seldepth ";
-            uciOutput += std::to_string(si.selDepth);
-
-            uciOutput += " currmove ";
-            uciOutput += moveToString(si.bestRootMove);
-
-            uciOutput += " score ";
-            uciOutput += abs(score) > MAXMATE ? "mate " : "cp ";
-            uciOutput += std::to_string(abs(score) > MAXMATE ? mateInPlies(score) : score);
-
-            u64 nodeCount = thread->threads->nodes();
-
-            uciOutput += " nodes ";
-            uciOutput += std::to_string(nodeCount);
-
-            uciOutput += " time ";
-            uciOutput += std::to_string(searchTime);
-
-            uciOutput += " nps ";
-            uciOutput += std::to_string((nodeCount / std::max(int(searchTime), 1)) * 1000);
-
-            uciOutput += outputWDL(pos);
-
-            uciOutput += " pv ";
-            for (int i = 0; i < pvLength[0]; i++)
-                uciOutput += moveToString(pvMoves[0][i]) + " ";
-
-            std::cout << uciOutput << std::endl;
+            si.rootMoves.sort();
+            uciPrint(pos, si.rootMoves[0], depth);
         }
 
         if (stop<Soft>(st, si)) {
@@ -392,6 +362,18 @@ int SearchState::search(int alpha, int beta, Position &pos, int depth, SearchInf
         if (si.stop.load(std::memory_order_relaxed) && !(ROOT && depth == (1 + check)))
             return DRAW;
 
+        if constexpr (ROOT) {
+            RootMove& rm = si.rootMoves.get(currentMove);
+            rm.score = score;
+
+            rm.scoreBound = score >= beta ? LOWER : (score <= alpha ? UPPER : EXACT);
+
+            rm.pvLength = pvLength[stack->plysInSearch + 1];
+
+            for (int nextPly = stack->plysInSearch + 1; nextPly < pvLength[stack->plysInSearch + 1]; nextPly++)
+                rm.pvMoves[nextPly] = pvMoves[stack->plysInSearch + 1][nextPly];
+        }
+
         if (score > bestScore) {
             bestScore = score;
             bestMove = currentMove;
@@ -543,10 +525,40 @@ int SearchState::qsearch(int alpha, int beta, Position &pos, SearchInfo &si, Sea
     return bestScore;
 }
 
-void prettyInitial() {
-    std::cout << std::endl;
-    std::cout << " depth       time       nodes      speed        score" << std::endl;
-    std::cout << "_______________________________________________________________________________" << std::endl;
+void SearchState::uciPrint(Position& pos, RootMove& rm, int depth) {
+    std::string uciOutput;
+    auto searchTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - si.st.searchStart).count();
+    uciOutput += "info depth ";
+    uciOutput += std::to_string(depth);
+
+    uciOutput += " seldepth ";
+    uciOutput += std::to_string(si.selDepth);
+
+    uciOutput += " currmove ";
+    uciOutput += moveToString(rm.move);
+
+    uciOutput += " score ";
+    uciOutput += abs(rm.score) > MAXMATE ? "mate " : "cp ";
+    uciOutput += std::to_string(abs(rm.score) > MAXMATE ? mateInPlies(rm.score) : rm.score);
+
+    u64 nodeCount = thread->threads->nodes();
+
+    uciOutput += " nodes ";
+    uciOutput += std::to_string(nodeCount);
+
+    uciOutput += " time ";
+    uciOutput += std::to_string(searchTime);
+
+    uciOutput += " nps ";
+    uciOutput += std::to_string((nodeCount / std::max(int(searchTime), 1)) * 1000);
+
+    uciOutput += outputWDL(pos);
+
+    uciOutput += " pv ";
+    for (int i = 0; i < rm.pvLength; i++)
+        uciOutput += moveToString(rm.pvMoves[i]) + " ";
+
+    std::cout << uciOutput << std::endl;
 }
 
 // This is pretty print, not pretty code
