@@ -19,20 +19,20 @@ Tune tune;
 
 bool prettyprint = false;
 
-std::string SearchState::outputWDL(Position &pos) {
-    for (int i = 0; i < pvLength[0]; i++)
-        pos.makeMove(pvMoves[0][i]);
+std::string SearchState::outputWDL(Position &pos, RootMove& rm) {
+    for (int i = 0; i < rm.pvLength; i++)
+        pos.makeMove(rm.pvMoves[i]);
 
     std::tuple<float, float, float> wdl = pos.net.getWDL(pos.sideToMove);
 
-    for (int i = pvLength[0] - 1; i >= 0; i--)
-        pos.unmakeMove(pvMoves[0][i]);
+    for (int i = rm.pvLength - 1; i >= 0; i--)
+        pos.unmakeMove(rm.pvMoves[i]);
 
     std::string values[3] = {std::to_string(int(std::get<2>(wdl) * 1000)), 
                              std::to_string(int(std::get<1>(wdl) * 1000)),
                              std::to_string(int(std::get<0>(wdl) * 1000))};
 
-    bool flip = pvLength[0] % 2 == 0;
+    bool flip = rm.pvLength % 2 == 0;
 
     return  " wdl " + values[flip ? 0 : 2]
               + " " + values[1           ]
@@ -75,7 +75,11 @@ int SearchState::iterativeDeepening(Position  &pos, SearchTime &st, int maxDepth
             prettyPrint(pos, si, score, depth);
         else {
             si.rootMoves.sort();
-            uciPrint(pos, si.rootMoves[0], depth);
+
+            uciPrint(pos, si.rootMoves[0], depth, 1);
+            
+            for (int i = 1; i < si.rootMoves.length && si.rootMoves[i].scoreBound == EXACT && si.rootMoves[i].score + PV_WINDOW >= score; i++)   
+                uciPrint(pos, si.rootMoves[i], depth, i + 1);
         }
 
         if (stop<Soft>(st, si)) {
@@ -141,7 +145,7 @@ int SearchState::search(int alpha, int beta, Position &pos, int depth, SearchInf
     u64 ksq = pos.getPieces(pos.sideToMove, KING);
     u64 checkers = attackersTo<false, false>(lsb(ksq),pos.getOccupied(), pos.sideToMove ? BLACK_PAWN : WHITE_PAWN, pos);
     Move bestMove = 0, currentMove = 0, excluded = NO_MOVE;
-    int bestScore = -INFINITE, score = -INFINITE, moveCount = 0, extensions = 0;
+    int bestScore = -INFINITE, minScoreToBeat = -INFINITE, score = -INFINITE, moveCount = 0, extensions = 0;
     bool exact = false, check = checkers, ttHit = false, improving, whatAreYouDoing;
     Stack<Move> historyUpdates;
 
@@ -374,13 +378,23 @@ int SearchState::search(int alpha, int beta, Position &pos, int depth, SearchInf
                 rm.pvMoves[nextPly] = pvMoves[stack->plysInSearch + 1][nextPly];
         }
 
-        if (score > bestScore) {
-            bestScore = score;
-            bestMove = currentMove;
+        if (score > minScoreToBeat) {
+            minScoreToBeat = score;
+
+            if (!ROOT || score > bestScore) {
+                bestMove  = currentMove;
+                bestScore = score;
+            }
+
+            if constexpr (ROOT)
+                minScoreToBeat = std::min(bestScore - PV_WINDOW - 1, minScoreToBeat);
 
             if(score > alpha) {
                 alpha = score;
                 exact = true;
+
+                if constexpr (ROOT)
+                    alpha = std::min(bestScore - PV_WINDOW - 1, alpha);
 
                 if (ROOT || (score >= beta && !pos.isCapture(bestMove))) {
                     if (bestMove != killers[stack->plysInSearch][0]) {
@@ -525,11 +539,14 @@ int SearchState::qsearch(int alpha, int beta, Position &pos, SearchInfo &si, Sea
     return bestScore;
 }
 
-void SearchState::uciPrint(Position& pos, RootMove& rm, int depth) {
+void SearchState::uciPrint(Position& pos, RootMove& rm, int depth, int mpvIndex) {
     std::string uciOutput;
     auto searchTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - si.st.searchStart).count();
     uciOutput += "info depth ";
     uciOutput += std::to_string(depth);
+
+    uciOutput += " multipv ";
+    uciOutput += std::to_string(mpvIndex);
 
     uciOutput += " seldepth ";
     uciOutput += std::to_string(si.selDepth);
@@ -552,7 +569,7 @@ void SearchState::uciPrint(Position& pos, RootMove& rm, int depth) {
     uciOutput += " nps ";
     uciOutput += std::to_string((nodeCount / std::max(int(searchTime), 1)) * 1000);
 
-    uciOutput += outputWDL(pos);
+    uciOutput += outputWDL(pos, rm);
 
     uciOutput += " pv ";
     for (int i = 0; i < rm.pvLength; i++)

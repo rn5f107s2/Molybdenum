@@ -19,6 +19,8 @@ extern Tune tune;
 
 extern bool prettyprint;
 
+static constexpr int PV_WINDOW = 10;
+
 class Thread;
 
 struct RootMove {
@@ -38,9 +40,9 @@ struct RootMove {
 struct RootMoves {
 private:
     std::array<RootMove, MAXMOVES> rootMoves;
-    int length;
 
 public:
+    int length;
 
     void init(Position& pos) {
         MoveList ml;
@@ -48,8 +50,10 @@ public:
         u64 checkers = attackersTo<false, false>(lsb(ksq),pos.getOccupied(), pos.sideToMove ? BLACK_PAWN : WHITE_PAWN, pos);
         generateMoves<false>(pos, ml, checkers);
 
-        for (int i = 0; i < ml.length; i++)
+        for (int i = 0; i < ml.length; i++) {
             rootMoves[i].move = rootMoves[i].pvMoves[0] = ml.moves[i].move;
+            rootMoves[i].pvLength = 0;
+        }
 
         length = ml.length;
 
@@ -122,12 +126,12 @@ class SearchState {
     std::array<std::array<Move, MAXDEPTH>, MAXDEPTH> pvMoves;
     std::array<int, MAXDEPTH> pvLength;
 
-    std::string outputWDL(Position &pos);
+    std::string outputWDL(Position &pos, RootMove& move);
     int iterativeDeepening(Position  &pos, SearchTime &st, int maxDepth, [[maybe_unused]] Move &bestMove);
     int aspirationWindow(int prevScore, Position &pos, SearchInfo &si, int depth);
 
     void prettyPrint(Position &pos, SearchInfo &si, int score, int depth);
-    void uciPrint(Position& pos, RootMove& rm, int depth);
+    void uciPrint(Position& pos, RootMove& rm, int depth, int mpvIndex);
 
     template<NodeType nt>
     int qsearch(int alpha, int beta, Position &pos, SearchInfo &si, SearchStack *stack);
