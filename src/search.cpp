@@ -94,7 +94,7 @@ int SearchState::iterativeDeepening(Position  &pos, SearchTime &st, int maxDepth
 
     if (!thread->id()) {
         while (!thread->threads->done()) {}
-        std::cout << "bestmove " << moveToString(si.bestRootMove) << std::endl;
+        std::cout << "bestmove " << moveToString(si.rootMoves[0].move) << std::endl;
     }
 
 #else
@@ -129,7 +129,7 @@ int SearchState::aspirationWindow(int prevScore, Position &pos, SearchInfo &si, 
 
         si.rootMoves.sort();
 
-        for (i = 0; i < si.rootMoves.length && si.rootMoves[i].scoreBound == EXACT && si.rootMoves[i].score + window >= si.rootMoves[0].score; i++);
+        for (i = si.multiPVIndex; i < si.rootMoves.length && si.rootMoves[i].scoreBound == EXACT && si.rootMoves[i].score + window >= si.rootMoves[si.multiPVIndex].score; i++);
 
         return i;
     };
@@ -139,19 +139,13 @@ int SearchState::aspirationWindow(int prevScore, Position &pos, SearchInfo &si, 
     while ((score >= beta || score <= alpha || usableRootMoves(PV_WINDOW) < std::min(si.rootMoves.length, MultiPV)) && !stop<Hard>(si.st, si)) {
         delta *= 1.23;
 
-        if (score > alpha && score < beta) {
+        if (score > alpha && score < beta)
             si.multiPVIndex = usableRootMoves(PV_WINDOW);
-            PV_WINDOW *= 2;
-
-            std::cout << "Widening PV window, skipping " << si.multiPVIndex << " moves" << std::endl; 
-        }
 
         if (score >= beta)
             beta = std::max(si.rootMoves[si.multiPVIndex].score + delta, INFINITE);
         else
             alpha = std::max(si.rootMoves[si.multiPVIndex].score - delta, -INFINITE);
-
-        std::cout << alpha << " " << beta << std::endl;
 
         si.selDepth = 0;
 
