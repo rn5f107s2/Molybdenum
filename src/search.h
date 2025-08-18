@@ -19,7 +19,7 @@ extern Tune tune;
 
 extern bool prettyprint;
 
-static constexpr int PV_WINDOW = 10;
+static int PV_WINDOW = 10;
 
 class Thread;
 
@@ -52,7 +52,7 @@ public:
 
         for (int i = 0; i < ml.length; i++) {
             rootMoves[i].move = rootMoves[i].pvMoves[0] = ml.moves[i].move;
-            rootMoves[i].pvLength = 0;
+            rootMoves[i].pvLength = 1;
         }
 
         length = ml.length;

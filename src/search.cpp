@@ -18,6 +18,7 @@ Tune tune;
 #endif
 
 bool prettyprint = false;
+int multiPv = 3;
 
 std::string SearchState::outputWDL(Position &pos, RootMove& rm) {
     for (int i = 0; i < rm.pvLength; i++)
@@ -78,7 +79,7 @@ int SearchState::iterativeDeepening(Position  &pos, SearchTime &st, int maxDepth
 
             uciPrint(pos, si.rootMoves[0], depth, 1);
             
-            for (int i = 1; i < si.rootMoves.length && si.rootMoves[i].scoreBound == EXACT && si.rootMoves[i].score + PV_WINDOW >= score; i++)   
+            for (int i = 1; i < multiPv || (i < si.rootMoves.length && si.rootMoves[i].scoreBound == EXACT && si.rootMoves[i].score + PV_WINDOW >= score); i++)   
                 uciPrint(pos, si.rootMoves[i], depth, i + 1);
         }
 
@@ -104,37 +105,55 @@ int SearchState::iterativeDeepening(Position  &pos, SearchTime &st, int maxDepth
 }
 
 int SearchState::aspirationWindow(int prevScore, Position &pos, SearchInfo &si, int depth) {
-    int delta = std::clamp(79 - depth * depth, 23, 34);
-    int alpha = -INFINITE;
-    int beta  =  INFINITE;
+    auto usableRootMoves = [&](int window) {
+        int i;
 
-    if (depth >= 2) {
-        alpha = std::max(-INFINITE, prevScore - delta);
-        beta  = std::min( INFINITE, prevScore + delta);
-    }
+        si.rootMoves.sort();
 
-    std::array<SearchStack, STACKSIZE> stack;
-    stack[0].contHist = &continuationHistory[NO_PIECE][0];
-    stack[1].contHist = &continuationHistory[NO_PIECE][0];
+        for (i = 0; i < si.rootMoves.length && si.rootMoves[i].scoreBound == EXACT && si.rootMoves[i].score + window >= si.rootMoves[0].score; i++);
 
-    si.selDepth = 0;
+        return i;
+    };
 
-    int score = search<Root>(alpha, beta, pos, depth, si, &stack[2]);
+    PV_WINDOW = depth == 1 ? 10 : (si.rootMoves[0].score - si.rootMoves[multiPv - 1].score + PV_WINDOW / 4);
 
-    while ((score >= beta || score <= alpha) && !stop<Hard>(si.st, si)) {
-        delta *= 1.23;
+    do {
+        int delta = std::clamp(79 - depth * depth, 23, 34);
+        int alpha = -INFINITE;
+        int beta  =  INFINITE;
 
-        if (score >= beta)
-            beta = std::max(score + delta, INFINITE);
-        else
-            alpha = std::max(score - delta, -INFINITE);
+        delta = std::max(delta, PV_WINDOW);
+
+        if (depth >= 2) {
+            alpha = std::max(-INFINITE, prevScore - delta);
+            beta  = std::min( INFINITE, prevScore + delta);
+        }
+
+        std::array<SearchStack, STACKSIZE> stack;
+        stack[0].contHist = &continuationHistory[NO_PIECE][0];
+        stack[1].contHist = &continuationHistory[NO_PIECE][0];
 
         si.selDepth = 0;
 
-        score = search<Root>(alpha, beta, pos, depth, si, &stack[2]);
-    }
+        int score = search<Root>(alpha, beta, pos, depth, si, &stack[2]);
 
-    return score;
+        while ((score >= beta || score <= alpha) && !stop<Hard>(si.st, si)) {
+            delta *= 1.23;
+
+            if (score >= beta)
+                beta = std::max(score + delta, INFINITE);
+            else
+                alpha = std::max(score - delta, -INFINITE);
+
+            si.selDepth = 0;
+
+            score = search<Root>(alpha, beta, pos, depth, si, &stack[2]);
+        }
+
+        PV_WINDOW = std::max(si.rootMoves[0].score - si.rootMoves[multiPv - 1].score + PV_WINDOW / 4, PV_WINDOW + 5);
+    } while(usableRootMoves(PV_WINDOW) < std::min(multiPv, si.rootMoves.length));
+
+    return si.rootMoves[0].score;
 }
 
 template<NodeType nt>
@@ -279,6 +298,7 @@ int SearchState::search(int alpha, int beta, Position &pos, int depth, SearchInf
         stack->quarterRed = (red - reductions) * 4;
 
         if (   !capture
+            && !ROOT
             && bestScore > -MAXMATE
             && depth <= 4
             && moveCount > (3 + improving) * (11 * depth - ((stack-1)->quarterRed * 10) / 4) / 4)
