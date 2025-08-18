@@ -108,11 +108,13 @@ int SearchState::aspirationWindow(int prevScore, Position &pos, SearchInfo &si, 
     int delta = std::clamp(79 - depth * depth, 23, 34);
     int alpha = -INFINITE;
     int beta  =  INFINITE;
-    PV_WINDOW = 10;
+    PV_WINDOW = depth == 1 ? 10 : std::max(int((si.rootMoves[0].score - si.rootMoves[2].score) * 1.23), 10);
 
     if (depth >= 2) {
         alpha = std::max(-INFINITE, prevScore - delta);
         beta  = std::min( INFINITE, prevScore + delta);
+
+        alpha = std::min(alpha, prevScore - PV_WINDOW - 1);
     }
 
     std::array<SearchStack, STACKSIZE> stack;
@@ -137,12 +139,14 @@ int SearchState::aspirationWindow(int prevScore, Position &pos, SearchInfo &si, 
         delta *= 1.23;
 
         if (score > alpha && score < beta)
-            PV_WINDOW *= 2;
+            PV_WINDOW *= 1.23;
 
         if (score >= beta)
             beta = std::max(score + delta, INFINITE);
         else
             alpha = std::max(score - delta, -INFINITE);
+
+        alpha = std::min(alpha, score - PV_WINDOW - 1);
 
         si.selDepth = 0;
 
