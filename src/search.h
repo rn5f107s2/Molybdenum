@@ -72,6 +72,14 @@ public:
     RootMove& operator[](int idx) {
         return rootMoves[idx];
     }
+
+    bool skip(Move m, int pvIndex) {
+        for (int i = 0; i < pvIndex; i++)
+            if (rootMoves[i].move == m)
+                return true;
+
+        return false;
+    }
 };
 
 struct SearchInfo {
@@ -124,12 +132,14 @@ class SearchState {
     std::array<std::array<Move, MAXDEPTH>, MAXDEPTH> pvMoves;
     std::array<int, MAXDEPTH> pvLength;
 
+    int pvIndex;
+
     std::string outputWDL(Position &pos);
     int iterativeDeepening(Position  &pos, SearchTime &st, int maxDepth, [[maybe_unused]] Move &bestMove);
     int aspirationWindow(int prevScore, Position &pos, SearchInfo &si, int depth);
 
     void prettyPrint(Position &pos, SearchInfo &si, int score, int depth);
-    void uciPrint(Position& pos, RootMove& rm, int depth);
+    void uciPrint(Position& pos, RootMove& rm, int depth, int mpvi);
 
     template<NodeType nt>
     int qsearch(int alpha, int beta, Position &pos, SearchInfo &si, SearchStack *stack);

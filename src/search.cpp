@@ -62,7 +62,10 @@ int SearchState::iterativeDeepening(Position  &pos, SearchTime &st, int maxDepth
     //prettyInitial();
 
     for (int depth = 1; depth != maxDepth; depth++) {
-        score = aspirationWindow(score, pos, si, depth);
+        for (pvIndex = 0; pvIndex < 3; pvIndex++) {
+            score = aspirationWindow(si.rootMoves[pvIndex].score, pos, si, depth);
+            si.rootMoves.sort();
+        }
 
         if (si.stop.load(std::memory_order_relaxed))
             break;
@@ -75,7 +78,9 @@ int SearchState::iterativeDeepening(Position  &pos, SearchTime &st, int maxDepth
             prettyPrint(pos, si, score, depth);
         else {
             si.rootMoves.sort();
-            uciPrint(pos, si.rootMoves[0], depth);
+
+            for (int i = 0; i < 3; i++)
+                uciPrint(pos, si.rootMoves[i], depth, i);
         }
 
         if (stop<Soft>(st, si)) {
@@ -258,6 +263,9 @@ int SearchState::search(int alpha, int beta, Position &pos, int depth, SearchInf
                                             &*(stack-2)->contHist, checkers, ROOT);
     while ((currentMove = mp.pickMove())) {
         extensions = depth + moveCount <= 13 ? extensions : 0;
+
+        if (ROOT && si.rootMoves.skip(currentMove, pvIndex))
+            continue;
     
         if (currentMove == excluded)
             continue;
@@ -410,7 +418,7 @@ int SearchState::search(int alpha, int beta, Position &pos, int depth, SearchInf
             historyUpdates.push(currentMove);
     }
 
-    if (ROOT && exact)
+    if (ROOT && exact && !pvIndex)
         si.bestRootMove = bestMove;
 
     if (bestScore == -INFINITE)
@@ -525,11 +533,15 @@ int SearchState::qsearch(int alpha, int beta, Position &pos, SearchInfo &si, Sea
     return bestScore;
 }
 
-void SearchState::uciPrint(Position& pos, RootMove& rm, int depth) {
+void SearchState::uciPrint(Position& pos, RootMove& rm, int depth, int mpvi) {
     std::string uciOutput;
     auto searchTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - si.st.searchStart).count();
     uciOutput += "info depth ";
     uciOutput += std::to_string(depth);
+
+    uciOutput += " multipv ";
+    uciOutput += std::to_string(mpvi + 1);
+
 
     uciOutput += " seldepth ";
     uciOutput += std::to_string(si.selDepth);
