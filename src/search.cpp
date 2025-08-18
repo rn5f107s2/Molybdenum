@@ -151,7 +151,7 @@ int SearchState::aspirationWindow(int prevScore, Position &pos, SearchInfo &si, 
         delta *= 1.23;
 
         if (score >= beta)
-            beta = std::max(score + delta, INFINITE);
+            beta = std::min(score + delta, INFINITE);
         else
             alpha = std::max(score - delta, -INFINITE);
 
