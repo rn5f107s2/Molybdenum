@@ -72,6 +72,14 @@ public:
     RootMove& operator[](int idx) {
         return rootMoves[idx];
     }
+
+    bool skip(Move move, int multiPvIndex) {
+        for (int i = 0; i < multiPvIndex; i++)
+            if (rootMoves[i].move == move)  
+                return true;
+
+        return false;
+    }
 };
 
 struct SearchInfo {
@@ -81,6 +89,8 @@ struct SearchInfo {
     SearchTime st;
     int rootMoveCount = 0;
     int selDepth = 0;
+
+    int multiPVIndex;
 
 public:
     std::atomic_uint64_t nodeCount = 0;

@@ -129,21 +129,29 @@ int SearchState::aspirationWindow(int prevScore, Position &pos, SearchInfo &si, 
 
         si.rootMoves.sort();
 
-        for (i = 1; i < si.rootMoves.length && si.rootMoves[i].scoreBound == EXACT && si.rootMoves[i].score + window >= si.rootMoves[0].score; i++);
+        for (i = 0; i < si.rootMoves.length && si.rootMoves[i].scoreBound == EXACT && si.rootMoves[i].score + window >= si.rootMoves[0].score; i++);
 
         return i;
     };
 
+    si.multiPVIndex = 0;
+
     while ((score >= beta || score <= alpha || usableRootMoves(PV_WINDOW) < std::min(si.rootMoves.length, MultiPV)) && !stop<Hard>(si.st, si)) {
         delta *= 1.23;
 
-        if (score > alpha && score < beta)
+        if (score > alpha && score < beta) {
+            si.multiPVIndex = usableRootMoves(PV_WINDOW);
             PV_WINDOW *= 2;
 
+            std::cout << "Widening PV window, skipping " << si.multiPVIndex << " moves" << std::endl; 
+        }
+
         if (score >= beta)
-            beta = std::max(score + delta, INFINITE);
+            beta = std::max(si.rootMoves[si.multiPVIndex].score + delta, INFINITE);
         else
-            alpha = std::max(score - delta, -INFINITE);
+            alpha = std::max(si.rootMoves[si.multiPVIndex].score - delta, -INFINITE);
+
+        std::cout << alpha << " " << beta << std::endl;
 
         si.selDepth = 0;
 
@@ -278,6 +286,9 @@ int SearchState::search(int alpha, int beta, Position &pos, int depth, SearchInf
                                             &*(stack-2)->contHist, checkers, ROOT);
     while ((currentMove = mp.pickMove())) {
         extensions = depth + moveCount <= 13 ? extensions : 0;
+
+        if (ROOT && si.rootMoves.skip(currentMove, si.multiPVIndex))
+            continue;
     
         if (currentMove == excluded)
             continue;
