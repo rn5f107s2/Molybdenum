@@ -135,7 +135,8 @@ int SearchState::aspirationWindow(int prevScore, Position &pos, SearchInfo &si, 
     };
 
     while ((score >= beta || score <= alpha || usableRootMoves(PV_WINDOW) < std::min(si.rootMoves.length, MultiPV)) && !stop<Hard>(si.st, si)) {
-        delta *= 1.23;
+        if (score >= beta || score <= alpha)
+            delta *= 1.23;
 
         if (score > alpha && score < beta)
             PV_WINDOW *= 2;
@@ -143,7 +144,7 @@ int SearchState::aspirationWindow(int prevScore, Position &pos, SearchInfo &si, 
         if (score >= beta)
             beta = std::max(score + delta, INFINITE);
         else
-            alpha = std::max(score - delta, -INFINITE);
+            alpha = std::max(score - std::max(delta, PV_WINDOW), -INFINITE);
 
         si.selDepth = 0;
 
