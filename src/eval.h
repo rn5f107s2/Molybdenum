@@ -5,7 +5,8 @@
 #include "nnue.h"
 
 inline int evaluate(Position &pos) {
-    return pos.net.calculate(pos.sideToMove);
-}
+    return pos.sideToMove == WHITE ? pos.net->calculate<WHITE>(pos.getOccupied(), &pos.pieceLocations[0])
+                                   : pos.net->calculate<BLACK>(__builtin_bswap64(pos.getOccupied()), &pos.pieceLocations[0]);
+}           
 
 #endif //MOLYBDENUM_EVAL_H

@@ -6,6 +6,10 @@
 #include "nnue.h"
 #include "Movegen.h"
 
+Position::Position() {
+    net = new Net();
+}
+
 void Position::setBoard(std::string fen) {
     clearBoard();
 
@@ -74,7 +78,7 @@ void Position::setBoard(std::string fen) {
     plys50moveRule  = !plys50mr.empty()  ? stringRoRule50(plys50mr)  : 0;
     movecount       = !moveCount.empty() ? stringRoRule50(moveCount) : 0;
     keyHistory.push(positionToKey(bitBoards, castlingRights, enPassantSquare, sideToMove));
-    net.initAccumulator(bitBoards);
+    net->initAccumulator(*this);
 }
 
 Move Position::fromToToMove(int from, int to, int promotionPiece, int flag) {
@@ -100,6 +104,15 @@ void Position::makeMove(Move move) {
     Piece movedPiece    = pieceLocations[from];
     Piece capturedPiece = pieceLocations[to];
     u64 key             = keyHistory.top();
+    
+    Piece mp    = movedPiece;
+    Piece capPc = capturedPiece;
+    int capSq   = to;
+
+    uint64_t cleanBitboard = getOccupied();
+
+    cleanBitboard &= ~(1ULL << from);
+    cleanBitboard &= ~(1ULL << to);
 
     plys50mrHistory.push(plys50moveRule);
     castlingHistory.push(castlingRights);
@@ -113,20 +126,14 @@ void Position::makeMove(Move move) {
     pieceLocations[from] = NO_PIECE;
     bitBoards[movedPiece] ^= 1ULL << from;
     updateKey(movedPiece,  from, key);
-    net.toggleFeature<Off>(movedPiece, from);
-
-    if (flag == PROMOTION) {
-        movedPiece = makePromoPiece(extract<PROMOTIONTYPE>(move), sideToMove);
-        phase += gamePhaseValues[typeOf(movedPiece)];
-        plys50moveRule = 0;
-    }
 
     if (flag == ENPASSANT) {
-        int capturedPawn = movedPiece == WHITE_PAWN ? BLACK_PAWN : WHITE_PAWN;
+        int capturedPawn = capPc = movedPiece == WHITE_PAWN ? BLACK_PAWN : WHITE_PAWN;
         u64 captureSquare = movePawn(enPassantSquare, !sideToMove);
         bitBoards[capturedPawn] ^= captureSquare;
-        pieceLocations[lsb(captureSquare)] = NO_PIECE;
-        net.toggleFeature<Off>(capturedPawn, lsb(captureSquare));
+        pieceLocations[capSq = lsb(captureSquare)] = NO_PIECE;
+
+        cleanBitboard &= ~captureSquare;
     }
 
     if (flag == CASTLING) {
@@ -137,9 +144,23 @@ void Position::makeMove(Move move) {
         pieceLocations[rookFrom] = NO_PIECE;
         pieceLocations[rookTo  ] = rook;
         bitBoards[rook] ^= (1ULL << rookFrom) | (1ULL << rookTo);
+
+        cleanBitboard &= ~(1ULL << rookFrom); 
+        cleanBitboard &= ~(1ULL << rookTo);
+
         updateKey(rook, rookFrom, key);
         updateKey(rook, rookTo, key);
-        net.moveFeature(rook, rookFrom, rookTo);
+        
+        if (colorOf(rook))
+            net->addaddSubSub<WHITE>(*this, cleanBitboard, from, to, rookFrom, rookTo, rook, movedPiece);
+        else
+            net->addaddSubSub<BLACK>(*this, cleanBitboard, from, to, rookFrom, rookTo, rook, movedPiece);
+    }
+
+    if (flag == PROMOTION) {
+        movedPiece = makePromoPiece(extract<PROMOTIONTYPE>(move), sideToMove);
+        phase += gamePhaseValues[typeOf(movedPiece)];
+        plys50moveRule = 0;
     }
 
     enPassantSquare = 0ULL;
@@ -159,19 +180,77 @@ void Position::makeMove(Move move) {
     if (capturedPiece != NO_PIECE) {
         bitBoards[capturedPiece] ^= 1ULL << to;
         phase -= gamePhaseValues[typeOf(capturedPiece)];
-        net.toggleFeature<Off>(capturedPiece, to);
         updateKey(capturedPiece, to, key);
         plys50moveRule = 0;
     }
 
     pieceLocations[to] = movedPiece;
-    net.toggleFeature<On>(movedPiece, to);
     bitBoards[movedPiece] ^= 1ULL << to;
     updateKey(movedPiece, to, key);
     updateKey(key);
     keyHistory.push(key);
     sideToMove = !sideToMove;
-    net.pushAccToStack();
+
+    uint64_t white = getOccupied<WHITE>();
+    uint64_t black = getOccupied<BLACK>();
+    uint64_t dirty = (white | black) & ~cleanBitboard;
+
+    // This is unnecesarily complex but for some reason faster this way
+    if (flag != CASTLING) {
+        int sq = popLSB(dirty);
+        Piece pc = pieceOn(sq);
+
+        if (capPc != NO_PIECE) {
+            if (colorOf(movedPiece))
+                if (colorOf(mp))
+                    if (colorOf(capPc))
+                        net->addSubSub<WHITE, WHITE, WHITE>(*this, cleanBitboard, white, movedPiece, to, mp, from, capPc, capSq, pc, sq);
+                    else
+                        net->addSubSub<WHITE, WHITE, BLACK>(*this, cleanBitboard, white, movedPiece, to, mp, from, capPc, capSq, pc, sq);
+                else
+                    if (colorOf(capPc))
+                        net->addSubSub<WHITE, BLACK, WHITE>(*this, cleanBitboard, white, movedPiece, to, mp, from, capPc, capSq, pc, sq);
+                    else
+                        net->addSubSub<WHITE, BLACK, BLACK>(*this, cleanBitboard, white, movedPiece, to, mp, from, capPc, capSq, pc, sq);
+            else
+                if (colorOf(mp))
+                    if (colorOf(capPc))
+                        net->addSubSub<BLACK, WHITE, WHITE>(*this, cleanBitboard, white, movedPiece, to, mp, from, capPc, capSq, pc, sq);
+                    else
+                        net->addSubSub<BLACK, WHITE, BLACK>(*this, cleanBitboard, white, movedPiece, to, mp, from, capPc, capSq, pc, sq);
+                else
+                    if (colorOf(capPc))
+                        net->addSubSub<BLACK, BLACK, WHITE>(*this, cleanBitboard, white, movedPiece, to, mp, from, capPc, capSq, pc, sq);
+                    else
+                        net->addSubSub<BLACK, BLACK, BLACK>(*this, cleanBitboard, white, movedPiece, to, mp, from, capPc, capSq, pc, sq);
+        } else {
+            if (colorOf(movedPiece))
+                if (colorOf(mp))
+                    net->addSub<WHITE, WHITE>(*this, cleanBitboard, white, movedPiece, to, mp, from, pc, sq);
+                else
+                    net->addSub<WHITE, BLACK>(*this, cleanBitboard, white, movedPiece, to, mp, from, pc, sq);
+            else
+                if (colorOf(mp))
+                    net->addSub<BLACK, WHITE>(*this, cleanBitboard, white, movedPiece, to, mp, from, pc, sq);
+                else
+                    net->addSub<BLACK, BLACK>(*this, cleanBitboard, white, movedPiece, to, mp, from, pc, sq);
+        }
+    } else {
+        int sq = popLSB(dirty);
+        Piece pc = pieceOn(sq);
+
+        net->refreshMiniAcc(*this, pc, sq);
+    }
+
+    if (flag == CASTLING) {
+        int sq = popLSB(dirty);
+        Piece pc = pieceOn(sq);
+
+        net->refreshMiniAcc(*this, pc, sq);
+    }
+
+    if (flag == CASTLING)
+        net->pushAccToStack(white | black);
 }
 
 void Position::unmakeMove(Move move) {
@@ -219,7 +298,7 @@ void Position::unmakeMove(Move move) {
     }
 
     sideToMove = !sideToMove;
-    net.popAccStack();
+    net->popAccStack();
 }
 
 void Position::clearBoard() {

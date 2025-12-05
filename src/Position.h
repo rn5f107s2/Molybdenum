@@ -9,11 +9,12 @@
 #include "Move.h"
 #include "Utility.h"
 #include "Transpositiontable.h"
-#include "nnue.h"
+
+class Net;
 
 class Position {
     public:
-        Net net;
+        Net* net;
         void setBoard(std::string fen);
         void clearBoard();
         void printBoard();
@@ -43,6 +44,9 @@ class Position {
         template<Color c> u64 getOccupied();
         inline std::string moveToSAN(Move move, u64 attacks);
         inline int ambigious(Move move, u64 attacks);
+
+        Position();
+
     private:
         Stack<Piece>  capturedHistory;
         Stack<int>  plys50mrHistory;

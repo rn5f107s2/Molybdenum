@@ -57,7 +57,7 @@ inline constexpr u64 lRankOf(int square) {
 }
 
 inline constexpr int typeOf(int piece) {
-    return piece % 6;
+    return piece - 6 * (piece > 5);
 }
 
 inline u64 createSquare(int file, int rank) {

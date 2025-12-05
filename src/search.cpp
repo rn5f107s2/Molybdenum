@@ -20,10 +20,13 @@ Tune tune;
 bool prettyprint = false;
 
 std::string SearchState::outputWDL(Position &pos) {
+    // currently not working
+    return "";
+
     for (int i = 0; i < pvLength[0]; i++)
         pos.makeMove(pvMoves[0][i]);
 
-    std::tuple<float, float, float> wdl = pos.net.getWDL(pos.sideToMove);
+    std::tuple<float, float, float> wdl = pos.net->getWDL(pos.sideToMove);
 
     for (int i = pvLength[0] - 1; i >= 0; i--)
         pos.unmakeMove(pvMoves[0][i]);
@@ -570,7 +573,7 @@ void SearchState::prettyPrint(Position &pos, SearchInfo &si, int s, int de) {
         pos.makeMove(pvMoves[0][i]);
     }
 
-    std::tuple<float, float, float> wdl = pos.net.getWDL(pos.sideToMove);
+    std::tuple<float, float, float> wdl = pos.net->getWDL(pos.sideToMove);
 
     for (int i = pvLength[0] - 1; i >= 0; i--)
         pos.unmakeMove(pvMoves[0][i]);
