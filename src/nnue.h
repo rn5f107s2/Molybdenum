@@ -43,7 +43,7 @@ public:
     Stack<std::array<std::array<int16_t, L1_SIZE>, 2>, MAXDEPTH> accumulatorStack;
 
     void initAccumulator(std::array<u64, 13> &bitboards);
-    int calculate(Color c);
+    int calculate(Color c, uint64_t occupied);
     std::tuple<float, float, float> getWDL(Color c);
     void loadDefaultNet();
 

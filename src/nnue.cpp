@@ -63,12 +63,15 @@ void Net::initAccumulator(std::array<u64, 13> &bitboards) {
     pushAccToStack();
 }
 
-int Net::calculate(Color c) {
+int Net::calculate(Color c, uint64_t occupied) {
     int output = 0;
 
     for (int n = 0; n != L1_SIZE; n++) {
-         output += screlu(accumulator[ c][n]) * weights1[n          ];
-         output += screlu(accumulator[!c][n]) * weights1[n + L1_SIZE];
+        if (occupied & (1ULL << ((n / 4) ^ (56 * (c == BLACK)))))
+            output += screlu(accumulator[ c][n]) * weights1[n          ];
+
+        if (occupied & (1ULL << ((n / 4) ^ (56 * (c == WHITE)))))
+            output += screlu(accumulator[!c][n]) * weights1[n + L1_SIZE];
     }
 
     return ((output / 255) + bias1[0]) * 133 / (64 * 255);
