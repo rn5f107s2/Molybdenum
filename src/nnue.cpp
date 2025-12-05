@@ -66,12 +66,16 @@ void Net::initAccumulator(std::array<u64, 13> &bitboards) {
 int Net::calculate(Color c, uint64_t occupied) {
     int output = 0;
 
-    for (int n = 0; n != L1_SIZE; n++) {
-        if (occupied & (1ULL << ((n / 4) ^ (56 * (c == BLACK)))))
-            output += screlu(accumulator[ c][n]) * weights1[n          ];
+    while (occupied) {
+        int sq = popLSB(occupied);
 
-        if (occupied & (1ULL << ((n / 4) ^ (56 * (c == WHITE)))))
-            output += screlu(accumulator[!c][n]) * weights1[n + L1_SIZE];
+        for (int i = 0; i < 4; i++) {
+            int nUs   = sq * 4 + i;
+            int nThem = (sq ^ 56) * 4 + i; 
+
+            output += screlu(accumulator[ c][nUs  ]) * weights1[nUs            ];
+            output += screlu(accumulator[!c][nThem]) * weights1[nThem + L1_SIZE];
+        }
     }
 
     return ((output / 255) + bias1[0]) * 133 / (64 * 255);
