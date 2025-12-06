@@ -14,7 +14,7 @@ enum Toggle {
 };
 
 static const int INPUT_SIZE = 12 * 64;
-static const int L1_SIZE = 256;
+static const int L1_SIZE = 3072;
 static const int OUTPUT_SIZE = 1;
 static const int NET_SIZE = 3;
 static const std::array<int, NET_SIZE> LAYER_SIZE = {INPUT_SIZE, L1_SIZE, OUTPUT_SIZE};
@@ -43,7 +43,7 @@ public:
     Stack<std::array<std::array<int16_t, L1_SIZE>, 2>, MAXDEPTH> accumulatorStack;
 
     void initAccumulator(std::array<u64, 13> &bitboards);
-    int calculate(Color c, uint64_t occupied);
+    int calculate(Color c, uint64_t occupied, Piece* mailbox);
     std::tuple<float, float, float> getWDL(Color c);
     void loadDefaultNet();
 

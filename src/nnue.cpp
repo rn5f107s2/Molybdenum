@@ -63,21 +63,25 @@ void Net::initAccumulator(std::array<u64, 13> &bitboards) {
     pushAccToStack();
 }
 
-int Net::calculate(Color c, uint64_t occupied) {
+int Net::calculate(Color c, uint64_t occupied, Piece* mailbox) {
     int output = 0;
 
     while (occupied) {
         int sq = popLSB(occupied);
         int nextSq = lsb(occupied);
 
-        __builtin_prefetch(&accumulator[ c][nextSq * 4]);
-        __builtin_prefetch(&accumulator[!c][(nextSq ^ 56) * 4]);
-        __builtin_prefetch(&weights1[sq * 4]);
-        __builtin_prefetch(&weights1[(sq ^ 56) * 4]);
+        int ourPiece   = mailbox[sq ^ (56 * (c == BLACK))];
+        int theirPiece = makePiece(typeOf(ourPiece), !colorOf(ourPiece));
+
+        if (c == BLACK) {
+            int temp = ourPiece;
+            ourPiece = theirPiece;
+            theirPiece = temp;
+        }
 
         for (int i = 0; i < 4; i++) {
-            int nUs   = sq * 4 + i;
-            int nThem = (sq ^ 56) * 4 + i; 
+            int nUs   = 256 * ourPiece + (sq * 4) + i;
+            int nThem = 256 * theirPiece + ((sq ^ 56) * 4) + i;
 
             output += screlu(accumulator[ c][nUs  ]) * weights1[nUs            ];
             output += screlu(accumulator[!c][nThem]) * weights1[nThem + L1_SIZE];

@@ -25,7 +25,7 @@ void UCI::d([[maybe_unused]] const std::string &args) {
 
 void UCI::eval([[maybe_unused]] const std::string &args) {
     std::cout << evaluate(internalBoard) << std::endl;
-    std::tuple<float, float, float> wdl = internalBoard.net.getWDL(internalBoard.sideToMove);
+    std::tuple<float, float, float> wdl = internalBoard.net->getWDL(internalBoard.sideToMove);
 
     std::cout << "W: " << std::setprecision(4) << std::get<2>(wdl) * 100.0f << "% ";
     std::cout << "D: " << std::setprecision(4) << std::get<1>(wdl) * 100.0f << "% ";
@@ -150,7 +150,7 @@ void UCI::position([[maybe_unused]] const std::string &args) {
 
         Move m = internalBoard.fromToToMove(from, to, promoPiece, flag);
         internalBoard.makeMove(m);
-        internalBoard.net.initAccumulator(internalBoard.bitBoards);
+        internalBoard.net->initAccumulator(internalBoard.bitBoards);
     }
 }
 

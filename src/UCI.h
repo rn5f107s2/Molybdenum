@@ -31,7 +31,7 @@ public:
     ThreadPool threads;
 
     UCI() {
-        internalBoard.net.loadDefaultNet();
+        internalBoard.net->loadDefaultNet();
         internalBoard.setBoard(defaultFEN);
 
         commands["d"] = &UCI::d;
