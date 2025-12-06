@@ -70,14 +70,14 @@ int Net::calculate(Color c, uint64_t occupied) {
         int sq = popLSB(occupied);
         int nextSq = lsb(occupied);
 
-        __builtin_prefetch(&accumulator[ c][sq * 4]);
-        __builtin_prefetch(&accumulator[!c][(sq ^ 56) * 4]);
-        __builtin_prefetch(&weights1[sq * 4]);
-        __builtin_prefetch(&weights1[(sq ^ 56) * 4]);
+        __builtin_prefetch(&accumulator[ c][sq * 8]);
+        __builtin_prefetch(&accumulator[!c][(sq ^ 56) * 8]);
+        __builtin_prefetch(&weights1[sq * 8]);
+        __builtin_prefetch(&weights1[(sq ^ 56) * 8]);
 
-        for (int i = 0; i < 4; i++) {
-            int nUs   = sq * 4 + i;
-            int nThem = (sq ^ 56) * 4 + i; 
+        for (int i = 0; i < 8; i++) {
+            int nUs   = sq * 8 + i;
+            int nThem = (sq ^ 56) * 8 + i; 
 
             output += screlu(accumulator[ c][nUs  ]) * weights1[nUs            ];
             output += screlu(accumulator[!c][nThem]) * weights1[nThem + L1_SIZE];
@@ -90,6 +90,7 @@ int Net::calculate(Color c, uint64_t occupied) {
 std::tuple<float, float, float> Net::getWDL(Color c) {
     int output[3] = {0, 0, 0};
     std::tuple<float, float, float> tpl;
+    return tpl;
 
     for (int n = 0; n < L1_SIZE; n++) {
         for (int n2 = 0; n2 < 3; n2++) {
