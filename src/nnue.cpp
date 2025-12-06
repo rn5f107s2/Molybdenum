@@ -70,8 +70,8 @@ int Net::calculate(Color c, uint64_t occupied) {
         int sq = popLSB(occupied);
         int nextSq = lsb(occupied);
 
-        __builtin_prefetch(&accumulator[ c][nextSq * 4]);
-        __builtin_prefetch(&accumulator[!c][(nextSq ^ 56) * 4]);
+        __builtin_prefetch(&accumulator[ c][sq * 4]);
+        __builtin_prefetch(&accumulator[!c][(sq ^ 56) * 4]);
         __builtin_prefetch(&weights1[sq * 4]);
         __builtin_prefetch(&weights1[(sq ^ 56) * 4]);
 
