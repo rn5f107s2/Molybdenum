@@ -109,8 +109,8 @@ inline void Net::refreshMiniAcc(Position& pos, Piece piece, int square) {
     int bSquare = square ^ 56;
     Piece bPiece = makePiece(typeOf(piece), !colorOf(piece));
 
-    memcpy(&accumulator[WHITE][square * 4], &bias0[square * 4 + L1_SIZE * piece], 4 * sizeof(int16_t));
-    memcpy(&accumulator[BLACK][square * 4], &bias0[square * 4 + L1_SIZE * piece], 4 * sizeof(int16_t));
+    memcpy(&accumulator[WHITE][ square * 4], &bias0[square  * 4 + L1_SIZE * piece ], 4 * sizeof(int16_t));
+    memcpy(&accumulator[BLACK][bSquare * 4], &bias0[bSquare * 4 + L1_SIZE * bPiece], 4 * sizeof(int16_t));
 
     while (occupied) {
         int sq = popLSB(occupied);
