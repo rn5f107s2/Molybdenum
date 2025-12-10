@@ -35,6 +35,26 @@ const Weights defaultWeights = *reinterpret_cast<const Weights*>(gnetworkData);
 const WDLHead defaultWdl     = *reinterpret_cast<const WDLHead*>(gwdlHeadData);
 
 void Net::loadDefaultNet() {
+    // for (int bucketPc = WHITE_PAWN; bucketPc <= BLACK_KING; bucketPc++) {
+    //     for (int featurePc = WHITE_PAWN; featurePc <= BLACK_KING; featurePc++) {
+    //         for (int featureSq = 0; featureSq < 64; featureSq++) {
+    //             for (int bucketSq = 0; bucketSq < 64; bucketSq++) {
+    //                 for (int n = 0; n < 4; n++) {
+    //                     int featureIndexOld = featurePc * 64 + featureSq;
+    //                     // arr[fpc][fsq][bpc][bsq][n]
+    //                     int originalIndex = featureIndexOld * L1_SIZE * 12 + L1_SIZE * bucketPc + bucketSq * 4 + n;
+
+    //                     // change feature indexing, such that a feature and the "flipped" feature are consective in memory
+    //                     int featureIndexNew = typeOf(Piece(featurePc)) * 64 * 2 + (colorOf(featurePc) == BLACK ? featureSq ^ 56 : featureSq) * 2 + (colorOf(featurePc) == BLACK);
+    //                     int targetIndex     = featureIndexNew * L1_SIZE * 12 + L1_SIZE * bucketPc + bucketSq * 4 + n;
+
+    //                     std::cout << featurePc << " " << featureSq << ": " << featureIndexOld << " " << featureIndexNew << std::endl;
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
+
     weights0 = defaultWeights.weights0;
     weights1 = defaultWeights.weights1;
     bias0 = defaultWeights.bias0;
@@ -63,42 +83,14 @@ void Net::initAccumulator(Position &pos) {
     pushAccToStack();
 }
 
-int Net::calculate(Color c, uint64_t occupied, Piece* mailbox) {
-    int output = 0;
-
-    while (occupied) {
-        int sq = popLSB(occupied);
-        int nextSq = lsb(occupied);
-
-        int ourPiece   = mailbox[sq ^ (56 * (c == BLACK))];
-        int theirPiece = makePiece(typeOf(ourPiece), !colorOf(ourPiece));
-
-        if (c == BLACK) {
-            int temp = ourPiece;
-            ourPiece = theirPiece;
-            theirPiece = temp;
-        }
-
-        for (int i = 0; i < 4; i++) {
-            int nUs   = (sq * 4) + i;
-            int nThem = ((sq ^ 56) * 4) + i;
-
-            output += screlu(accumulator[ c][nUs  ]) * weights1[256 * ourPiece   + nUs                 ];
-            output += screlu(accumulator[!c][nThem]) * weights1[256 * theirPiece + nThem + L1_SIZE * 12];
-        }
-    }
-
-    return ((output / 255) + bias1[0]) * 133 / (64 * 255);
-}
-
 std::tuple<float, float, float> Net::getWDL(Color c) {
     int output[3] = {0, 0, 0};
     std::tuple<float, float, float> tpl;
 
     for (int n = 0; n < L1_SIZE; n++) {
         for (int n2 = 0; n2 < 3; n2++) {
-            output[n2] += screlu(accumulator[ c][n]) * wdlWeights[n * 3 + n2              ];
-            output[n2] += screlu(accumulator[!c][n]) * wdlWeights[n * 3 + n2 + L1_SIZE * 3];
+            output[n2] += screlu(accumulator[n]) * wdlWeights[n * 3 + n2              ];
+            output[n2] += screlu(accumulator[n]) * wdlWeights[n * 3 + n2 + L1_SIZE * 3];
         }
     }
 

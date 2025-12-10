@@ -38,13 +38,14 @@ public:
     std::array<int16_t, L1_SIZE * 12> bias0{};
     std::array<int16_t, L1_SIZE * OUTPUT_SIZE * 2 * 12> weights1{};
     std::array<int16_t, OUTPUT_SIZE> bias1{};
-    std::array<std::array<int16_t, L1_SIZE>, 2> accumulator{};
+    std::array<int16_t, L1_SIZE * 2> accumulator{};
     std::array<int16_t, L1_SIZE * 3 * 2> wdlWeights{};
     std::array<int16_t, 3> wdlBias{};
-    Stack<std::array<std::array<int16_t, L1_SIZE>, 2>, MAXDEPTH> accumulatorStack;
+    Stack<std::array<int16_t, L1_SIZE * 2>, MAXDEPTH> accumulatorStack;
 
     void initAccumulator(Position &pos);
-    int calculate(Color c, uint64_t occupied, Piece* mailbox);
+    template<Color C>
+    int calculate(uint64_t occupied, Piece* mailbox);
     std::tuple<float, float, float> getWDL(Color c);
     void loadDefaultNet();
 
@@ -79,8 +80,8 @@ void Net::toggleFeature(int piece, int square) {
     std::cout << "trololol" << std::endl;
 
     for (int l = 0; l != L1_SIZE; l++) {
-        accumulator[WHITE][l] += weights0[indexWhite * L1_SIZE + l] * (!STATE ? -1 : 1);
-        accumulator[BLACK][l] += weights0[indexBlack * L1_SIZE + l] * (!STATE ? -1 : 1);
+        accumulator[l] += weights0[indexWhite * L1_SIZE + l] * (!STATE ? -1 : 1);
+        accumulator[l] += weights0[indexBlack * L1_SIZE + l] * (!STATE ? -1 : 1);
     }
 }
 
@@ -99,10 +100,40 @@ void Net::toggleFeature(Position& pos, uint64_t cleanBitboard, int piece, int sq
         int bOffset = indexBlack * L1_SIZE * 12 + bSq * 4 + L1_SIZE * bPc;
 
         for (int i = 0; i < 4; i++) {
-            accumulator[WHITE][wSq * 4 + i] += weights0[wOffset + i] * (!STATE ? -1 : 1);
-            accumulator[BLACK][bSq * 4 + i] += weights0[bOffset + i] * (!STATE ? -1 : 1);
+            accumulator[(wSq * 4 * 2) + i    ] += weights0[wOffset + i] * (!STATE ? -1 : 1);
+            accumulator[(wSq * 4 * 2) + 4 + i] += weights0[bOffset + i] * (!STATE ? -1 : 1);
         }
     }
+}
+
+
+template<Color C> inline
+int Net::calculate(uint64_t occupied, Piece* mailbox) {
+    int output = 0;
+
+    while (occupied) {
+        int sq = popLSB(occupied);
+        int nextSq = lsb(occupied);
+
+        int ourPiece   = mailbox[sq ^ (56 * (C == BLACK))];
+        int theirPiece = makePiece(typeOf(ourPiece), !colorOf(ourPiece));
+
+        if (C == BLACK) {
+            int temp = ourPiece;
+            ourPiece = theirPiece;
+            theirPiece = temp;
+        }
+
+        for (int i = 0; i < 4; i++) {
+            int nUs   = ((sq ^ (56 * (C == BLACK))) * 4 * 2) + (4 * (C == BLACK)) + i;
+            int nThem = ((sq ^ (56 * (C == BLACK))) * 4 * 2) + (4 * (C == WHITE)) + i;
+
+            output += screlu(accumulator[nUs  ]) * weights1[256 * ourPiece   + (sq * 4) + i                      ];
+            output += screlu(accumulator[nThem]) * weights1[256 * theirPiece + ((sq ^ 56) * 4) + i + L1_SIZE * 12];
+        }
+    }
+
+    return ((output / 255) + bias1[0]) * 133 / (64 * 255);
 }
 
 inline void Net::refreshMiniAcc(Position& pos, Piece piece, int square) {
@@ -111,8 +142,8 @@ inline void Net::refreshMiniAcc(Position& pos, Piece piece, int square) {
     int bSquare = square ^ 56;
     Piece bPiece = makePiece(typeOf(piece), !colorOf(piece));
 
-    memcpy(&accumulator[WHITE][ square * 4], &bias0[square  * 4 + L1_SIZE * piece ], 4 * sizeof(int16_t));
-    memcpy(&accumulator[BLACK][bSquare * 4], &bias0[bSquare * 4 + L1_SIZE * bPiece], 4 * sizeof(int16_t));
+    memcpy(&accumulator[square * 4 * 2    ], &bias0[square  * 4 + L1_SIZE * piece ], 4 * sizeof(int16_t));
+    memcpy(&accumulator[square * 4 * 2 + 4], &bias0[bSquare * 4 + L1_SIZE * bPiece], 4 * sizeof(int16_t));
 
     while (occupied) {
         int sq = popLSB(occupied);
@@ -125,8 +156,8 @@ inline void Net::refreshMiniAcc(Position& pos, Piece piece, int square) {
         int bOffset = indexBlack * L1_SIZE * 12 + bSquare * 4 + L1_SIZE * bPiece;
 
         for (int i = 0; i < 4; i++) {
-            accumulator[WHITE][ square * 4 + i] += weights0[wOffset + i];
-            accumulator[BLACK][bSquare * 4 + i] += weights0[bOffset + i];
+            accumulator[square * 4 * 2     + i] += weights0[wOffset + i];
+            accumulator[square * 4 * 2 + 4 + i] += weights0[bOffset + i];
         }
     }
 }
