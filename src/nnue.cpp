@@ -83,10 +83,10 @@ int Net::calculate(Color c, uint64_t occupied, Piece* mailbox) {
             int nUs   = (sq * 4) + i;
             int nThem = ((sq ^ 56) * 4) + i;
 
-            // output += screlu(accumulator[ c][nUs  ]) * weights1[256 * ourPiece   + nUs            ];
-            // output += screlu(accumulator[!c][nThem]) * weights1[256 * theirPiece + nThem + L1_SIZE];
-            std::cout << accumulator[ c][nUs  ] << std::endl;
-            std::cout << accumulator[!c][nThem] << std::endl;
+            output += screlu(accumulator[ c][nUs  ]) * weights1[256 * ourPiece   + nUs                 ];
+            output += screlu(accumulator[!c][nThem]) * weights1[256 * theirPiece + nThem + L1_SIZE * 12];
+            std::cout << 256 * ourPiece   + nUs << std::endl;
+            std::cout << 256 * theirPiece + nThem + L1_SIZE * 12 << std::endl;
         }
     }
 
