@@ -112,21 +112,21 @@ inline void Net::refreshMiniAcc(Position& pos, Piece piece, int square) {
     memcpy(&accumulator[WHITE][square * 4], &bias0[square * 4 + L1_SIZE * piece], 4 * sizeof(int16_t));
     memcpy(&accumulator[BLACK][square * 4], &bias0[square * 4 + L1_SIZE * piece], 4 * sizeof(int16_t));
 
-    while (occupied) {
-        int sq = popLSB(occupied);
-        Piece pc = pos.pieceOn(sq);
+    // while (occupied) {
+    //     int sq = popLSB(occupied);
+    //     Piece pc = pos.pieceOn(sq);
         
-        int indexWhite = index<WHITE>(pc, sq);
-        int indexBlack = index<BLACK>(pc, sq);
+    //     int indexWhite = index<WHITE>(pc, sq);
+    //     int indexBlack = index<BLACK>(pc, sq);
 
-        int wOffset = indexWhite * L1_SIZE * 12 +  square * 4 + L1_SIZE *  piece;
-        int bOffset = indexBlack * L1_SIZE * 12 + bSquare * 4 + L1_SIZE * bPiece;
+    //     int wOffset = indexWhite * L1_SIZE * 12 +  square * 4 + L1_SIZE *  piece;
+    //     int bOffset = indexBlack * L1_SIZE * 12 + bSquare * 4 + L1_SIZE * bPiece;
 
-        for (int i = 0; i < 4; i++) {
-            accumulator[WHITE][ square * 4 + i] += weights0[wOffset + i];
-            accumulator[BLACK][bSquare * 4 + i] += weights0[bOffset + i];
-        }
-    }
+    //     for (int i = 0; i < 4; i++) {
+    //         accumulator[WHITE][ square * 4 + i] += weights0[wOffset + i];
+    //         accumulator[BLACK][bSquare * 4 + i] += weights0[bOffset + i];
+    //     }
+    // }
 }
 
 inline void Net::moveFeature(int piece, int from, int to) {
