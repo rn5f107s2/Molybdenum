@@ -9,7 +9,8 @@
 #include "Move.h"
 #include "Utility.h"
 #include "Transpositiontable.h"
-#include "nnue.h"
+
+class Net;
 
 class Position {
     public:
@@ -44,9 +45,7 @@ class Position {
         inline std::string moveToSAN(Move move, u64 attacks);
         inline int ambigious(Move move, u64 attacks);
 
-        Position() {
-            net = new Net();
-        }
+        Position();
 
     private:
         Stack<Piece>  capturedHistory;

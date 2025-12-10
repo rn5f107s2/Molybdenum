@@ -7,6 +7,7 @@
 #include "tune.h"
 #include "UCIOptions.h"
 #include "thread.h"
+#include "nnue.h"
 
 #include <unordered_map>
 #include <vector>

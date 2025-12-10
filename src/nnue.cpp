@@ -44,19 +44,34 @@ void Net::loadDefaultNet() {
     wdlBias    = defaultWdl.bias1;
 }
 
-void Net::initAccumulator(std::array<u64, 13> &bitboards) {
+void Net::initAccumulator(Position &pos) {
     accumulatorStack.clear();
 
     memcpy(&accumulator[WHITE], &bias0[0], sizeof(int16_t) * L1_SIZE);
     memcpy(&accumulator[BLACK], &bias0[0], sizeof(int16_t) * L1_SIZE);
 
-    for (int pc = WHITE_PAWN; pc != NO_PIECE; pc++) {
-        u64 pieceBB = bitboards[pc];
+    uint64_t occupied = pos.getOccupied();
 
-        while (pieceBB) {
-            int square = popLSB(pieceBB);
+    while (occupied) {
+        int sq = popLSB(occupied);
 
-            toggleFeature<On>(pc, square);
+        refreshMiniAcc(pos, pos.pieceOn(sq), sq);
+    }
+
+    occupied = pos.getOccupied();
+
+    while (occupied) {
+        int sq = popLSB(occupied);
+        int nextSq = lsb(occupied);
+
+        int ourPiece   = pos.pieceOn(sq);
+        int theirPiece = makePiece(typeOf(ourPiece), !colorOf(ourPiece));
+
+        for (int i = 0; i < 4; i++) {
+            int nUs   = 256 * ourPiece + (sq * 4) + i;
+            int nThem = 256 * theirPiece + ((sq ^ 56) * 4) + i;
+
+            std::cout << accumulator[WHITE][nUs] << std::endl;
         }
     }
 

@@ -150,7 +150,7 @@ void UCI::position([[maybe_unused]] const std::string &args) {
 
         Move m = internalBoard.fromToToMove(from, to, promoPiece, flag);
         internalBoard.makeMove(m);
-        internalBoard.net->initAccumulator(internalBoard.bitBoards);
+        internalBoard.net->initAccumulator(internalBoard);
     }
 }
 

@@ -6,6 +6,10 @@
 #include "nnue.h"
 #include "Movegen.h"
 
+Position::Position() {
+    net = new Net();
+}
+
 void Position::setBoard(std::string fen) {
     clearBoard();
 
@@ -74,7 +78,7 @@ void Position::setBoard(std::string fen) {
     plys50moveRule  = !plys50mr.empty()  ? stringRoRule50(plys50mr)  : 0;
     movecount       = !moveCount.empty() ? stringRoRule50(moveCount) : 0;
     keyHistory.push(positionToKey(bitBoards, castlingRights, enPassantSquare, sideToMove));
-    net->initAccumulator(bitBoards);
+    net->initAccumulator(*this);
 }
 
 Move Position::fromToToMove(int from, int to, int promotionPiece, int flag) {
