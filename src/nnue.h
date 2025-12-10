@@ -23,7 +23,7 @@ static const std::array<int, NET_SIZE> LAYER_SIZE = {INPUT_SIZE, L1_SIZE, OUTPUT
 struct Weights {
     std::array<int16_t , L1_SIZE * INPUT_SIZE * 12> weights0{};
     std::array<int16_t, L1_SIZE * 12> bias0{};
-    std::array<int16_t, L1_SIZE * OUTPUT_SIZE * 2> weights1{};
+    std::array<int16_t, L1_SIZE * OUTPUT_SIZE * 2 * 12> weights1{};
     std::array<int16_t, OUTPUT_SIZE> bias1{};
 };
 
@@ -36,7 +36,7 @@ class Net {
 public:
     std::array<int16_t , L1_SIZE * INPUT_SIZE * 12> weights0{};
     std::array<int16_t, L1_SIZE * 12> bias0{};
-    std::array<int16_t, L1_SIZE * OUTPUT_SIZE * 2> weights1{};
+    std::array<int16_t, L1_SIZE * OUTPUT_SIZE * 2 * 12> weights1{};
     std::array<int16_t, OUTPUT_SIZE> bias1{};
     std::array<std::array<int16_t, L1_SIZE>, 2> accumulator{};
     std::array<int16_t, L1_SIZE * 3 * 2> wdlWeights{};
