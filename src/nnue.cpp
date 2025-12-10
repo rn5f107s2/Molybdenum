@@ -70,7 +70,7 @@ void Net::initAccumulator(Position &pos) {
         for (int i = 0; i < 4; i++) {
             int nUs   = (sq * 4) + i;
 
-            // std::cout << accumulator[WHITE][nUs] << std::endl;
+            std::cout << accumulator[WHITE][nUs] << std::endl;
         }
     }
 
