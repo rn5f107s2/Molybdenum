@@ -105,6 +105,10 @@ void Position::makeMove(Move move) {
     Piece capturedPiece = pieceLocations[to];
     u64 key             = keyHistory.top();
 
+    uint64_t cleanBitboard = getOccupied();
+    cleanBitboard &= ~(1ULL << from);
+    cleanBitboard &= ~(1ULL << to);
+
     plys50mrHistory.push(plys50moveRule);
     castlingHistory.push(castlingRights);
     capturedHistory.push(capturedPiece);
@@ -117,20 +121,16 @@ void Position::makeMove(Move move) {
     pieceLocations[from] = NO_PIECE;
     bitBoards[movedPiece] ^= 1ULL << from;
     updateKey(movedPiece,  from, key);
-    net->toggleFeature<Off>(movedPiece, from);
-
-    if (flag == PROMOTION) {
-        movedPiece = makePromoPiece(extract<PROMOTIONTYPE>(move), sideToMove);
-        phase += gamePhaseValues[typeOf(movedPiece)];
-        plys50moveRule = 0;
-    }
 
     if (flag == ENPASSANT) {
         int capturedPawn = movedPiece == WHITE_PAWN ? BLACK_PAWN : WHITE_PAWN;
         u64 captureSquare = movePawn(enPassantSquare, !sideToMove);
         bitBoards[capturedPawn] ^= captureSquare;
         pieceLocations[lsb(captureSquare)] = NO_PIECE;
-        net->toggleFeature<Off>(capturedPawn, lsb(captureSquare));
+
+        cleanBitboard &= ~captureSquare;
+
+        net->toggleFeature<Off>(*this, cleanBitboard, capturedPawn, lsb(captureSquare));
     }
 
     if (flag == CASTLING) {
@@ -141,9 +141,22 @@ void Position::makeMove(Move move) {
         pieceLocations[rookFrom] = NO_PIECE;
         pieceLocations[rookTo  ] = rook;
         bitBoards[rook] ^= (1ULL << rookFrom) | (1ULL << rookTo);
+
+        cleanBitboard &= ~(1ULL << rookFrom); 
+        cleanBitboard &= ~(1ULL << rookTo);
+
         updateKey(rook, rookFrom, key);
         updateKey(rook, rookTo, key);
-        net->moveFeature(rook, rookFrom, rookTo);
+        net->toggleFeature<On >(*this, cleanBitboard, rook, rookTo  );
+        net->toggleFeature<Off>(*this, cleanBitboard, rook, rookFrom);
+    }
+
+    net->toggleFeature<Off>(*this, cleanBitboard, movedPiece, from);
+
+    if (flag == PROMOTION) {
+        movedPiece = makePromoPiece(extract<PROMOTIONTYPE>(move), sideToMove);
+        phase += gamePhaseValues[typeOf(movedPiece)];
+        plys50moveRule = 0;
     }
 
     enPassantSquare = 0ULL;
@@ -163,18 +176,28 @@ void Position::makeMove(Move move) {
     if (capturedPiece != NO_PIECE) {
         bitBoards[capturedPiece] ^= 1ULL << to;
         phase -= gamePhaseValues[typeOf(capturedPiece)];
-        net->toggleFeature<Off>(capturedPiece, to);
+        net->toggleFeature<Off>(*this, cleanBitboard, capturedPiece, to);
         updateKey(capturedPiece, to, key);
         plys50moveRule = 0;
     }
 
     pieceLocations[to] = movedPiece;
-    net->toggleFeature<On>(movedPiece, to);
+    net->toggleFeature<On>(*this, cleanBitboard, movedPiece, to);
     bitBoards[movedPiece] ^= 1ULL << to;
     updateKey(movedPiece, to, key);
     updateKey(key);
     keyHistory.push(key);
     sideToMove = !sideToMove;
+
+    uint64_t dirty = getOccupied() & ~cleanBitboard;
+
+    while (dirty) {
+        int sq = popLSB(dirty);
+        Piece pc = pieceOn(sq);
+
+        net->refreshMiniAcc(*this, pc, sq);
+    }
+
     net->pushAccToStack();
 }
 

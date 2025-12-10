@@ -76,6 +76,8 @@ void Net::toggleFeature(int piece, int square) {
     int indexWhite = index<WHITE>(piece, square);
     int indexBlack = index<BLACK>(piece, square);
 
+    std::cout << "trololol" << std::endl;
+
     for (int l = 0; l != L1_SIZE; l++) {
         accumulator[WHITE][l] += weights0[indexWhite * L1_SIZE + l] * (!STATE ? -1 : 1);
         accumulator[BLACK][l] += weights0[indexBlack * L1_SIZE + l] * (!STATE ? -1 : 1);
