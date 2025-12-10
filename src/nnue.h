@@ -21,8 +21,8 @@ static const int NET_SIZE = 3;
 static const std::array<int, NET_SIZE> LAYER_SIZE = {INPUT_SIZE, L1_SIZE, OUTPUT_SIZE};
 
 struct Weights {
-    std::array<int16_t , L1_SIZE * INPUT_SIZE> weights0{};
-    std::array<int16_t, L1_SIZE> bias0{};
+    std::array<int16_t , L1_SIZE * INPUT_SIZE * 12> weights0{};
+    std::array<int16_t, L1_SIZE * 12> bias0{};
     std::array<int16_t, L1_SIZE * OUTPUT_SIZE * 2> weights1{};
     std::array<int16_t, OUTPUT_SIZE> bias1{};
 };
@@ -34,8 +34,8 @@ struct WDLHead {
 
 class Net {
 public:
-    std::array<int16_t , L1_SIZE * INPUT_SIZE> weights0{};
-    std::array<int16_t, L1_SIZE> bias0{};
+    std::array<int16_t , L1_SIZE * INPUT_SIZE * 12> weights0{};
+    std::array<int16_t, L1_SIZE * 12> bias0{};
     std::array<int16_t, L1_SIZE * OUTPUT_SIZE * 2> weights1{};
     std::array<int16_t, OUTPUT_SIZE> bias1{};
     std::array<std::array<int16_t, L1_SIZE>, 2> accumulator{};
@@ -109,6 +109,7 @@ inline void Net::refreshMiniAcc(Position& pos, Piece piece, int square) {
     int bSquare = square ^ 56;
     Piece bPiece = makePiece(typeOf(piece), !colorOf(piece));
 
+    std::cout << square * 4 + L1_SIZE * piece << std::endl;
     memcpy(&accumulator[WHITE][square * 4], &bias0[square * 4 + L1_SIZE * piece], 4 * sizeof(int16_t));
     memcpy(&accumulator[BLACK][square * 4], &bias0[square * 4 + L1_SIZE * piece], 4 * sizeof(int16_t));
 
