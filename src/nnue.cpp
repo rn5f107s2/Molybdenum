@@ -60,20 +60,6 @@ void Net::initAccumulator(Position &pos) {
 
     occupied = pos.getOccupied();
 
-    while (occupied) {
-        int sq = popLSB(occupied);
-        int nextSq = lsb(occupied);
-
-        int ourPiece   = pos.pieceOn(sq);
-        int theirPiece = makePiece(typeOf(ourPiece), !colorOf(ourPiece));
-
-        for (int i = 0; i < 4; i++) {
-            int nUs   = (sq * 4) + i;
-
-            std::cout << accumulator[WHITE][nUs] << std::endl;
-        }
-    }
-
     pushAccToStack();
 }
 
@@ -94,11 +80,13 @@ int Net::calculate(Color c, uint64_t occupied, Piece* mailbox) {
         }
 
         for (int i = 0; i < 4; i++) {
-            int nUs   = 256 * ourPiece + (sq * 4) + i;
-            int nThem = 256 * theirPiece + ((sq ^ 56) * 4) + i;
+            int nUs   = (sq * 4) + i;
+            int nThem = ((sq ^ 56) * 4) + i;
 
-            output += screlu(accumulator[ c][nUs  ]) * weights1[nUs            ];
-            output += screlu(accumulator[!c][nThem]) * weights1[nThem + L1_SIZE];
+            // output += screlu(accumulator[ c][nUs  ]) * weights1[256 * ourPiece   + nUs            ];
+            // output += screlu(accumulator[!c][nThem]) * weights1[256 * theirPiece + nThem + L1_SIZE];
+            std::cout << accumulator[ c][nUs  ] << std::endl;
+            std::cout << accumulator[!c][nThem] << std::endl;
         }
     }
 
