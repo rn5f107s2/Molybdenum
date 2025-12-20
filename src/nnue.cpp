@@ -78,8 +78,8 @@ void Net::loadDefaultNet() {
     for (int sq = 0; sq < 64; sq++) {
         for (int pc = 0; pc < 12; pc++) {
             for (int n = 0; n < 4; n++) {
-                weights1[256 * 2 * pc + (sq * 4) +     n] = defaultWeights.weights1[256 * pc + (sq * 4) + n];
-                weights1[256 * 2 * pc + (sq * 4) + 4 + n] = defaultWeights.weights1[256 * makePiece(typeOf(pc), !colorOf(pc)) + ((sq ^ 56) * 4) + n + L1_SIZE * 12];
+                weights1[256 * 2 * pc + (sq * 4 * 2) +     n] = defaultWeights.weights1[256 * pc + (sq * 4) + n];
+                weights1[256 * 2 * pc + (sq * 4 * 2) + 4 + n] = defaultWeights.weights1[256 * makePiece(typeOf(pc), !colorOf(pc)) + ((sq ^ 56) * 4) + n + L1_SIZE * 12];
             }
         }
     }
