@@ -32,6 +32,8 @@ struct WDLHead {
     std::array<int16_t, 3> bias1{};
 };
 
+const extern Weights defaultWeights;
+
 class Net {
 public:
     std::array<int16_t , L1_SIZE * INPUT_SIZE * 12> weights0{};
@@ -76,17 +78,21 @@ template<Color C> inline
 int index_old(int bucketPc, int bucketSq, int featurePc, int featureSq) {
     int idx = index<C>(featurePc, featureSq);
 
+    // indexWhite * L1_SIZE * 12 + wSq * 4 + L1_SIZE * wPc
     return idx * L1_SIZE * 12 + bucketSq * 4 + L1_SIZE * bucketPc;
 }
 
 template<Color C> inline
 int index_new(int bucketPc, int bucketSq, int featurePc, int featureSq) {
-    int idx = typeOf(featurePc) * 64 + (C == WHITE ? featureSq : featureSq ^ 56) * 4;
+    int bpt = typeOf(bucketPc);
+    int fpt = typeOf(featurePc);
+    int bpc = colorOf(bucketPc) == C;
+    int fpc = colorOf(featurePc) == C;
+    int bsq = colorOf(bucketPc)  ? bucketSq  : bucketSq  ^ 56;
+    int fsq = colorOf(featurePc) ? featureSq : featureSq ^ 56;
+    int ci  = ((bpc ^ fpc) << 1) | !fpc;
 
-    bool bw = colorOf(bucketPc);
-    bool fw = colorOf(featurePc);
-
-    return idx * L1_SIZE * 12 + (C == WHITE ? bucketSq : bucketSq ^ 56) * 4 * 4 + L1_SIZE * typeOf(bucketPc) * 4 + (((bw ^ fw) << 1) | (!fw)) * 4;
+    return fpt * 64 * 64 * 4 * 4 * 6 + fsq * 64 * 4 * 4 * 6 + bpt * 64 * 4 * 4 + bsq * 4 * 4 + ci * 4;
 }
 
 template<Toggle STATE> inline
@@ -104,26 +110,16 @@ void Net::toggleFeature(int piece, int square) {
 
 template<Toggle STATE> inline
 void Net::toggleFeature(Position& pos, uint64_t cleanBitboard, int piece, int square) {
-    int indexWhite = index<WHITE>(piece, square);
-    int indexBlack = index<BLACK>(piece, square);
-
     while (cleanBitboard) {
-        int wSq   = popLSB(cleanBitboard);
-        int bSq   = wSq ^ 56;
-        Piece wPc = pos.pieceOn(wSq);
-        Piece bPc = makePiece(typeOf(wPc), !colorOf(wPc));
+        int sq   = popLSB(cleanBitboard);
+        Piece pc = pos.pieceOn(sq);
 
-        int wOffset = indexWhite * L1_SIZE * 12 + wSq * 4 + L1_SIZE * wPc;
-        int bOffset = indexBlack * L1_SIZE * 12 + bSq * 4 + L1_SIZE * bPc;
-
-        // int newW = index_new<WHITE>(wPc, wSq, piece, square);
-        // int newB = index_new<BLACK>(bPc, bSq, makePiece(typeOf(piece), !colorOf(piece)), square ^ 56);
-
-        // std::cout << newW << " " << newB << std::endl;
+        int wOffset = index_new<WHITE>(pc, sq, piece, square);
+        int bOffset = index_new<BLACK>(pc, sq, piece, square);
 
         for (int i = 0; i < 4; i++) {
-            accumulator[(wSq * 4 * 2) + i    ] += weights0[wOffset + i] * (!STATE ? -1 : 1);
-            accumulator[(wSq * 4 * 2) + 4 + i] += weights0[bOffset + i] * (!STATE ? -1 : 1);
+            accumulator[(sq * 4 * 2) + i    ] += weights0[wOffset + i] * (!STATE ? -1 : 1);
+            accumulator[(sq * 4 * 2) + 4 + i] += weights0[bOffset + i] * (!STATE ? -1 : 1);
         }
     }
 }
@@ -170,12 +166,9 @@ inline void Net::refreshMiniAcc(Position& pos, Piece piece, int square) {
     while (occupied) {
         int sq = popLSB(occupied);
         Piece pc = pos.pieceOn(sq);
-        
-        int indexWhite = index<WHITE>(pc, sq);
-        int indexBlack = index<BLACK>(pc, sq);
 
-        int wOffset = indexWhite * L1_SIZE * 12 +  square * 4 + L1_SIZE *  piece;
-        int bOffset = indexBlack * L1_SIZE * 12 + bSquare * 4 + L1_SIZE * bPiece;
+        int wOffset = index_new<WHITE>(piece, square, pc, sq);
+        int bOffset = index_new<BLACK>(piece, square, pc, sq);
 
         for (int i = 0; i < 4; i++) {
             accumulator[square * 4 * 2     + i] += weights0[wOffset + i];

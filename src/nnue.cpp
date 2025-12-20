@@ -59,21 +59,18 @@ void Net::loadDefaultNet() {
     //     }
     // }
 
-    // for (int fpc = 0; fpc < 12; fpc++)
-    // for (int fsq = 0; fsq < 64; fsq++)
-    // for (int bpc = 0; bpc < 12; bpc++)
-    // for (int bsq = 0; bsq < 64; bsq++)
-    // for (int fpc2 = 0; fpc2 < 12; fpc2++)
-    // for (int fsq2 = 0; fsq2 < 64; fsq2++)
-    // for (int bpc2 = 0; bpc2 < 12; bpc2++)
-    // for (int bsq2 = 0; bsq2 < 64; bsq2++)
-    // if (fpc != fpc2 || fsq != fsq2 || bpc != bpc2 || bsq2 != bsq)
-    // if (index_new<WHITE>(bpc, bsq, fpc, fsq) == index_new<WHITE>(bpc2, bsq2, fpc2, fsq2))
-    // std::cout << "hit " << fpc << " " << fsq << " " << bpc << " " << bsq << "\n" << " " << fpc2 << " " << fsq2 << " " << bpc2 << " " << bsq2 << std::endl;
+    // [fpt][fsq][bpt][bsq][ci][n]
 
-    weights0 = defaultWeights.weights0;
     bias0 = defaultWeights.bias0;
     bias1 = defaultWeights.bias1;
+    weights0 = defaultWeights.weights0;
+
+    for (int fpc = 0; fpc < 12; fpc++)
+       for (int fsq = 0; fsq < 64; fsq++)
+            for (int bpc = 0; bpc < 12; bpc++)
+                for (int bsq = 0; bsq < 64; bsq++)
+                    for (int n = 0; n < 4; n++)
+                        weights0[index_new<WHITE>(bpc, bsq, fpc, fsq) + n] = defaultWeights.weights0[index_old<WHITE>(bpc, bsq, fpc, fsq) + n];
 
     for (int sq = 0; sq < 64; sq++) {
         for (int pc = 0; pc < 12; pc++) {
