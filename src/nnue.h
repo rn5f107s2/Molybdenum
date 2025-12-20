@@ -72,6 +72,23 @@ int index(int pc, int sq) {
     return piece * 64 + square;
 }
 
+template<Color C> inline
+int index_old(int bucketPc, int bucketSq, int featurePc, int featureSq) {
+    int idx = index<C>(featurePc, featureSq);
+
+    return idx * L1_SIZE * 12 + bucketSq * 4 + L1_SIZE * bucketPc;
+}
+
+template<Color C> inline
+int index_new(int bucketPc, int bucketSq, int featurePc, int featureSq) {
+    int idx = typeOf(featurePc) * 64 + (C == WHITE ? featureSq : featureSq ^ 56) * 4;
+
+    bool bw = colorOf(bucketPc);
+    bool fw = colorOf(featurePc);
+
+    return idx * L1_SIZE * 12 + (C == WHITE ? bucketSq : bucketSq ^ 56) * 4 * 4 + L1_SIZE * typeOf(bucketPc) * 4 + (((bw ^ fw) << 1) | (!fw)) * 4;
+}
+
 template<Toggle STATE> inline
 void Net::toggleFeature(int piece, int square) {
     int indexWhite = index<WHITE>(piece, square);
@@ -98,6 +115,11 @@ void Net::toggleFeature(Position& pos, uint64_t cleanBitboard, int piece, int sq
 
         int wOffset = indexWhite * L1_SIZE * 12 + wSq * 4 + L1_SIZE * wPc;
         int bOffset = indexBlack * L1_SIZE * 12 + bSq * 4 + L1_SIZE * bPc;
+
+        // int newW = index_new<WHITE>(wPc, wSq, piece, square);
+        // int newB = index_new<BLACK>(bPc, bSq, makePiece(typeOf(piece), !colorOf(piece)), square ^ 56);
+
+        // std::cout << newW << " " << newB << std::endl;
 
         for (int i = 0; i < 4; i++) {
             accumulator[(wSq * 4 * 2) + i    ] += weights0[wOffset + i] * (!STATE ? -1 : 1);
