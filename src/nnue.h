@@ -150,8 +150,8 @@ int Net::calculate(uint64_t occupied, Piece* mailbox) {
             int nUs   = ((sq ^ (56 * (C == BLACK))) * 4 * 2) + (4 * (C == BLACK)) + i;
             int nThem = ((sq ^ (56 * (C == BLACK))) * 4 * 2) + (4 * (C == WHITE)) + i;
 
-            output += screlu(accumulator[nUs  ]) * weights1[256 * ourPiece   + (sq * 4) + i                      ];
-            output += screlu(accumulator[nThem]) * weights1[256 * theirPiece + ((sq ^ 56) * 4) + i + L1_SIZE * 12];
+            output += screlu(accumulator[nUs  ]) * weights1[256 * 2 * ourPiece + (sq * 4) + i + 4 * (C == BLACK)];
+            output += screlu(accumulator[nThem]) * weights1[256 * 2 * ourPiece + (sq * 4) + i + 4 * (C == WHITE)];
         }
     }
 

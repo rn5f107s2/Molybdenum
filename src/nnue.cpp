@@ -72,9 +72,17 @@ void Net::loadDefaultNet() {
     // std::cout << "hit " << fpc << " " << fsq << " " << bpc << " " << bsq << "\n" << " " << fpc2 << " " << fsq2 << " " << bpc2 << " " << bsq2 << std::endl;
 
     weights0 = defaultWeights.weights0;
-    weights1 = defaultWeights.weights1;
     bias0 = defaultWeights.bias0;
     bias1 = defaultWeights.bias1;
+
+    for (int sq = 0; sq < 64; sq++) {
+        for (int pc = 0; pc < 12; pc++) {
+            for (int n = 0; n < 4; n++) {
+                weights1[256 * 2 * pc + (sq * 4) +     n] = defaultWeights.weights1[256 * pc + (sq * 4) + n];
+                weights1[256 * 2 * pc + (sq * 4) + 4 + n] = defaultWeights.weights1[256 * makePiece(typeOf(pc), !colorOf(pc)) + ((sq ^ 56) * 4) + n + L1_SIZE * 12];
+            }
+        }
+    }
 
     wdlWeights = defaultWdl.weights1;
     wdlBias    = defaultWdl.bias1;
