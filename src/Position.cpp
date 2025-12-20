@@ -105,7 +105,9 @@ void Position::makeMove(Move move) {
     Piece capturedPiece = pieceLocations[to];
     u64 key             = keyHistory.top();
 
-    uint64_t cleanBitboard = getOccupied();
+    uint64_t whiteBitboard = getPieces<PAWN>(WHITE) | getPieces<KNIGHT>(WHITE) | getPieces<BISHOP>(WHITE) | getPieces<ROOK>(WHITE) | getPieces<QUEEN>(WHITE) | getPieces<KING>(WHITE);
+    uint64_t cleanBitboard = whiteBitboard | getPieces<PAWN>(BLACK) | getPieces<KNIGHT>(BLACK) | getPieces<BISHOP>(BLACK) | getPieces<ROOK>(BLACK) | getPieces<QUEEN>(BLACK) | getPieces<KING>(BLACK);
+
     cleanBitboard &= ~(1ULL << from);
     cleanBitboard &= ~(1ULL << to);
 
@@ -130,7 +132,7 @@ void Position::makeMove(Move move) {
 
         cleanBitboard &= ~captureSquare;
 
-        net->toggleFeature<Off>(*this, cleanBitboard, capturedPawn, lsb(captureSquare));
+        net->toggleFeature<Off>(*this, cleanBitboard, whiteBitboard, capturedPawn, lsb(captureSquare));
     }
 
     if (flag == CASTLING) {
@@ -147,11 +149,11 @@ void Position::makeMove(Move move) {
 
         updateKey(rook, rookFrom, key);
         updateKey(rook, rookTo, key);
-        net->toggleFeature<On >(*this, cleanBitboard, rook, rookTo  );
-        net->toggleFeature<Off>(*this, cleanBitboard, rook, rookFrom);
+        net->toggleFeature<On >(*this, cleanBitboard, whiteBitboard, rook, rookTo  );
+        net->toggleFeature<Off>(*this, cleanBitboard, whiteBitboard, rook, rookFrom);
     }
 
-    net->toggleFeature<Off>(*this, cleanBitboard, movedPiece, from);
+    net->toggleFeature<Off>(*this, cleanBitboard, whiteBitboard, movedPiece, from);
 
     if (flag == PROMOTION) {
         movedPiece = makePromoPiece(extract<PROMOTIONTYPE>(move), sideToMove);
@@ -176,13 +178,13 @@ void Position::makeMove(Move move) {
     if (capturedPiece != NO_PIECE) {
         bitBoards[capturedPiece] ^= 1ULL << to;
         phase -= gamePhaseValues[typeOf(capturedPiece)];
-        net->toggleFeature<Off>(*this, cleanBitboard, capturedPiece, to);
+        net->toggleFeature<Off>(*this, cleanBitboard, whiteBitboard, capturedPiece, to);
         updateKey(capturedPiece, to, key);
         plys50moveRule = 0;
     }
 
     pieceLocations[to] = movedPiece;
-    net->toggleFeature<On>(*this, cleanBitboard, movedPiece, to);
+    net->toggleFeature<On>(*this, cleanBitboard, whiteBitboard, movedPiece, to);
     bitBoards[movedPiece] ^= 1ULL << to;
     updateKey(movedPiece, to, key);
     updateKey(key);

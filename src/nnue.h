@@ -54,7 +54,7 @@ public:
     template<Toggle STATE> inline
     void toggleFeature(int piece, int square);
     template<Toggle STATE> inline
-    void toggleFeature(Position& pos, uint64_t cleanBitboard, int piece, int square);
+    void toggleFeature(Position& pos, uint64_t cleanBitboard, uint64_t whiteBitboard, int piece, int square);
     void refreshMiniAcc(Position& pos, Piece piece, int square);
     inline void moveFeature(int piece, int from, int to);
     inline void pushAccToStack();
@@ -109,17 +109,28 @@ void Net::toggleFeature(int piece, int square) {
 }
 
 template<Toggle STATE> inline
-void Net::toggleFeature(Position& pos, uint64_t cleanBitboard, int piece, int square) {
-    while (cleanBitboard) {
+void Net::toggleFeature(Position& pos, uint64_t cleanBitboard, uint64_t whiteBitboard, int piece, int square) {
+    while (cleanBitboard & whiteBitboard) {
         int sq   = popLSB(cleanBitboard);
         Piece pc = pos.pieceOn(sq);
 
         int wOffset = index_new<WHITE>(pc, sq, piece, square);
-        int bOffset = index_new<BLACK>(pc, sq, piece, square);
 
         for (int i = 0; i < 4; i++) {
-            accumulator[(sq * 4 * 2) + i    ] += weights0[wOffset + i] * (!STATE ? -1 : 1);
-            accumulator[(sq * 4 * 2) + 4 + i] += weights0[bOffset + i] * (!STATE ? -1 : 1);
+            accumulator[(sq * 4 * 2) + i    ] += weights0[wOffset +     i] * (!STATE ? -1 : 1);
+            accumulator[(sq * 4 * 2) + 4 + i] += weights0[wOffset + 4 + i] * (!STATE ? -1 : 1);
+        }
+    }
+
+    while (cleanBitboard & ~whiteBitboard) {
+        int sq   = popLSB(cleanBitboard);
+        Piece pc = pos.pieceOn(sq);
+
+        int wOffset = index_new<WHITE>(pc, sq, piece, square);
+
+        for (int i = 0; i < 4; i++) {
+            accumulator[(sq * 4 * 2) + i    ] += weights0[wOffset + 4 + i] * (!STATE ? -1 : 1);
+            accumulator[(sq * 4 * 2) + 4 + i] += weights0[wOffset     + i] * (!STATE ? -1 : 1);
         }
     }
 }
