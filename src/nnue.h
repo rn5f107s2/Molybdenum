@@ -307,7 +307,7 @@ inline void Net::addSubSub(Position& pos, uint64_t cleanBitboard, int onPiece, i
         // Accumulate
         acc = _mm_add_epi16(acc, wA );
         acc = _mm_sub_epi16(acc, wS1);
-        //acc = _mm_sub_epi16(acc, wS2);
+        acc = _mm_sub_epi16(acc, wS2);
 
         // Store result
         _mm_storeu_si128((__m128i *)(&accumulator[0] + idx), acc);

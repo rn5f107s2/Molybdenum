@@ -191,19 +191,40 @@ void Position::makeMove(Move move) {
     uint64_t dirty = getOccupied() & ~cleanBitboard;
 
     if (capPc != NO_PIECE) {
-        net->toggleFeature<Off>(*this, cleanBitboard, capPc, capSq);
+        if (colorOf(movedPiece))
+            if (colorOf(mp))
+                if (colorOf(capPc))
+                    net->addSubSub<WHITE, WHITE, WHITE>(*this, cleanBitboard, movedPiece, to, mp, from, capPc, capSq);
+                else
+                    net->addSubSub<WHITE, WHITE, BLACK>(*this, cleanBitboard, movedPiece, to, mp, from, capPc, capSq);
+            else
+                if (colorOf(capPc))
+                    net->addSubSub<WHITE, BLACK, WHITE>(*this, cleanBitboard, movedPiece, to, mp, from, capPc, capSq);
+                else
+                    net->addSubSub<WHITE, BLACK, BLACK>(*this, cleanBitboard, movedPiece, to, mp, from, capPc, capSq);
+        else
+            if (colorOf(mp))
+                if (colorOf(capPc))
+                    net->addSubSub<BLACK, WHITE, WHITE>(*this, cleanBitboard, movedPiece, to, mp, from, capPc, capSq);
+                else
+                    net->addSubSub<BLACK, WHITE, BLACK>(*this, cleanBitboard, movedPiece, to, mp, from, capPc, capSq);
+            else
+                if (colorOf(capPc))
+                    net->addSubSub<BLACK, BLACK, WHITE>(*this, cleanBitboard, movedPiece, to, mp, from, capPc, capSq);
+                else
+                    net->addSubSub<BLACK, BLACK, BLACK>(*this, cleanBitboard, movedPiece, to, mp, from, capPc, capSq);
+    } else {
+        if (colorOf(movedPiece))
+            if (colorOf(mp))
+                net->addSub<WHITE, WHITE>(*this, cleanBitboard, movedPiece, to, mp, from);
+            else
+                net->addSub<WHITE, BLACK>(*this, cleanBitboard, movedPiece, to, mp, from);
+        else
+            if (colorOf(mp))
+                net->addSub<BLACK, WHITE>(*this, cleanBitboard, movedPiece, to, mp, from);
+            else
+                net->addSub<BLACK, BLACK>(*this, cleanBitboard, movedPiece, to, mp, from);
     }
-
-    if (colorOf(movedPiece))
-        if (colorOf(mp))
-            net->addSub<WHITE, WHITE>(*this, cleanBitboard, movedPiece, to, mp, from);
-        else
-            net->addSub<WHITE, BLACK>(*this, cleanBitboard, movedPiece, to, mp, from);
-    else
-        if (colorOf(mp))
-            net->addSub<BLACK, WHITE>(*this, cleanBitboard, movedPiece, to, mp, from);
-        else
-            net->addSub<BLACK, BLACK>(*this, cleanBitboard, movedPiece, to, mp, from);
 
     while (dirty) {
         int sq = popLSB(dirty);
