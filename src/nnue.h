@@ -205,7 +205,7 @@ void Net::toggleFeature(Position& pos, uint64_t cleanBitboard, int piece, int sq
     }
 }
 
-template<Color C>
+template<Color C> 
 inline void refreshSingle(Net* net, int offset, int bpc, int bsq, int fpc, int fsq) {
     int idx = bsq * 8;
 
@@ -639,9 +639,33 @@ template<Color C> inline
 int Net::calculate(uint64_t occupied, Piece* mailbox) {
     int output = 0;
 
-    while (occupied) {
+    while (occupied & (occupied - 1)) {
+        int sq1 = popLSB(occupied);
+        int sq2 = popLSB(occupied);
+
+        int ourPiece1 = mailbox[sq1 ^ (56 * (C == BLACK))];
+        int ourPiece2 = mailbox[sq2 ^ (56 * (C == BLACK))];
+
+        if constexpr (C == BLACK) {
+            ourPiece1 = makePiece(typeOf(ourPiece1), !colorOf(ourPiece1));
+            ourPiece2 = makePiece(typeOf(ourPiece2), !colorOf(ourPiece2));
+        }
+
+        for (int i = 0; i < 4; i++) {
+            int nUs1   = ((sq1 ^ (56 * (C == BLACK))) * 4 * 2) + (4 * (C == BLACK)) + i;
+            int nThem1 = ((sq1 ^ (56 * (C == BLACK))) * 4 * 2) + (4 * (C == WHITE)) + i;
+            int nUs2   = ((sq2 ^ (56 * (C == BLACK))) * 4 * 2) + (4 * (C == BLACK)) + i;
+            int nThem2 = ((sq2 ^ (56 * (C == BLACK))) * 4 * 2) + (4 * (C == WHITE)) + i;
+
+            output += screlu(accumulator[nUs1  ]) * weights1[256 * 2 * ourPiece1 + (sq1 * 4 * 2) + i    ];
+            output += screlu(accumulator[nThem1]) * weights1[256 * 2 * ourPiece1 + (sq1 * 4 * 2) + i + 4];
+            output += screlu(accumulator[nUs2  ]) * weights1[256 * 2 * ourPiece2 + (sq2 * 4 * 2) + i    ];
+            output += screlu(accumulator[nThem2]) * weights1[256 * 2 * ourPiece2 + (sq2 * 4 * 2) + i + 4];
+        }
+    }
+
+    if (occupied) {
         int sq = popLSB(occupied);
-        int nextSq = lsb(occupied);
 
         int ourPiece   = mailbox[sq ^ (56 * (C == BLACK))];
         int theirPiece = makePiece(typeOf(ourPiece), !colorOf(ourPiece));
@@ -656,7 +680,7 @@ int Net::calculate(uint64_t occupied, Piece* mailbox) {
             int nUs   = ((sq ^ (56 * (C == BLACK))) * 4 * 2) + (4 * (C == BLACK)) + i;
             int nThem = ((sq ^ (56 * (C == BLACK))) * 4 * 2) + (4 * (C == WHITE)) + i;
 
-            output += screlu(accumulator[nUs  ]) * weights1[256 * 2 * ourPiece + (sq * 4 * 2) + i];
+            output += screlu(accumulator[nUs  ]) * weights1[256 * 2 * ourPiece + (sq * 4 * 2) + i    ];
             output += screlu(accumulator[nThem]) * weights1[256 * 2 * ourPiece + (sq * 4 * 2) + i + 4];
         }
     }
@@ -664,8 +688,7 @@ int Net::calculate(uint64_t occupied, Piece* mailbox) {
     return ((output / 255) + bias1[0]) * 133 / (64 * 255);
 }
 
-inline void __attribute__ ((noinline))
-Net::refreshMiniAcc(Position& pos, Piece piece, int square) {
+inline void Net::refreshMiniAcc(Position& pos, Piece piece, int square) {
     uint64_t white = pos.getOccupied<WHITE>();
     uint64_t black = pos.getOccupied<BLACK>();
 
