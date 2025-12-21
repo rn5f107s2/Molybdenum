@@ -191,7 +191,8 @@ void Position::makeMove(Move move) {
     keyHistory.push(key);
     sideToMove = !sideToMove;
 
-    uint64_t dirty = getOccupied() & ~cleanBitboard;
+    uint64_t white = getOccupied<WHITE>();
+    uint64_t dirty = (white | getOccupied<BLACK>()) & ~cleanBitboard;
 
     // This is unnecesarily complex but for some reason faster this way
     if (flag != CASTLING) {
@@ -219,20 +220,28 @@ void Position::makeMove(Move move) {
                     else
                         net->addSubSub<BLACK, BLACK, BLACK>(*this, cleanBitboard, movedPiece, to, mp, from, capPc, capSq);
         } else {
+            int sq = lsb(dirty);
+            Piece pc = pieceOn(sq);
+
             if (colorOf(movedPiece))
                 if (colorOf(mp))
-                    net->addSub<WHITE, WHITE>(*this, cleanBitboard, movedPiece, to, mp, from);
+                    net->addSub<WHITE, WHITE>(*this, cleanBitboard, white, movedPiece, to, mp, from, pc, sq);
                 else
-                    net->addSub<WHITE, BLACK>(*this, cleanBitboard, movedPiece, to, mp, from);
+                    net->addSub<WHITE, BLACK>(*this, cleanBitboard, white, movedPiece, to, mp, from, pc, sq);
             else
                 if (colorOf(mp))
-                    net->addSub<BLACK, WHITE>(*this, cleanBitboard, movedPiece, to, mp, from);
+                    net->addSub<BLACK, WHITE>(*this, cleanBitboard, white, movedPiece, to, mp, from, pc, sq);
                 else
-                    net->addSub<BLACK, BLACK>(*this, cleanBitboard, movedPiece, to, mp, from);
+                    net->addSub<BLACK, BLACK>(*this, cleanBitboard, white, movedPiece, to, mp, from, pc, sq);
         }
+    } else {
+        int sq = popLSB(dirty);
+        Piece pc = pieceOn(sq);
+
+        net->refreshMiniAcc(*this, pc, sq);
     }
 
-    while (dirty) {
+    if (true) {
         int sq = popLSB(dirty);
         Piece pc = pieceOn(sq);
 
