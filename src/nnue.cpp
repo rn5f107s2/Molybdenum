@@ -61,7 +61,6 @@ void Net::loadDefaultNet() {
 
     // [fpt][fsq][bpt][bsq][ci][n]
 
-    bias0 = defaultWeights.bias0;
     bias1 = defaultWeights.bias1;
     weights0 = defaultWeights.weights0;
 
@@ -84,7 +83,8 @@ void Net::loadDefaultNet() {
     for (int sq = 0; sq < 64; sq++)
         for (int pc = 0; pc < 12; pc++)
             for (int n = 0; n < 4; n++)
-                bias0[sq * 4 + L1_SIZE * pc + n] += weights0[index_new<WHITE>(pc, sq, pc, sq) + n];
+                bias0[L1_SIZE * 2 * typeOf(pc) + (colorOf(pc) ? sq : sq ^ 56) * 8 + 4 * (!colorOf(pc)) + n]
+                = defaultWeights.bias0[sq * 4 + L1_SIZE * pc + n] + weights0[index_new<WHITE>(pc, sq, pc, sq) + n];
 
     wdlWeights = defaultWdl.weights1;
     wdlBias    = defaultWdl.bias1;

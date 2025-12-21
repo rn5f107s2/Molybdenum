@@ -243,11 +243,12 @@ inline void Net::addSub(Position& pos, uint64_t cleanBitboard, uint64_t white, i
     uint64_t w = cleanBitboard & white;
     uint64_t b = cleanBitboard & ~white;
 
-    int bSquare = refreshSq ^ 56;
-    Piece bPiece = makePiece(typeOf(refreshPc), !colorOf(refreshPc));
+    constexpr bool RPC = ON_COLOR; // colorOf(refreshPc) == colorOf(movedPiece) == ON_COLOR
 
-    memcpy(&accumulator[refreshSq * 4 * 2    ], &bias0[refreshSq  * 4 + L1_SIZE * refreshPc], 4 * sizeof(int16_t));
-    memcpy(&accumulator[refreshSq * 4 * 2 + 4], &bias0[bSquare    * 4 + L1_SIZE * bPiece   ], 4 * sizeof(int16_t));
+    int biasIndex = L1_SIZE * 2 * typeOf(refreshPc) + (RPC ? refreshSq : refreshSq ^ 56) * 8;
+
+    memcpy(&accumulator[refreshSq * 4 * 2    ], &bias0[biasIndex + 4 * !RPC], 4 * sizeof(int16_t));
+    memcpy(&accumulator[refreshSq * 4 * 2 + 4], &bias0[biasIndex + 4 *  RPC], 4 * sizeof(int16_t));
 
     while (w) {
         int sq   = popLSB(w);
@@ -371,11 +372,12 @@ inline void Net::addSubSub(Position& pos, uint64_t cleanBitboard, uint64_t white
     uint64_t w = cleanBitboard &  white;
     uint64_t b = cleanBitboard & ~white;
 
-    int bSquare = refreshSq ^ 56;
-    Piece bPiece = makePiece(typeOf(refreshPc), !colorOf(refreshPc));
+    constexpr bool RPC = ON_COLOR; // colorOf(refreshPc) == colorOf(movedPiece) == ON_COLOR
 
-    memcpy(&accumulator[refreshSq * 4 * 2    ], &bias0[refreshSq  * 4 + L1_SIZE * refreshPc], 4 * sizeof(int16_t));
-    memcpy(&accumulator[refreshSq * 4 * 2 + 4], &bias0[bSquare    * 4 + L1_SIZE * bPiece   ], 4 * sizeof(int16_t));
+    int biasIndex = L1_SIZE * 2 * typeOf(refreshPc) + (RPC ? refreshSq : refreshSq ^ 56) * 8;
+
+    memcpy(&accumulator[refreshSq * 4 * 2    ], &bias0[biasIndex + 4 * !RPC], 4 * sizeof(int16_t));
+    memcpy(&accumulator[refreshSq * 4 * 2 + 4], &bias0[biasIndex + 4 *  RPC], 4 * sizeof(int16_t));
 
     while (w) {
         int sq   = popLSB(w);
@@ -682,11 +684,10 @@ inline void Net::refreshMiniAcc(Position& pos, Piece piece, int square) {
     uint64_t white = pos.getOccupied<WHITE>() & ~(1ULL << square);
     uint64_t black = pos.getOccupied<BLACK>() & ~(1ULL << square);
 
-    int bSquare = square ^ 56;
-    Piece bPiece = makePiece(typeOf(piece), !colorOf(piece));
+    int biasIndex = L1_SIZE * 2 * typeOf(piece) + (colorOf(piece) ? square : square ^ 56) * 8;
 
-    memcpy(&accumulator[square * 4 * 2    ], &bias0[square  * 4 + L1_SIZE * piece ], 4 * sizeof(int16_t));
-    memcpy(&accumulator[square * 4 * 2 + 4], &bias0[bSquare * 4 + L1_SIZE * bPiece], 4 * sizeof(int16_t));
+    memcpy(&accumulator[square * 4 * 2    ], &bias0[biasIndex + 4 * !colorOf(piece)], 4 * sizeof(int16_t));
+    memcpy(&accumulator[square * 4 * 2 + 4], &bias0[biasIndex + 4 *  colorOf(piece)], 4 * sizeof(int16_t));
 
     while (white) {
         int sq = popLSB(white);
