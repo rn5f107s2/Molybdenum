@@ -102,6 +102,18 @@ int index_new(int bucketPc, int bucketSq, int featurePc, int featureSq) {
     return fpt * 64 * 64 * 4 * 4 * 6 + fsq * 64 * 4 * 4 * 6 + bpt * 64 * 4 * 4 + bsq * 4 * 4 + ci * 4;
 }
 
+template<Color C, Color FPC> inline
+int index_new(int bucketPc, int bucketSq, int featurePc, int featureSq) {
+    int bpt = typeOf(bucketPc);
+    int fpt = typeOf(featurePc);
+    int bpc = colorOf(bucketPc);
+    int bsq = bpc ? bucketSq  : bucketSq  ^ 56;
+    int fsq = FPC ? featureSq : featureSq ^ 56;
+    int ci  = ((bpc ^ FPC) << 1) | !FPC;
+
+    return fpt * 64 * 64 * 4 * 4 * 6 + fsq * 64 * 4 * 4 * 6 + bpt * 64 * 4 * 4 + bsq * 4 * 4 + ci * 4;
+}
+
 template<Color C, Color BPC, Color FPC> inline
 int index_new(int bucketPc, int bucketSq, int featurePc, int featureSq) {
     int bpt = typeOf(bucketPc);
@@ -248,7 +260,7 @@ inline void Net::addSub(Position& pos, uint64_t cleanBitboard, uint64_t white, i
 
         int  onOffset     = index_new<WHITE, WHITE, ON_COLOR >(pc, sq,  onPiece, onSquare);
         int offOffset     = index_new<WHITE, WHITE, OFF_COLOR>(pc, sq, offPiece, offSquare);
-        int refreshOffset = index_new<WHITE>(refreshPc, refreshSq, pc, sq);
+        int refreshOffset = index_new<WHITE, WHITE>(refreshPc, refreshSq, pc, sq);
 
         refreshSingle<WHITE>(this, refreshOffset, refreshPc, refreshSq, pc, sq);
 
@@ -306,7 +318,7 @@ inline void Net::addSub(Position& pos, uint64_t cleanBitboard, uint64_t white, i
 
         int  onOffset     = index_new<WHITE, BLACK, ON_COLOR >(pc, sq,  onPiece, onSquare);
         int offOffset     = index_new<WHITE, BLACK, OFF_COLOR>(pc, sq, offPiece, offSquare);
-        int refreshOffset = index_new<WHITE>(refreshPc, refreshSq, pc, sq);
+        int refreshOffset = index_new<WHITE, BLACK>(refreshPc, refreshSq, pc, sq);
 
         refreshSingle<BLACK>(this, refreshOffset, refreshPc, refreshSq, pc, sq);
 
@@ -382,7 +394,7 @@ inline void Net::addSubSub(Position& pos, uint64_t cleanBitboard, uint64_t white
         int  onOffset     = index_new<WHITE, WHITE, ON_COLOR >(pc, sq,  onPiece,  onSquare);
         int offOffset     = index_new<WHITE, WHITE, OFF_COLOR>(pc, sq, offPiece, offSquare);
         int capOffset     = index_new<WHITE, WHITE, CAP_COLOR>(pc, sq, capPiece,     capSq);
-        int refreshOffset = index_new<WHITE>(refreshPc, refreshSq, pc, sq);
+        int refreshOffset = index_new<WHITE, WHITE>(refreshPc, refreshSq, pc, sq);
 
         refreshSingle<WHITE>(this, refreshOffset, refreshPc, refreshSq, pc, sq);
 
@@ -458,7 +470,7 @@ inline void Net::addSubSub(Position& pos, uint64_t cleanBitboard, uint64_t white
         int  onOffset = index_new<WHITE, BLACK, ON_COLOR >(pc, sq,  onPiece,  onSquare);
         int offOffset = index_new<WHITE, BLACK, OFF_COLOR>(pc, sq, offPiece, offSquare);
         int capOffset = index_new<WHITE, BLACK, CAP_COLOR>(pc, sq, capPiece,     capSq);
-        int refreshOffset = index_new<WHITE>(refreshPc, refreshSq, pc, sq);
+        int refreshOffset = index_new<WHITE, BLACK>(refreshPc, refreshSq, pc, sq);
 
         refreshSingle<BLACK>(this, refreshOffset, refreshPc, refreshSq, pc, sq);
 
