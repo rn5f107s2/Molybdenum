@@ -55,7 +55,7 @@ public:
     template<Toggle STATE> inline
     void toggleFeature(int piece, int square);
     template<Toggle STATE> inline
-    void toggleFeature(Position& pos, uint64_t cleanBitboard, uint64_t whiteBitboard, int piece, int square);
+    void toggleFeature(Position& pos, uint64_t cleanBitboard, int piece, int square);
     void refreshMiniAcc(Position& pos, Piece piece, int square);
     inline void moveFeature(int piece, int from, int to);
     inline void pushAccToStack();
@@ -110,7 +110,7 @@ void Net::toggleFeature(int piece, int square) {
 }
 
 template<Toggle STATE> inline
-void Net::toggleFeature(Position& pos, uint64_t cleanBitboard, uint64_t whiteBitboard, int piece, int square) {
+void Net::toggleFeature(Position& pos, uint64_t cleanBitboard, int piece, int square) {
     if (colorOf(piece)) {
         while (cleanBitboard) {
             int sq   = popLSB(cleanBitboard);
@@ -178,7 +178,6 @@ void Net::toggleFeature(Position& pos, uint64_t cleanBitboard, uint64_t whiteBit
 
 
 template<Color C> inline
-__attribute__ ((noinline))
 int Net::calculate(uint64_t occupied, Piece* mailbox) {
     int output = 0;
 
@@ -208,7 +207,8 @@ int Net::calculate(uint64_t occupied, Piece* mailbox) {
 }
 
 inline void Net::refreshMiniAcc(Position& pos, Piece piece, int square) {
-    uint64_t occupied = pos.getOccupied();
+    uint64_t white = pos.getOccupied<WHITE>();
+    uint64_t black = pos.getOccupied<BLACK>();
 
     int bSquare = square ^ 56;
     Piece bPiece = makePiece(typeOf(piece), !colorOf(piece));
@@ -216,17 +216,56 @@ inline void Net::refreshMiniAcc(Position& pos, Piece piece, int square) {
     memcpy(&accumulator[square * 4 * 2    ], &bias0[square  * 4 + L1_SIZE * piece ], 4 * sizeof(int16_t));
     memcpy(&accumulator[square * 4 * 2 + 4], &bias0[bSquare * 4 + L1_SIZE * bPiece], 4 * sizeof(int16_t));
 
-    while (occupied) {
-        int sq = popLSB(occupied);
+    while (white) {
+        int sq = popLSB(white);
         Piece pc = pos.pieceOn(sq);
 
         int wOffset = index_new<WHITE>(piece, square, pc, sq);
-        int bOffset = index_new<BLACK>(piece, square, pc, sq);
 
-        for (int i = 0; i < 4; i++) {
-            accumulator[square * 4 * 2     + i] += weights0[wOffset + i];
-            accumulator[square * 4 * 2 + 4 + i] += weights0[bOffset + i];
-        }
+        int idx = square * 8;
+
+        // Load 8 weights
+        __m128i w = _mm_loadu_si128((const __m128i *)(&weights0[0] + wOffset));
+
+        // Load 8 accumulator values
+        __m128i acc = _mm_loadu_si128((__m128i *)(&accumulator[0] + idx));
+
+        // Accumulate
+        acc = _mm_add_epi16(acc, w);
+
+        // Store result
+        _mm_storeu_si128((__m128i *)(&accumulator[0] + idx), acc);
+    }
+
+    while (black) {
+        int sq = popLSB(black);
+        Piece pc = pos.pieceOn(sq);
+
+        int wOffset = index_new<WHITE>(piece, square, pc, sq);
+
+        int idx = square * 8;
+
+        // Load first 4 weights: wOffset + 0..3
+        __m128i w_lo = _mm_loadl_epi64(
+            (const __m128i *)(&weights0[0] + wOffset)
+        );
+
+        // Load second 4 weights: wOffset - 4..-1
+        __m128i w_hi = _mm_loadl_epi64(
+            (const __m128i *)(&weights0[0] + wOffset - 4)
+        );
+
+        // Combine into one vector: [lo | hi]
+        __m128i w = _mm_unpacklo_epi64(w_lo, w_hi);
+
+        // Load 8 accumulator values
+         __m128i acc = _mm_loadu_si128((__m128i *)(&accumulator[0] + idx));
+
+        // Accumulate
+        acc = _mm_add_epi16(acc, w);
+
+        // Store result
+        _mm_storeu_si128((__m128i *)(&accumulator[0] + idx), acc);
     }
 }
 
