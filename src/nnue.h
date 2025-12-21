@@ -249,11 +249,6 @@ inline void Net::addSub(Position& pos, uint64_t cleanBitboard, uint64_t white, i
     memcpy(&accumulator[refreshSq * 4 * 2    ], &bias0[refreshSq  * 4 + L1_SIZE * refreshPc], 4 * sizeof(int16_t));
     memcpy(&accumulator[refreshSq * 4 * 2 + 4], &bias0[bSquare    * 4 + L1_SIZE * bPiece   ], 4 * sizeof(int16_t));
 
-    if (colorOf(refreshPc))
-        refreshSingle<WHITE>(this, index_new<WHITE>(refreshPc, refreshSq, refreshPc, refreshSq), refreshPc, refreshSq, refreshPc, refreshSq);
-    else
-        refreshSingle<BLACK>(this, index_new<WHITE>(refreshPc, refreshSq, refreshPc, refreshSq), refreshPc, refreshSq, refreshPc, refreshSq);
-
     while (w) {
         int sq   = popLSB(w);
         Piece pc = pos.pieceOn(sq);
@@ -381,11 +376,6 @@ inline void Net::addSubSub(Position& pos, uint64_t cleanBitboard, uint64_t white
 
     memcpy(&accumulator[refreshSq * 4 * 2    ], &bias0[refreshSq  * 4 + L1_SIZE * refreshPc], 4 * sizeof(int16_t));
     memcpy(&accumulator[refreshSq * 4 * 2 + 4], &bias0[bSquare    * 4 + L1_SIZE * bPiece   ], 4 * sizeof(int16_t));
-
-    if (colorOf(refreshPc))
-        refreshSingle<WHITE>(this, index_new<WHITE>(refreshPc, refreshSq, refreshPc, refreshSq), refreshPc, refreshSq, refreshPc, refreshSq);
-    else
-        refreshSingle<BLACK>(this, index_new<WHITE>(refreshPc, refreshSq, refreshPc, refreshSq), refreshPc, refreshSq, refreshPc, refreshSq);
 
     while (w) {
         int sq   = popLSB(w);
@@ -689,8 +679,8 @@ int Net::calculate(uint64_t occupied, Piece* mailbox) {
 }
 
 inline void Net::refreshMiniAcc(Position& pos, Piece piece, int square) {
-    uint64_t white = pos.getOccupied<WHITE>();
-    uint64_t black = pos.getOccupied<BLACK>();
+    uint64_t white = pos.getOccupied<WHITE>() & ~(1ULL << square);
+    uint64_t black = pos.getOccupied<BLACK>() & ~(1ULL << square);
 
     int bSquare = square ^ 56;
     Piece bPiece = makePiece(typeOf(piece), !colorOf(piece));

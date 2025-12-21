@@ -81,6 +81,11 @@ void Net::loadDefaultNet() {
         }
     }
 
+    for (int sq = 0; sq < 64; sq++)
+        for (int pc = 0; pc < 12; pc++)
+            for (int n = 0; n < 4; n++)
+                bias0[sq * 4 + L1_SIZE * pc + n] += weights0[index_new<WHITE>(pc, sq, pc, sq) + n];
+
     wdlWeights = defaultWdl.weights1;
     wdlBias    = defaultWdl.bias1;
 }
