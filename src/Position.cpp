@@ -105,8 +105,8 @@ void Position::makeMove(Move move) {
     Piece capturedPiece = pieceLocations[to];
     u64 key             = keyHistory.top();
 
-    uint64_t whiteBitboard = getPieces<PAWN>(WHITE) | getPieces<KNIGHT>(WHITE) | getPieces<BISHOP>(WHITE) | getPieces<ROOK>(WHITE) | getPieces<QUEEN>(WHITE) | getPieces<KING>(WHITE);
-    uint64_t cleanBitboard = whiteBitboard | getPieces<PAWN>(BLACK) | getPieces<KNIGHT>(BLACK) | getPieces<BISHOP>(BLACK) | getPieces<ROOK>(BLACK) | getPieces<QUEEN>(BLACK) | getPieces<KING>(BLACK);
+    uint64_t whiteBitboard = getOccupied<WHITE>();
+    uint64_t cleanBitboard = whiteBitboard | getOccupied<BLACK>();
 
     cleanBitboard &= ~(1ULL << from);
     cleanBitboard &= ~(1ULL << to);

@@ -6,6 +6,7 @@
 #include <string>
 #include <tuple>
 #include <algorithm>
+#include <immintrin.h>
 #include "BitStuff.h"
 #include "Utility.h"
 #include "Position.h"
@@ -110,33 +111,74 @@ void Net::toggleFeature(int piece, int square) {
 
 template<Toggle STATE> inline
 void Net::toggleFeature(Position& pos, uint64_t cleanBitboard, uint64_t whiteBitboard, int piece, int square) {
-    while (cleanBitboard & whiteBitboard) {
-        int sq   = popLSB(cleanBitboard);
-        Piece pc = pos.pieceOn(sq);
+    if (colorOf(piece)) {
+        while (cleanBitboard) {
+            int sq   = popLSB(cleanBitboard);
+            Piece pc = pos.pieceOn(sq);
 
-        int wOffset = index_new<WHITE>(pc, sq, piece, square);
+            int wOffset = index_new<WHITE>(pc, sq, piece, square);
 
-        for (int i = 0; i < 4; i++) {
-            accumulator[(sq * 4 * 2) + i    ] += weights0[wOffset +     i] * (!STATE ? -1 : 1);
-            accumulator[(sq * 4 * 2) + 4 + i] += weights0[wOffset + 4 + i] * (!STATE ? -1 : 1);
+            int offset = 4;
+
+            int idx = sq * 8;
+
+            // Load 8 weights
+            __m128i w = _mm_loadu_si128((const __m128i *)(&weights0[0] + wOffset));
+
+            // Load 8 accumulator values
+            __m128i acc = _mm_loadu_si128((__m128i *)(&accumulator[0] + idx));
+
+            // Accumulate
+            if constexpr (STATE == On)
+                acc = _mm_add_epi16(acc, w);
+            else
+                acc = _mm_sub_epi16(acc, w);
+
+            // Store result
+            _mm_storeu_si128((__m128i *)(&accumulator[0] + idx), acc);
         }
-    }
+    } else {
+        while (cleanBitboard) {
+            int sq   = popLSB(cleanBitboard);
+            Piece pc = pos.pieceOn(sq);
 
-    while (cleanBitboard & ~whiteBitboard) {
-        int sq   = popLSB(cleanBitboard);
-        Piece pc = pos.pieceOn(sq);
+            int wOffset = index_new<WHITE>(pc, sq, piece, square);
+            
+            int offset = -4;
 
-        int wOffset = index_new<WHITE>(pc, sq, piece, square);
+            int idx = sq * 8;
 
-        for (int i = 0; i < 4; i++) {
-            accumulator[(sq * 4 * 2) + i    ] += weights0[wOffset + 4 + i] * (!STATE ? -1 : 1);
-            accumulator[(sq * 4 * 2) + 4 + i] += weights0[wOffset     + i] * (!STATE ? -1 : 1);
+            // Load first 4 weights: wOffset + 0..3
+            __m128i w_lo = _mm_loadl_epi64(
+                (const __m128i *)(&weights0[0] + wOffset)
+            );
+
+            // Load second 4 weights: wOffset - 4..-1
+            __m128i w_hi = _mm_loadl_epi64(
+                (const __m128i *)(&weights0[0] + wOffset - 4)
+            );
+
+            // Combine into one vector: [lo | hi]
+            __m128i w = _mm_unpacklo_epi64(w_lo, w_hi);
+
+            // Load 8 accumulator values
+            __m128i acc = _mm_loadu_si128((__m128i *)(&accumulator[0] + idx));
+
+            // Accumulate
+            if constexpr (STATE == On)
+                acc = _mm_add_epi16(acc, w);
+            else
+                acc = _mm_sub_epi16(acc, w);
+
+            // Store result
+            _mm_storeu_si128((__m128i *)(&accumulator[0] + idx), acc);
         }
     }
 }
 
 
 template<Color C> inline
+__attribute__ ((noinline))
 int Net::calculate(uint64_t occupied, Piece* mailbox) {
     int output = 0;
 
