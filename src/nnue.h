@@ -60,6 +60,8 @@ public:
     void addSub(Position& pos, uint64_t cleanBitboard, int onPiece, int onSquare, int offPiece, int offSquare);
     template<Color ON_COLOR, Color OFF_COLOR, Color CAP_COLOR>
     inline void addSubSub(Position& pos, uint64_t cleanBitboard, int onPiece, int onSquare, int offPiece, int offSquare, int capPc, int capSq);
+    template<Color C>
+    inline void addaddSubSub(Position& pos, uint64_t cleanBitboard, int from, int to, int rFrom, int tRo, int rook, int king);
     void refreshMiniAcc(Position& pos, Piece piece, int square);
     inline void moveFeature(int piece, int from, int to);
     inline void pushAccToStack();
@@ -306,6 +308,101 @@ inline void Net::addSubSub(Position& pos, uint64_t cleanBitboard, int onPiece, i
 
         // Accumulate
         acc = _mm_add_epi16(acc, wA );
+        acc = _mm_sub_epi16(acc, wS1);
+        acc = _mm_sub_epi16(acc, wS2);
+
+        // Store result
+        _mm_storeu_si128((__m128i *)(&accumulator[0] + idx), acc);
+    }
+}
+
+template<Color C>
+inline void Net::addaddSubSub(Position& pos, uint64_t cleanBitboard, int from, int to, int rFrom, int rTo, int rook, int king) {
+    while (cleanBitboard) {
+        int sq   = popLSB(cleanBitboard);
+        Piece pc = pos.pieceOn(sq);
+
+        int add1Offset = index_new<WHITE>(pc, sq, king, to);
+        int add2Offset = index_new<WHITE>(pc, sq, rook, rTo);
+        int sub1Offset = index_new<WHITE>(pc, sq, king, from);
+        int sub2Offset = index_new<WHITE>(pc, sq, rook, rFrom);
+
+        int idx = sq * 8;
+
+        __m128i wA1, wA2, wS1, wS2;
+
+        // Load 8 accumulator values
+        __m128i acc = _mm_loadu_si128((__m128i *)(&accumulator[0] + idx));
+
+        // Load 8 weights
+        if constexpr (C) {
+            wA1 = _mm_loadu_si128((const __m128i *)(&weights0[0] +  add1Offset));
+        } else {
+            // Load first 4 weights: wOffset + 0..3
+            __m128i wA_lo = _mm_loadl_epi64(
+                (const __m128i *)(&weights0[0] + add1Offset)
+            );
+
+            // Load second 4 weights: wOffset - 4..-1
+            __m128i wA_hi = _mm_loadl_epi64(
+                (const __m128i *)(&weights0[0] + add1Offset - 4)
+            );
+
+            wA1 = _mm_unpacklo_epi64(wA_lo, wA_hi);
+        }
+
+        if constexpr (C) {
+            wA2 = _mm_loadu_si128((const __m128i *)(&weights0[0] +  add2Offset));
+        } else {
+            // Load first 4 weights: wOffset + 0..3
+            __m128i wA_lo = _mm_loadl_epi64(
+                (const __m128i *)(&weights0[0] + add2Offset)
+            );
+
+            // Load second 4 weights: wOffset - 4..-1
+            __m128i wA_hi = _mm_loadl_epi64(
+                (const __m128i *)(&weights0[0] + add2Offset - 4)
+            );
+
+            wA2 = _mm_unpacklo_epi64(wA_lo, wA_hi);
+        }
+
+        acc = _mm_add_epi16(acc, wA1);
+        acc = _mm_add_epi16(acc, wA2);
+
+        if constexpr (C) {
+            wS1 = _mm_loadu_si128((const __m128i *)(&weights0[0] + sub1Offset));
+        } else {
+            // Load first 4 weights: wOffset + 0..3
+            __m128i wS_lo = _mm_loadl_epi64(
+                (const __m128i *)(&weights0[0] + sub1Offset)
+            );
+
+            // Load second 4 weights: wOffset - 4..-1
+            __m128i wS_hi = _mm_loadl_epi64(
+                (const __m128i *)(&weights0[0] + sub1Offset - 4)
+            );
+
+            wS1 = _mm_unpacklo_epi64(wS_lo, wS_hi);
+        }
+
+        if constexpr (C) {
+            wS2 = _mm_loadu_si128((const __m128i *)(&weights0[0] + sub2Offset));
+        } else {
+            // Load first 4 weights: wOffset + 0..3
+            __m128i wS_lo = _mm_loadl_epi64(
+                (const __m128i *)(&weights0[0] + sub2Offset)
+            );
+
+            // Load second 4 weights: wOffset - 4..-1
+            __m128i wS_hi = _mm_loadl_epi64(
+                (const __m128i *)(&weights0[0] + sub2Offset - 4)
+            );
+
+            wS2 = _mm_unpacklo_epi64(wS_lo, wS_hi);
+        }
+
+        // Accumulate
         acc = _mm_sub_epi16(acc, wS1);
         acc = _mm_sub_epi16(acc, wS2);
 
