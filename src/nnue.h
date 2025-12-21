@@ -379,9 +379,9 @@ inline void Net::addSubSub(Position& pos, uint64_t cleanBitboard, uint64_t white
         int sq   = popLSB(w);
         Piece pc = pos.pieceOn(sq);
 
-        int  onOffset = index_new<WHITE>(pc, sq,  onPiece,  onSquare);
-        int offOffset = index_new<WHITE>(pc, sq, offPiece, offSquare);
-        int capOffset = index_new<WHITE>(pc, sq, capPiece,     capSq);
+        int  onOffset     = index_new<WHITE, WHITE, ON_COLOR >(pc, sq,  onPiece,  onSquare);
+        int offOffset     = index_new<WHITE, WHITE, OFF_COLOR>(pc, sq, offPiece, offSquare);
+        int capOffset     = index_new<WHITE, WHITE, CAP_COLOR>(pc, sq, capPiece,     capSq);
         int refreshOffset = index_new<WHITE>(refreshPc, refreshSq, pc, sq);
 
         refreshSingle<WHITE>(this, refreshOffset, refreshPc, refreshSq, pc, sq);
@@ -455,9 +455,9 @@ inline void Net::addSubSub(Position& pos, uint64_t cleanBitboard, uint64_t white
         int sq   = popLSB(b);
         Piece pc = pos.pieceOn(sq);
 
-        int  onOffset = index_new<WHITE>(pc, sq,  onPiece,  onSquare);
-        int offOffset = index_new<WHITE>(pc, sq, offPiece, offSquare);
-        int capOffset = index_new<WHITE>(pc, sq, capPiece,     capSq);
+        int  onOffset = index_new<WHITE, BLACK, ON_COLOR >(pc, sq,  onPiece,  onSquare);
+        int offOffset = index_new<WHITE, BLACK, OFF_COLOR>(pc, sq, offPiece, offSquare);
+        int capOffset = index_new<WHITE, BLACK, CAP_COLOR>(pc, sq, capPiece,     capSq);
         int refreshOffset = index_new<WHITE>(refreshPc, refreshSq, pc, sq);
 
         refreshSingle<BLACK>(this, refreshOffset, refreshPc, refreshSq, pc, sq);
