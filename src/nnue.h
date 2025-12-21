@@ -56,6 +56,7 @@ public:
     void toggleFeature(int piece, int square);
     template<Toggle STATE> inline
     void toggleFeature(Position& pos, uint64_t cleanBitboard, int piece, int square);
+    template<Color ON_COLOR, Color OFF_COLOR>
     void addSub(Position& pos, uint64_t cleanBitboard, int onPiece, int onSquare, int offPiece, int offSquare);
     void refreshMiniAcc(Position& pos, Piece piece, int square);
     inline void moveFeature(int piece, int from, int to);
@@ -177,148 +178,61 @@ void Net::toggleFeature(Position& pos, uint64_t cleanBitboard, int piece, int sq
     }
 }
 
-inline
-void Net::addSub(Position& pos, uint64_t cleanBitboard, int onPiece, int onSquare, int offPiece, int offSquare) {
-    if (colorOf(onPiece)) {
-        if (colorOf(offPiece)) {
-            while (cleanBitboard) {
-                int sq   = popLSB(cleanBitboard);
-                Piece pc = pos.pieceOn(sq);
+template<Color ON_COLOR, Color OFF_COLOR>
+inline void Net::addSub(Position& pos, uint64_t cleanBitboard, int onPiece, int onSquare, int offPiece, int offSquare) {
+    while (cleanBitboard) {
+        int sq   = popLSB(cleanBitboard);
+        Piece pc = pos.pieceOn(sq);
 
-                int  onOffset = index_new<WHITE>(pc, sq,  onPiece, onSquare);
-                int offOffset = index_new<WHITE>(pc, sq, offPiece, offSquare);
+        int  onOffset = index_new<WHITE>(pc, sq,  onPiece, onSquare);
+        int offOffset = index_new<WHITE>(pc, sq, offPiece, offSquare);
 
-                int idx = sq * 8;
+        int idx = sq * 8;
 
-                // Load 8 weights
-                __m128i wA = _mm_loadu_si128((const __m128i *)(&weights0[0] +  onOffset));
-                __m128i wS = _mm_loadu_si128((const __m128i *)(&weights0[0] + offOffset));
+        __m128i wA, wS;
 
-                // Load 8 accumulator values
-                __m128i acc = _mm_loadu_si128((__m128i *)(&accumulator[0] + idx));
-
-                // Accumulate
-                acc = _mm_add_epi16(acc, wA);
-                acc = _mm_sub_epi16(acc, wS);
-
-                // Store result
-                _mm_storeu_si128((__m128i *)(&accumulator[0] + idx), acc);
-            }
+        // Load 8 weights
+        if constexpr (ON_COLOR) {
+            wA = _mm_loadu_si128((const __m128i *)(&weights0[0] +  onOffset));
         } else {
-            while (cleanBitboard) {
-                int sq   = popLSB(cleanBitboard);
-                Piece pc = pos.pieceOn(sq);
+            // Load first 4 weights: wOffset + 0..3
+            __m128i wA_lo = _mm_loadl_epi64(
+                (const __m128i *)(&weights0[0] + onOffset)
+            );
 
-                int  onOffset = index_new<WHITE>(pc, sq,  onPiece, onSquare);
-                int offOffset = index_new<WHITE>(pc, sq, offPiece, offSquare);
+            // Load second 4 weights: wOffset - 4..-1
+            __m128i wA_hi = _mm_loadl_epi64(
+                (const __m128i *)(&weights0[0] + onOffset - 4)
+            );
 
-                int idx = sq * 8;
-
-                // Load first 4 weights: wOffset + 0..3
-                __m128i wS_lo = _mm_loadl_epi64(
-                    (const __m128i *)(&weights0[0] + offOffset)
-                );
-
-                // Load second 4 weights: wOffset - 4..-1
-                __m128i wS_hi = _mm_loadl_epi64(
-                    (const __m128i *)(&weights0[0] + offOffset - 4)
-                );
-
-                // Load 8 weights
-                __m128i wA = _mm_loadu_si128((const __m128i *)(&weights0[0] +  onOffset));
-                __m128i wS = _mm_unpacklo_epi64(wS_lo, wS_hi);
-
-                // Load 8 accumulator values
-                __m128i acc = _mm_loadu_si128((__m128i *)(&accumulator[0] + idx));
-
-                // Accumulate
-                acc = _mm_add_epi16(acc, wA);
-                acc = _mm_sub_epi16(acc, wS);
-
-                // Store result
-                _mm_storeu_si128((__m128i *)(&accumulator[0] + idx), acc);
-            }
+            wA = _mm_unpacklo_epi64(wA_lo, wA_hi);
         }
-    } else {
-        if (colorOf(offPiece)) {
-            while (cleanBitboard) {
-                int sq   = popLSB(cleanBitboard);
-                Piece pc = pos.pieceOn(sq);
 
-                int  onOffset = index_new<WHITE>(pc, sq,  onPiece, onSquare);
-                int offOffset = index_new<WHITE>(pc, sq, offPiece, offSquare);
-
-                int idx = sq * 8;
-
-                // Load first 4 weights: wOffset + 0..3
-                __m128i wA_lo = _mm_loadl_epi64(
-                    (const __m128i *)(&weights0[0] + onOffset)
-                );
-
-                // Load second 4 weights: wOffset - 4..-1
-                __m128i wA_hi = _mm_loadl_epi64(
-                    (const __m128i *)(&weights0[0] + onOffset - 4)
-                );
-
-                // Load 8 weights
-                __m128i wA = _mm_unpacklo_epi64(wA_lo, wA_hi);
-                __m128i wS = _mm_loadu_si128((const __m128i *)(&weights0[0] + offOffset));
-
-                // Load 8 accumulator values
-                __m128i acc = _mm_loadu_si128((__m128i *)(&accumulator[0] + idx));
-
-                // Accumulate
-                acc = _mm_add_epi16(acc, wA);
-                acc = _mm_sub_epi16(acc, wS);
-
-                // Store result
-                _mm_storeu_si128((__m128i *)(&accumulator[0] + idx), acc);
-            }
+        if constexpr (OFF_COLOR) {
+            wS = _mm_loadu_si128((const __m128i *)(&weights0[0] + offOffset));
         } else {
-            while (cleanBitboard) {
-                int sq   = popLSB(cleanBitboard);
-                Piece pc = pos.pieceOn(sq);
+            // Load first 4 weights: wOffset + 0..3
+            __m128i wS_lo = _mm_loadl_epi64(
+                (const __m128i *)(&weights0[0] + offOffset)
+            );
 
-                int  onOffset = index_new<WHITE>(pc, sq,  onPiece, onSquare);
-                int offOffset = index_new<WHITE>(pc, sq, offPiece, offSquare);
+            // Load second 4 weights: wOffset - 4..-1
+            __m128i wS_hi = _mm_loadl_epi64(
+                (const __m128i *)(&weights0[0] + offOffset - 4)
+            );
 
-                int idx = sq * 8;
-
-                // Load first 4 weights: wOffset + 0..3
-                __m128i wA_lo = _mm_loadl_epi64(
-                    (const __m128i *)(&weights0[0] + onOffset)
-                );
-
-                // Load second 4 weights: wOffset - 4..-1
-                __m128i wA_hi = _mm_loadl_epi64(
-                    (const __m128i *)(&weights0[0] + onOffset - 4)
-                );
-
-                // Load first 4 weights: wOffset + 0..3
-                __m128i wS_lo = _mm_loadl_epi64(
-                    (const __m128i *)(&weights0[0] + offOffset)
-                );
-
-                // Load second 4 weights: wOffset - 4..-1
-                __m128i wS_hi = _mm_loadl_epi64(
-                    (const __m128i *)(&weights0[0] + offOffset - 4)
-                );
-
-                // Load 8 weights
-                __m128i wA = _mm_unpacklo_epi64(wA_lo, wA_hi);
-                __m128i wS = _mm_unpacklo_epi64(wS_lo, wS_hi);
-
-                // Load 8 accumulator values
-                __m128i acc = _mm_loadu_si128((__m128i *)(&accumulator[0] + idx));
-
-                // Accumulate
-                acc = _mm_add_epi16(acc, wA);
-                acc = _mm_sub_epi16(acc, wS);
-
-                // Store result
-                _mm_storeu_si128((__m128i *)(&accumulator[0] + idx), acc);
-            }
+            wS = _mm_unpacklo_epi64(wS_lo, wS_hi);
         }
+
+        // Load 8 accumulator values
+        __m128i acc = _mm_loadu_si128((__m128i *)(&accumulator[0] + idx));
+
+        // Accumulate
+        acc = _mm_add_epi16(acc, wA);
+        acc = _mm_sub_epi16(acc, wS);
+
+        // Store result
+        _mm_storeu_si128((__m128i *)(&accumulator[0] + idx), acc);
     }
 }
 

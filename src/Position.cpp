@@ -194,7 +194,16 @@ void Position::makeMove(Move move) {
         net->toggleFeature<Off>(*this, cleanBitboard, capPc, capSq);
     }
 
-    net->addSub(*this, cleanBitboard, movedPiece, to, mp, from);
+    if (colorOf(movedPiece))
+        if (colorOf(mp))
+            net->addSub<WHITE, WHITE>(*this, cleanBitboard, movedPiece, to, mp, from);
+        else
+            net->addSub<WHITE, BLACK>(*this, cleanBitboard, movedPiece, to, mp, from);
+    else
+        if (colorOf(mp))
+            net->addSub<BLACK, WHITE>(*this, cleanBitboard, movedPiece, to, mp, from);
+        else
+            net->addSub<BLACK, BLACK>(*this, cleanBitboard, movedPiece, to, mp, from);
 
     while (dirty) {
         int sq = popLSB(dirty);
