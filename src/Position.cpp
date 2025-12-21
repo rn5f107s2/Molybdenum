@@ -190,6 +190,7 @@ void Position::makeMove(Move move) {
 
     uint64_t dirty = getOccupied() & ~cleanBitboard;
 
+    // This is unnecesarily complex but for some reason faster this way
     if (capPc != NO_PIECE) {
         if (colorOf(movedPiece))
             if (colorOf(mp))
