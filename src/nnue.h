@@ -64,7 +64,7 @@ public:
     inline void addaddSubSub(Position& pos, uint64_t cleanBitboard, int from, int to, int rFrom, int tRo, int rook, int king);
     void refreshMiniAcc(Position& pos, Piece piece, int square);
     inline void moveFeature(int piece, int from, int to);
-    inline void pushAccToStack();
+    inline void pushAccToStack(uint64_t occupied);
     inline void popAccStack();
 };
 
@@ -250,6 +250,8 @@ inline void Net::addSub(Position& pos, uint64_t cleanBitboard, uint64_t white, i
     memcpy(&accumulator[refreshSq * 4 * 2    ], &bias0[biasIndex + 4 * !RPC], 4 * sizeof(int16_t));
     memcpy(&accumulator[refreshSq * 4 * 2 + 4], &bias0[biasIndex + 4 *  RPC], 4 * sizeof(int16_t));
 
+    auto& t = accumulatorStack.at(accumulatorStack.getSize());
+
     while (w) {
         int sq   = popLSB(w);
         Piece pc = pos.pieceOn(sq);
@@ -306,6 +308,8 @@ inline void Net::addSub(Position& pos, uint64_t cleanBitboard, uint64_t white, i
 
         // Store result
         _mm_storeu_si128((__m128i *)(&accumulator[0] + idx), acc);
+
+        memcpy(&t[sq * 4 * 2], &accumulator[sq * 4 * 2], 8 * sizeof(int16_t));
     }
 
     while (b) {
@@ -364,7 +368,13 @@ inline void Net::addSub(Position& pos, uint64_t cleanBitboard, uint64_t white, i
 
         // Store result
         _mm_storeu_si128((__m128i *)(&accumulator[0] + idx), acc);
+
+        memcpy(&t[sq * 4 * 2], &accumulator[sq * 4 * 2], 8 * sizeof(int16_t));
     }
+
+    memcpy(&t[refreshSq * 4 * 2], &accumulator[refreshSq * 4 * 2], 8 * sizeof(int16_t));
+
+    accumulatorStack.incSize();
 }
 
 template<Color ON_COLOR, Color OFF_COLOR, Color CAP_COLOR>
@@ -378,6 +388,8 @@ inline void Net::addSubSub(Position& pos, uint64_t cleanBitboard, uint64_t white
 
     memcpy(&accumulator[refreshSq * 4 * 2    ], &bias0[biasIndex + 4 * !RPC], 4 * sizeof(int16_t));
     memcpy(&accumulator[refreshSq * 4 * 2 + 4], &bias0[biasIndex + 4 *  RPC], 4 * sizeof(int16_t));
+
+    auto& t = accumulatorStack.at(accumulatorStack.getSize());
 
     while (w) {
         int sq   = popLSB(w);
@@ -453,6 +465,8 @@ inline void Net::addSubSub(Position& pos, uint64_t cleanBitboard, uint64_t white
 
         // Store result
         _mm_storeu_si128((__m128i *)(&accumulator[0] + idx), acc);
+
+        memcpy(&t[sq * 4 * 2], &accumulator[sq * 4 * 2], 8 * sizeof(int16_t));
     }
 
     while (b) {
@@ -529,7 +543,13 @@ inline void Net::addSubSub(Position& pos, uint64_t cleanBitboard, uint64_t white
 
         // Store result
         _mm_storeu_si128((__m128i *)(&accumulator[0] + idx), acc);
+
+        memcpy(&t[sq * 4 * 2], &accumulator[sq * 4 * 2], 8 * sizeof(int16_t));
     }
+
+    memcpy(&t[refreshSq * 4 * 2], &accumulator[refreshSq * 4 * 2], 8 * sizeof(int16_t));
+
+    accumulatorStack.incSize();
 }
 
 template<Color C>
@@ -715,8 +735,17 @@ inline void Net::moveFeature(int piece, int from, int to) {
     toggleFeature<On >(piece, to);
 }
 
-inline void Net::pushAccToStack() {
-    accumulatorStack.push(accumulator);
+inline void
+ Net::pushAccToStack(uint64_t occupied) {
+    auto& t = accumulatorStack.at(accumulatorStack.getSize());
+
+    while (occupied) {
+        int sq = popLSB(occupied);
+
+        memcpy(&t[sq * 4 * 2], &accumulator[sq * 4 * 2], 8 * sizeof(int16_t));
+    }
+    
+    accumulatorStack.incSize();
 }
 
 inline void Net::popAccStack() {

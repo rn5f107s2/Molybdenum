@@ -106,7 +106,7 @@ void Net::initAccumulator(Position &pos) {
 
     occupied = pos.getOccupied();
 
-    pushAccToStack();
+    pushAccToStack(occupied);
 }
 
 std::tuple<float, float, float> Net::getWDL(Color c) {

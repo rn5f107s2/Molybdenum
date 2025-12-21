@@ -192,7 +192,8 @@ void Position::makeMove(Move move) {
     sideToMove = !sideToMove;
 
     uint64_t white = getOccupied<WHITE>();
-    uint64_t dirty = (white | getOccupied<BLACK>()) & ~cleanBitboard;
+    uint64_t black = getOccupied<BLACK>();
+    uint64_t dirty = (white | black) & ~cleanBitboard;
 
     // This is unnecesarily complex but for some reason faster this way
     if (flag != CASTLING) {
@@ -248,7 +249,8 @@ void Position::makeMove(Move move) {
         net->refreshMiniAcc(*this, pc, sq);
     }
 
-    net->pushAccToStack();
+    if (flag == CASTLING)
+        net->pushAccToStack(white | black);
 }
 
 void Position::unmakeMove(Move move) {
