@@ -104,6 +104,10 @@ void Position::makeMove(Move move) {
     Piece movedPiece    = pieceLocations[from];
     Piece capturedPiece = pieceLocations[to];
     u64 key             = keyHistory.top();
+    
+    Piece mp    = movedPiece;
+    Piece capPc = capturedPiece;
+    int capSq   = to;
 
     uint64_t cleanBitboard = getOccupied();
 
@@ -124,14 +128,12 @@ void Position::makeMove(Move move) {
     updateKey(movedPiece,  from, key);
 
     if (flag == ENPASSANT) {
-        int capturedPawn = movedPiece == WHITE_PAWN ? BLACK_PAWN : WHITE_PAWN;
+        int capturedPawn = capPc = movedPiece == WHITE_PAWN ? BLACK_PAWN : WHITE_PAWN;
         u64 captureSquare = movePawn(enPassantSquare, !sideToMove);
         bitBoards[capturedPawn] ^= captureSquare;
-        pieceLocations[lsb(captureSquare)] = NO_PIECE;
+        pieceLocations[capSq = lsb(captureSquare)] = NO_PIECE;
 
         cleanBitboard &= ~captureSquare;
-
-        net->toggleFeature<Off>(*this, cleanBitboard, capturedPawn, lsb(captureSquare));
     }
 
     if (flag == CASTLING) {
@@ -151,8 +153,6 @@ void Position::makeMove(Move move) {
         net->toggleFeature<On >(*this, cleanBitboard, rook, rookTo  );
         net->toggleFeature<Off>(*this, cleanBitboard, rook, rookFrom);
     }
-
-    net->toggleFeature<Off>(*this, cleanBitboard, movedPiece, from);
 
     if (flag == PROMOTION) {
         movedPiece = makePromoPiece(extract<PROMOTIONTYPE>(move), sideToMove);
@@ -177,13 +177,11 @@ void Position::makeMove(Move move) {
     if (capturedPiece != NO_PIECE) {
         bitBoards[capturedPiece] ^= 1ULL << to;
         phase -= gamePhaseValues[typeOf(capturedPiece)];
-        net->toggleFeature<Off>(*this, cleanBitboard, capturedPiece, to);
         updateKey(capturedPiece, to, key);
         plys50moveRule = 0;
     }
 
     pieceLocations[to] = movedPiece;
-    net->toggleFeature<On>(*this, cleanBitboard, movedPiece, to);
     bitBoards[movedPiece] ^= 1ULL << to;
     updateKey(movedPiece, to, key);
     updateKey(key);
@@ -191,6 +189,13 @@ void Position::makeMove(Move move) {
     sideToMove = !sideToMove;
 
     uint64_t dirty = getOccupied() & ~cleanBitboard;
+
+    if (capPc != NO_PIECE) {
+        net->toggleFeature<Off>(*this, cleanBitboard, capPc, capSq);
+    }
+
+    net->toggleFeature<Off>(*this, cleanBitboard, mp        , from);
+    net->toggleFeature<On >(*this, cleanBitboard, movedPiece, to  );
 
     while (dirty) {
         int sq = popLSB(dirty);
