@@ -196,33 +196,33 @@ void Position::makeMove(Move move) {
 
     // This is unnecesarily complex but for some reason faster this way
     if (flag != CASTLING) {
+        int sq = popLSB(dirty);
+        Piece pc = pieceOn(sq);
+
         if (capPc != NO_PIECE) {
             if (colorOf(movedPiece))
                 if (colorOf(mp))
                     if (colorOf(capPc))
-                        net->addSubSub<WHITE, WHITE, WHITE>(*this, cleanBitboard, movedPiece, to, mp, from, capPc, capSq);
+                        net->addSubSub<WHITE, WHITE, WHITE>(*this, cleanBitboard, white, movedPiece, to, mp, from, capPc, capSq, pc, sq);
                     else
-                        net->addSubSub<WHITE, WHITE, BLACK>(*this, cleanBitboard, movedPiece, to, mp, from, capPc, capSq);
+                        net->addSubSub<WHITE, WHITE, BLACK>(*this, cleanBitboard, white, movedPiece, to, mp, from, capPc, capSq, pc, sq);
                 else
                     if (colorOf(capPc))
-                        net->addSubSub<WHITE, BLACK, WHITE>(*this, cleanBitboard, movedPiece, to, mp, from, capPc, capSq);
+                        net->addSubSub<WHITE, BLACK, WHITE>(*this, cleanBitboard, white, movedPiece, to, mp, from, capPc, capSq, pc, sq);
                     else
-                        net->addSubSub<WHITE, BLACK, BLACK>(*this, cleanBitboard, movedPiece, to, mp, from, capPc, capSq);
+                        net->addSubSub<WHITE, BLACK, BLACK>(*this, cleanBitboard, white, movedPiece, to, mp, from, capPc, capSq, pc, sq);
             else
                 if (colorOf(mp))
                     if (colorOf(capPc))
-                        net->addSubSub<BLACK, WHITE, WHITE>(*this, cleanBitboard, movedPiece, to, mp, from, capPc, capSq);
+                        net->addSubSub<BLACK, WHITE, WHITE>(*this, cleanBitboard, white, movedPiece, to, mp, from, capPc, capSq, pc, sq);
                     else
-                        net->addSubSub<BLACK, WHITE, BLACK>(*this, cleanBitboard, movedPiece, to, mp, from, capPc, capSq);
+                        net->addSubSub<BLACK, WHITE, BLACK>(*this, cleanBitboard, white, movedPiece, to, mp, from, capPc, capSq, pc, sq);
                 else
                     if (colorOf(capPc))
-                        net->addSubSub<BLACK, BLACK, WHITE>(*this, cleanBitboard, movedPiece, to, mp, from, capPc, capSq);
+                        net->addSubSub<BLACK, BLACK, WHITE>(*this, cleanBitboard, white, movedPiece, to, mp, from, capPc, capSq, pc, sq);
                     else
-                        net->addSubSub<BLACK, BLACK, BLACK>(*this, cleanBitboard, movedPiece, to, mp, from, capPc, capSq);
+                        net->addSubSub<BLACK, BLACK, BLACK>(*this, cleanBitboard, white, movedPiece, to, mp, from, capPc, capSq, pc, sq);
         } else {
-            int sq = popLSB(dirty);
-            Piece pc = pieceOn(sq);
-
             if (colorOf(movedPiece))
                 if (colorOf(mp))
                     net->addSub<WHITE, WHITE>(*this, cleanBitboard, white, movedPiece, to, mp, from, pc, sq);
@@ -241,7 +241,7 @@ void Position::makeMove(Move move) {
         net->refreshMiniAcc(*this, pc, sq);
     }
 
-    if (flag == CASTLING || capPc != NO_PIECE) {
+    if (flag == CASTLING) {
         int sq = popLSB(dirty);
         Piece pc = pieceOn(sq);
 

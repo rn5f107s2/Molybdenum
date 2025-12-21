@@ -59,7 +59,7 @@ public:
     template<Color ON_COLOR, Color OFF_COLOR>
     void addSub(Position& pos, uint64_t cleanBitboard, uint64_t white, int onPiece, int onSquare, int offPiece, int offSquare, int refreshPc, int refreshSq);
     template<Color ON_COLOR, Color OFF_COLOR, Color CAP_COLOR>
-    inline void addSubSub(Position& pos, uint64_t cleanBitboard, int onPiece, int onSquare, int offPiece, int offSquare, int capPc, int capSq);
+    inline void addSubSub(Position& pos, uint64_t cleanBitboard, uint64_t white, int onPiece, int onSquare, int offPiece, int offSquare, int capPiece, int capSq, int refreshPc, int refreshSq);
     template<Color C>
     inline void addaddSubSub(Position& pos, uint64_t cleanBitboard, int from, int to, int rFrom, int tRo, int rook, int king);
     void refreshMiniAcc(Position& pos, Piece piece, int square);
@@ -349,14 +349,107 @@ inline void Net::addSub(Position& pos, uint64_t cleanBitboard, uint64_t white, i
 }
 
 template<Color ON_COLOR, Color OFF_COLOR, Color CAP_COLOR>
-inline void Net::addSubSub(Position& pos, uint64_t cleanBitboard, int onPiece, int onSquare, int offPiece, int offSquare, int capPiece, int capSq) {
-    while (cleanBitboard) {
-        int sq   = popLSB(cleanBitboard);
+inline void Net::addSubSub(Position& pos, uint64_t cleanBitboard, uint64_t white, int onPiece, int onSquare, int offPiece, int offSquare, int capPiece, int capSq, int refreshPc, int refreshSq) {
+    uint64_t w = cleanBitboard &  white;
+    uint64_t b = cleanBitboard & ~white;
+
+    int bSquare = refreshSq ^ 56;
+    Piece bPiece = makePiece(typeOf(refreshPc), !colorOf(refreshPc));
+
+    memcpy(&accumulator[refreshSq * 4 * 2    ], &bias0[refreshSq  * 4 + L1_SIZE * refreshPc], 4 * sizeof(int16_t));
+    memcpy(&accumulator[refreshSq * 4 * 2 + 4], &bias0[bSquare    * 4 + L1_SIZE * bPiece   ], 4 * sizeof(int16_t));
+
+    if (colorOf(refreshPc))
+        refreshSingle<WHITE>(this, index_new<WHITE>(refreshPc, refreshSq, refreshPc, refreshSq), refreshPc, refreshSq, refreshPc, refreshSq);
+    else
+        refreshSingle<BLACK>(this, index_new<WHITE>(refreshPc, refreshSq, refreshPc, refreshSq), refreshPc, refreshSq, refreshPc, refreshSq);
+
+    while (w) {
+        int sq   = popLSB(w);
         Piece pc = pos.pieceOn(sq);
 
         int  onOffset = index_new<WHITE>(pc, sq,  onPiece,  onSquare);
         int offOffset = index_new<WHITE>(pc, sq, offPiece, offSquare);
         int capOffset = index_new<WHITE>(pc, sq, capPiece,     capSq);
+        int refreshOffset = index_new<WHITE>(refreshPc, refreshSq, pc, sq);
+
+        refreshSingle<WHITE>(this, refreshOffset, refreshPc, refreshSq, pc, sq);
+
+        int idx = sq * 8;
+
+        __m128i wA, wS1, wS2;
+
+        // Load 8 weights
+        if constexpr (ON_COLOR) {
+            wA = _mm_loadu_si128((const __m128i *)(&weights0[0] +  onOffset));
+        } else {
+            // Load first 4 weights: wOffset + 0..3
+            __m128i wA_lo = _mm_loadl_epi64(
+                (const __m128i *)(&weights0[0] + onOffset)
+            );
+
+            // Load second 4 weights: wOffset - 4..-1
+            __m128i wA_hi = _mm_loadl_epi64(
+                (const __m128i *)(&weights0[0] + onOffset - 4)
+            );
+
+            wA = _mm_unpacklo_epi64(wA_lo, wA_hi);
+        }
+
+        if constexpr (OFF_COLOR) {
+            wS1 = _mm_loadu_si128((const __m128i *)(&weights0[0] + offOffset));
+        } else {
+            // Load first 4 weights: wOffset + 0..3
+            __m128i wS_lo = _mm_loadl_epi64(
+                (const __m128i *)(&weights0[0] + offOffset)
+            );
+
+            // Load second 4 weights: wOffset - 4..-1
+            __m128i wS_hi = _mm_loadl_epi64(
+                (const __m128i *)(&weights0[0] + offOffset - 4)
+            );
+
+            wS1 = _mm_unpacklo_epi64(wS_lo, wS_hi);
+        }
+
+        if constexpr (CAP_COLOR) {
+            wS2 = _mm_loadu_si128((const __m128i *)(&weights0[0] + capOffset));
+        } else {
+            // Load first 4 weights: wOffset + 0..3
+            __m128i wS_lo = _mm_loadl_epi64(
+                (const __m128i *)(&weights0[0] + capOffset)
+            );
+
+            // Load second 4 weights: wOffset - 4..-1
+            __m128i wS_hi = _mm_loadl_epi64(
+                (const __m128i *)(&weights0[0] + capOffset - 4)
+            );
+
+            wS2 = _mm_unpacklo_epi64(wS_lo, wS_hi);
+        }
+
+        // Load 8 accumulator values
+        __m128i acc = _mm_loadu_si128((__m128i *)(&accumulator[0] + idx));
+
+        // Accumulate
+        acc = _mm_add_epi16(acc, wA );
+        acc = _mm_sub_epi16(acc, wS1);
+        acc = _mm_sub_epi16(acc, wS2);
+
+        // Store result
+        _mm_storeu_si128((__m128i *)(&accumulator[0] + idx), acc);
+    }
+
+    while (b) {
+        int sq   = popLSB(b);
+        Piece pc = pos.pieceOn(sq);
+
+        int  onOffset = index_new<WHITE>(pc, sq,  onPiece,  onSquare);
+        int offOffset = index_new<WHITE>(pc, sq, offPiece, offSquare);
+        int capOffset = index_new<WHITE>(pc, sq, capPiece,     capSq);
+        int refreshOffset = index_new<WHITE>(refreshPc, refreshSq, pc, sq);
+
+        refreshSingle<BLACK>(this, refreshOffset, refreshPc, refreshSq, pc, sq);
 
         int idx = sq * 8;
 
