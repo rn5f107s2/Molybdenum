@@ -220,13 +220,26 @@ inline void Net::addSub(Position& pos, uint64_t cleanBitboard, uint64_t white, i
     uint64_t w = cleanBitboard & white;
     uint64_t b = cleanBitboard & ~white;
 
+    int bSquare = refreshSq ^ 56;
+    Piece bPiece = makePiece(typeOf(refreshPc), !colorOf(refreshPc));
+
+    memcpy(&accumulator[refreshSq * 4 * 2    ], &bias0[refreshSq  * 4 + L1_SIZE * refreshPc], 4 * sizeof(int16_t));
+    memcpy(&accumulator[refreshSq * 4 * 2 + 4], &bias0[bSquare    * 4 + L1_SIZE * bPiece   ], 4 * sizeof(int16_t));
+
+    if (colorOf(refreshPc))
+        refreshSingle<WHITE>(this, index_new<WHITE>(refreshPc, refreshSq, refreshPc, refreshSq), refreshPc, refreshSq, refreshPc, refreshSq);
+    else
+        refreshSingle<BLACK>(this, index_new<WHITE>(refreshPc, refreshSq, refreshPc, refreshSq), refreshPc, refreshSq, refreshPc, refreshSq);
+
     while (w) {
         int sq   = popLSB(w);
         Piece pc = pos.pieceOn(sq);
 
-        int  onOffset = index_new<WHITE>(pc, sq,  onPiece, onSquare);
-        int offOffset = index_new<WHITE>(pc, sq, offPiece, offSquare);
-        int refreshOffset = 
+        int  onOffset     = index_new<WHITE>(pc, sq,  onPiece, onSquare);
+        int offOffset     = index_new<WHITE>(pc, sq, offPiece, offSquare);
+        int refreshOffset = index_new<WHITE>(refreshPc, refreshSq, pc, sq);
+
+        refreshSingle<WHITE>(this, refreshOffset, refreshPc, refreshSq, pc, sq);
 
         int idx = sq * 8;
 
@@ -280,8 +293,11 @@ inline void Net::addSub(Position& pos, uint64_t cleanBitboard, uint64_t white, i
         int sq   = popLSB(b);
         Piece pc = pos.pieceOn(sq);
 
-        int  onOffset = index_new<WHITE>(pc, sq,  onPiece, onSquare);
-        int offOffset = index_new<WHITE>(pc, sq, offPiece, offSquare);
+        int  onOffset     = index_new<WHITE>(pc, sq,  onPiece, onSquare);
+        int offOffset     = index_new<WHITE>(pc, sq, offPiece, offSquare);
+        int refreshOffset = index_new<WHITE>(refreshPc, refreshSq, pc, sq);
+
+        refreshSingle<BLACK>(this, refreshOffset, refreshPc, refreshSq, pc, sq);
 
         int idx = sq * 8;
 

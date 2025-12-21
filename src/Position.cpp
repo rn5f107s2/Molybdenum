@@ -220,7 +220,7 @@ void Position::makeMove(Move move) {
                     else
                         net->addSubSub<BLACK, BLACK, BLACK>(*this, cleanBitboard, movedPiece, to, mp, from, capPc, capSq);
         } else {
-            int sq = lsb(dirty);
+            int sq = popLSB(dirty);
             Piece pc = pieceOn(sq);
 
             if (colorOf(movedPiece))
@@ -241,7 +241,7 @@ void Position::makeMove(Move move) {
         net->refreshMiniAcc(*this, pc, sq);
     }
 
-    if (true) {
+    if (flag == CASTLING || capPc != NO_PIECE) {
         int sq = popLSB(dirty);
         Piece pc = pieceOn(sq);
 
