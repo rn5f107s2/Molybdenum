@@ -102,6 +102,17 @@ int index_new(int bucketPc, int bucketSq, int featurePc, int featureSq) {
     return fpt * 64 * 64 * 4 * 4 * 6 + fsq * 64 * 4 * 4 * 6 + bpt * 64 * 4 * 4 + bsq * 4 * 4 + ci * 4;
 }
 
+template<Color C, Color BPC, Color FPC> inline
+int index_new(int bucketPc, int bucketSq, int featurePc, int featureSq) {
+    int bpt = typeOf(bucketPc);
+    int fpt = typeOf(featurePc);
+    int bsq = BPC ? bucketSq  : bucketSq  ^ 56;
+    int fsq = FPC ? featureSq : featureSq ^ 56;
+    int ci  = ((BPC ^ FPC) << 1) | !FPC;
+
+    return fpt * 64 * 64 * 4 * 4 * 6 + fsq * 64 * 4 * 4 * 6 + bpt * 64 * 4 * 4 + bsq * 4 * 4 + ci * 4;
+}
+
 template<Toggle STATE> inline
 void Net::toggleFeature(int piece, int square) {
     int indexWhite = index<WHITE>(piece, square);
@@ -235,8 +246,8 @@ inline void Net::addSub(Position& pos, uint64_t cleanBitboard, uint64_t white, i
         int sq   = popLSB(w);
         Piece pc = pos.pieceOn(sq);
 
-        int  onOffset     = index_new<WHITE>(pc, sq,  onPiece, onSquare);
-        int offOffset     = index_new<WHITE>(pc, sq, offPiece, offSquare);
+        int  onOffset     = index_new<WHITE, WHITE, ON_COLOR >(pc, sq,  onPiece, onSquare);
+        int offOffset     = index_new<WHITE, WHITE, OFF_COLOR>(pc, sq, offPiece, offSquare);
         int refreshOffset = index_new<WHITE>(refreshPc, refreshSq, pc, sq);
 
         refreshSingle<WHITE>(this, refreshOffset, refreshPc, refreshSq, pc, sq);
@@ -293,8 +304,8 @@ inline void Net::addSub(Position& pos, uint64_t cleanBitboard, uint64_t white, i
         int sq   = popLSB(b);
         Piece pc = pos.pieceOn(sq);
 
-        int  onOffset     = index_new<WHITE>(pc, sq,  onPiece, onSquare);
-        int offOffset     = index_new<WHITE>(pc, sq, offPiece, offSquare);
+        int  onOffset     = index_new<WHITE, BLACK, ON_COLOR >(pc, sq,  onPiece, onSquare);
+        int offOffset     = index_new<WHITE, BLACK, OFF_COLOR>(pc, sq, offPiece, offSquare);
         int refreshOffset = index_new<WHITE>(refreshPc, refreshSq, pc, sq);
 
         refreshSingle<BLACK>(this, refreshOffset, refreshPc, refreshSq, pc, sq);
@@ -641,7 +652,8 @@ int Net::calculate(uint64_t occupied, Piece* mailbox) {
     return ((output / 255) + bias1[0]) * 133 / (64 * 255);
 }
 
-inline void Net::refreshMiniAcc(Position& pos, Piece piece, int square) {
+inline void __attribute__ ((noinline))
+Net::refreshMiniAcc(Position& pos, Piece piece, int square) {
     uint64_t white = pos.getOccupied<WHITE>();
     uint64_t black = pos.getOccupied<BLACK>();
 
