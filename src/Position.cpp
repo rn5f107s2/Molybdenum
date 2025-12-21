@@ -194,8 +194,7 @@ void Position::makeMove(Move move) {
         net->toggleFeature<Off>(*this, cleanBitboard, capPc, capSq);
     }
 
-    net->toggleFeature<Off>(*this, cleanBitboard, mp        , from);
-    net->toggleFeature<On >(*this, cleanBitboard, movedPiece, to  );
+    net->addSub(*this, cleanBitboard, movedPiece, to, mp, from);
 
     while (dirty) {
         int sq = popLSB(dirty);
