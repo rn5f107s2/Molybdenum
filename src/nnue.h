@@ -15,7 +15,7 @@ enum Toggle {
 };
 
 static const int INPUT_SIZE = 12 * 64;
-static const int L1_SIZE = 256;
+static const int L1_SIZE = 512;
 static const int OUTPUT_SIZE = 1;
 static const int NET_SIZE = 3;
 static const std::array<int, NET_SIZE> LAYER_SIZE = {INPUT_SIZE, L1_SIZE, OUTPUT_SIZE};
@@ -95,12 +95,12 @@ void Net::toggleFeature(Position& pos, uint64_t cleanBitboard, int piece, int sq
         Piece wPc = pos.pieceOn(wSq);
         Piece bPc = makePiece(typeOf(wPc), !colorOf(wPc));
 
-        int wOffset = indexWhite * L1_SIZE * 12 + wSq * 4 + L1_SIZE * wPc;
-        int bOffset = indexBlack * L1_SIZE * 12 + bSq * 4 + L1_SIZE * bPc;
+        int wOffset = indexWhite * L1_SIZE * 12 + wSq * 8 + L1_SIZE * wPc;
+        int bOffset = indexBlack * L1_SIZE * 12 + bSq * 8 + L1_SIZE * bPc;
 
-        for (int i = 0; i < 4; i++) {
-            accumulator[WHITE][wSq * 4 + i] += weights0[wOffset + i] * (!STATE ? -1 : 1);
-            accumulator[BLACK][bSq * 4 + i] += weights0[bOffset + i] * (!STATE ? -1 : 1);
+        for (int i = 0; i < 8; i++) {
+            accumulator[WHITE][wSq * 8 + i] += weights0[wOffset + i] * (!STATE ? -1 : 1);
+            accumulator[BLACK][bSq * 8 + i] += weights0[bOffset + i] * (!STATE ? -1 : 1);
         }
     }
 }
@@ -111,8 +111,8 @@ inline void Net::refreshMiniAcc(Position& pos, Piece piece, int square) {
     int bSquare = square ^ 56;
     Piece bPiece = makePiece(typeOf(piece), !colorOf(piece));
 
-    memcpy(&accumulator[WHITE][ square * 4], &bias0[square  * 4 + L1_SIZE * piece ], 4 * sizeof(int16_t));
-    memcpy(&accumulator[BLACK][bSquare * 4], &bias0[bSquare * 4 + L1_SIZE * bPiece], 4 * sizeof(int16_t));
+    memcpy(&accumulator[WHITE][ square * 8], &bias0[square  * 8 + L1_SIZE * piece ], 8 * sizeof(int16_t));
+    memcpy(&accumulator[BLACK][bSquare * 8], &bias0[bSquare * 8 + L1_SIZE * bPiece], 8 * sizeof(int16_t));
 
     while (occupied) {
         int sq = popLSB(occupied);
@@ -121,12 +121,12 @@ inline void Net::refreshMiniAcc(Position& pos, Piece piece, int square) {
         int indexWhite = index<WHITE>(pc, sq);
         int indexBlack = index<BLACK>(pc, sq);
 
-        int wOffset = indexWhite * L1_SIZE * 12 +  square * 4 + L1_SIZE *  piece;
-        int bOffset = indexBlack * L1_SIZE * 12 + bSquare * 4 + L1_SIZE * bPiece;
+        int wOffset = indexWhite * L1_SIZE * 12 +  square * 8 + L1_SIZE *  piece;
+        int bOffset = indexBlack * L1_SIZE * 12 + bSquare * 8 + L1_SIZE * bPiece;
 
-        for (int i = 0; i < 4; i++) {
-            accumulator[WHITE][ square * 4 + i] += weights0[wOffset + i];
-            accumulator[BLACK][bSquare * 4 + i] += weights0[bOffset + i];
+        for (int i = 0; i < 8; i++) {
+            accumulator[WHITE][ square * 8 + i] += weights0[wOffset + i];
+            accumulator[BLACK][bSquare * 8 + i] += weights0[bOffset + i];
         }
     }
 }

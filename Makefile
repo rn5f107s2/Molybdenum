@@ -3,7 +3,7 @@ OBJ_DIR=build
 MOLY_DIR=src
 CXX=clang++
 
-DEFAULT_NET_NAME=pb20.bin
+DEFAULT_NET_NAME=ChonkerFixed-5.bin
 DEFAULT_WDL_HEAD_NAME=net.nnue
 
 DEFAULT_EXE = $(OBJ_DIR)/Molybdenum
