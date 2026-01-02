@@ -109,9 +109,12 @@ void Net::initAccumulator(Position &pos) {
     pushAccToStack(occupied);
 }
 
-std::tuple<float, float, float> Net::getWDL(Color c) {
+std::tuple<float, float, float> Net::getWDL([[maybe_unused]] Color c) {
     int output[3] = {0, 0, 0};
     std::tuple<float, float, float> tpl;
+
+    // currently not used
+    return tpl;
 
     for (int n = 0; n < L1_SIZE; n++) {
         for (int n2 = 0; n2 < 3; n2++) {

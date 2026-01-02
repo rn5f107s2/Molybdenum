@@ -20,6 +20,9 @@ Tune tune;
 bool prettyprint = false;
 
 std::string SearchState::outputWDL(Position &pos) {
+    // currently not working
+    return "";
+
     for (int i = 0; i < pvLength[0]; i++)
         pos.makeMove(pvMoves[0][i]);
 
