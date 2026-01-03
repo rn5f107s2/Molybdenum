@@ -7,6 +7,7 @@
 #include "tune.h"
 #include "UCIOptions.h"
 #include "thread.h"
+#include "nnue.h"
 
 #include <unordered_map>
 #include <vector>
@@ -31,7 +32,7 @@ public:
     ThreadPool threads;
 
     UCI() {
-        internalBoard.net.loadDefaultNet();
+        internalBoard.net->loadDefaultNet();
         internalBoard.setBoard(defaultFEN);
 
         commands["d"] = &UCI::d;

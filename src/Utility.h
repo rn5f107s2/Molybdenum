@@ -17,6 +17,8 @@ class Stack {
         void push(T t);
         void clear();
         int getSize();
+        void incSize();
+
     private:
         std::array<T, SIZE> stack;
         int size = 0;
@@ -25,6 +27,11 @@ class Stack {
 template<typename T, int SIZE>
 int Stack<T, SIZE>::getSize() {
     return size;
+}
+
+template<typename T, int SIZE>
+void Stack<T, SIZE>::incSize() {
+    size++;
 }
 
 template<typename T, int SIZE>
