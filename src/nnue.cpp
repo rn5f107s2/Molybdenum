@@ -35,32 +35,6 @@ const Weights defaultWeights = *reinterpret_cast<const Weights*>(gnetworkData);
 const WDLHead defaultWdl     = *reinterpret_cast<const WDLHead*>(gwdlHeadData);
 
 void Net::loadDefaultNet() {
-    // for (int bucketPc = WHITE_PAWN; bucketPc <= BLACK_KING; bucketPc++) {
-    //     for (int featurePc = WHITE_PAWN; featurePc <= BLACK_KING; featurePc++) {
-    //         for (int featureSq = 0; featureSq < 64; featureSq++) {
-    //             for (int bucketSq = 0; bucketSq < 64; bucketSq++) {
-    //                 for (int n = 0; n < 4; n++) {
-    //                     int featureIndexOld = featurePc * 64 + featureSq;
-    //                     // arr[fpc][fsq][bpc][bsq][n] 
-                           // target = arr[bpt][bsq][fpt][fsq][ci][n]
-                           // where ci = 00 for ww, 01 for bb, 10 for wb, 01 for bw
-                           // and fsq = sq if fpcolor == white else sq ^ 56
-                           // and bsq = sq if bpcolor == white else sq ^ 56
-    //                     int originalIndex = featureIndexOld * L1_SIZE * 12 + L1_SIZE * bucketPc + bucketSq * 4 + n;
-
-    //                     // change feature indexing, such that a feature and the "flipped" feature are consective in memory
-    //                     int featureIndexNew = typeOf(Piece(featurePc)) * 64 * 2 + (colorOf(featurePc) == BLACK ? featureSq ^ 56 : featureSq) * 2 + (colorOf(featurePc) == BLACK);
-    //                     int targetIndex     = featureIndexNew * L1_SIZE * 12 + L1_SIZE * bucketPc + bucketSq * 4 + n;
-
-    //                     std::cout << featurePc << " " << featureSq << ": " << featureIndexOld << " " << featureIndexNew << std::endl;
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }
-
-    // [fpt][fsq][bpt][bsq][ci][n]
-
     bias1 = defaultWeights.bias1;
     weights0 = defaultWeights.weights0;
 
@@ -68,23 +42,23 @@ void Net::loadDefaultNet() {
        for (int fsq = 0; fsq < 64; fsq++)
             for (int bpc = 0; bpc < 12; bpc++)
                 for (int bsq = 0; bsq < 64; bsq++)
-                    for (int n = 0; n < 4; n++)
+                    for (int n = 0; n < MINI_ACC_SIZE; n++)
                         weights0[index_new<WHITE>(bpc, bsq, fpc, fsq) + n] = defaultWeights.weights0[index_old<WHITE>(bpc, bsq, fpc, fsq) + n];
 
     for (int sq = 0; sq < 64; sq++) {
         for (int pc = 0; pc < 12; pc++) {
-            for (int n = 0; n < 4; n++) {
-                weights1[256 * 2 * pc + (sq * 4 * 2) +     n] = defaultWeights.weights1[256 * pc + (sq * 4) + n];
-                weights1[256 * 2 * pc + (sq * 4 * 2) + 4 + n] = defaultWeights.weights1[256 * makePiece(typeOf(pc), !colorOf(pc)) + ((sq ^ 56) * 4) + n + L1_SIZE * 12];
+            for (int n = 0; n < MINI_ACC_SIZE; n++) {
+                weights1[L1_SIZE * 2 * pc + (sq * MINI_ACC_SIZE * 2) +                 n] = defaultWeights.weights1[L1_SIZE * pc + (sq * MINI_ACC_SIZE) + n];
+                weights1[L1_SIZE * 2 * pc + (sq * MINI_ACC_SIZE * 2) + MINI_ACC_SIZE + n] = defaultWeights.weights1[L1_SIZE * makePiece(typeOf(pc), !colorOf(pc)) + ((sq ^ 56) * MINI_ACC_SIZE) + n + L1_SIZE * 12];
             }
         }
     }
 
     for (int sq = 0; sq < 64; sq++)
         for (int pc = 0; pc < 12; pc++)
-            for (int n = 0; n < 4; n++)
-                bias0[L1_SIZE * 2 * typeOf(pc) + (colorOf(pc) ? sq : sq ^ 56) * 8 + 4 * (!colorOf(pc)) + n]
-                = defaultWeights.bias0[sq * 4 + L1_SIZE * pc + n] + weights0[index_new<WHITE>(pc, sq, pc, sq) + n];
+            for (int n = 0; n < MINI_ACC_SIZE; n++)
+                bias0[L1_SIZE * 2 * typeOf(pc) + (colorOf(pc) ? sq : sq ^ 56) * MINI_ACC_SIZE * 2 + MINI_ACC_SIZE * (!colorOf(pc)) + n]
+                = defaultWeights.bias0[sq * MINI_ACC_SIZE + L1_SIZE * pc + n] + weights0[index_new<WHITE>(pc, sq, pc, sq) + n];
 
     wdlWeights = defaultWdl.weights1;
     wdlBias    = defaultWdl.bias1;
@@ -103,6 +77,15 @@ void Net::initAccumulator(Position &pos) {
 
         refreshMiniAcc(pos, pos.pieceOn(sq), sq);
     }
+
+    // occupied = pos.getOccupied();
+
+    // while (occupied) {
+    //     int sq = popLSB(occupied);
+
+    //     for (int i = 0; i < MINI_ACC_SIZE * 2; i++)
+    //         std::cout << accumulator[sq * MINI_ACC_SIZE * 2 + i] << std::endl;
+    // }
 
     occupied = pos.getOccupied();
 

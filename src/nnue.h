@@ -16,7 +16,7 @@ enum Toggle {
 };
 
 static const int INPUT_SIZE = 12 * 64;
-static const int MINI_ACC_SIZE = 4;
+static const int MINI_ACC_SIZE = 8;
 static const int L1_SIZE = MINI_ACC_SIZE * 64;
 static const int OUTPUT_SIZE = 1;
 static const int NET_SIZE = 3;
@@ -54,7 +54,16 @@ public:
     void loadDefaultNet();
 
     template<Color C> inline
-    void loadWeightsVec(__m128i& w, int offset);
+    void loadWeightsVec(__m256i& w, int offset);
+
+    template<Color ON_COLOR, Color OFF_COLOR>
+    void addSubSingle(int sq, int onOffset, int offOffset);
+
+    template<Color ON_COLOR, Color OFF_COLOR, Color CAP_COLOR>
+    void addSubSubSingle(int sq, int onOffset, int offOffset, int capOffset);
+
+    template<Color C>
+    void addaddSubSubSingle(int sq, int add1Offset, int add2Offset, int sub1Offset, int sub2Offset);
 
     template<Color ON_COLOR, Color OFF_COLOR>
     void addSub(Position& pos, uint64_t cleanBitboard, uint64_t white, int onPiece, int onSquare, int offPiece, int offSquare, int refreshPc, int refreshSq);
@@ -99,10 +108,10 @@ int index_new(int bucketPc, int bucketSq, int featurePc, int featureSq) {
     int fsq = colorOf(featurePc) ? featureSq : featureSq ^ 56;
     int ci  = ((bpc ^ fpc) << 1) | !fpc;
 
-    return   fpt * 64 * 64 * MINI_ACC_SIZE * MINI_ACC_SIZE * 6 
-           + fsq * 64 * MINI_ACC_SIZE * MINI_ACC_SIZE * 6 
-           + bpt * 64 * MINI_ACC_SIZE * MINI_ACC_SIZE 
-           + bsq * MINI_ACC_SIZE * MINI_ACC_SIZE 
+    return   fpt * 64 * 64 * MINI_ACC_SIZE * 4 * 6 
+           + fsq * 64 * MINI_ACC_SIZE * 4 * 6 
+           + bpt * 64 * MINI_ACC_SIZE * 4 
+           + bsq * MINI_ACC_SIZE * 4 
            + ci * MINI_ACC_SIZE;
 }
 
@@ -115,10 +124,10 @@ int index_new(int bucketPc, int bucketSq, int featurePc, int featureSq) {
     int fsq = FPC ? featureSq : featureSq ^ 56;
     int ci  = ((bpc ^ FPC) << 1) | !FPC;
 
-    return     fpt * 64 * 64 * MINI_ACC_SIZE * MINI_ACC_SIZE * 6
-             + fsq * 64 * MINI_ACC_SIZE * MINI_ACC_SIZE * 6 
-             + bpt * 64 * MINI_ACC_SIZE * MINI_ACC_SIZE 
-             + bsq * MINI_ACC_SIZE * MINI_ACC_SIZE 
+    return     fpt * 64 * 64 * MINI_ACC_SIZE * 4 * 6
+             + fsq * 64 * MINI_ACC_SIZE * 4 * 6 
+             + bpt * 64 * MINI_ACC_SIZE * 4 
+             + bsq * MINI_ACC_SIZE * 4 
              + ci * MINI_ACC_SIZE;
 }
 
@@ -130,27 +139,22 @@ int index_new(int bucketPc, int bucketSq, int featurePc, int featureSq) {
     int fsq = FPC ? featureSq : featureSq ^ 56;
     int ci  = ((BPC ^ FPC) << 1) | !FPC;
 
-    return    fpt * 64 * 64 * MINI_ACC_SIZE * MINI_ACC_SIZE * 6 
-            + fsq * 64 * MINI_ACC_SIZE * MINI_ACC_SIZE * 6 
-            + bpt * 64 * MINI_ACC_SIZE * MINI_ACC_SIZE 
-            + bsq * MINI_ACC_SIZE * MINI_ACC_SIZE 
+    return    fpt * 64 * 64 * MINI_ACC_SIZE * 4 * 6 
+            + fsq * 64 * MINI_ACC_SIZE * 4 * 6 
+            + bpt * 64 * MINI_ACC_SIZE * 4 
+            + bsq * MINI_ACC_SIZE * 4 
             + ci * MINI_ACC_SIZE;
 }
 
 template<Color C> inline
-void Net::loadWeightsVec(__m128i& w, int offset) {
+void Net::loadWeightsVec(__m256i& w, int offset) {
     if constexpr (C) {
-        w = _mm_loadu_si128((const __m128i *)(&weights0[0] + offset));
+        w = _mm256_loadu_si256((const __m256i *)(&weights0[0] + offset));
     } else {
-        __m128i w_lo = _mm_loadl_epi64(
-            (const __m128i *)(&weights0[0] + offset)
+        w = _mm256_loadu2_m128i(
+            (const __m128i*)(&weights0[offset - MINI_ACC_SIZE]),
+            (const __m128i*)(&weights0[offset                ])
         );
-
-        __m128i w_hi = _mm_loadl_epi64(
-            (const __m128i *)(&weights0[0] + offset - MINI_ACC_SIZE)
-        );
-
-        w = _mm_unpacklo_epi64(w_lo, w_hi);
     }
 }
 
@@ -158,15 +162,74 @@ template<Color C>
 inline void refreshSingle(Net* net, int offset, int bsq) {
     int idx = bsq * MINI_ACC_SIZE * 2;
 
-    __m128i w;
+    __m256i w;
    
     net->loadWeightsVec<C>(w, offset);
 
-    __m128i acc = _mm_loadu_si128((__m128i *)(&net->accumulator[0] + idx));
+    __m256i acc = _mm256_loadu_si256((__m256i *)(&net->accumulator[0] + idx));
 
-    acc = _mm_add_epi16(acc, w);
+    acc = _mm256_add_epi16(acc, w);
 
-    _mm_storeu_si128((__m128i *)(&net->accumulator[0] + idx), acc);   
+    _mm256_storeu_si256((__m256i *)(&net->accumulator[0] + idx), acc);  
+}
+
+template<Color ON_COLOR, Color OFF_COLOR>
+inline void Net::addSubSingle(int sq, int onOffset, int offOffset) {
+    int idx = sq * MINI_ACC_SIZE * 2;
+
+    __m256i wA, wS;
+
+    loadWeightsVec< ON_COLOR>(wA, onOffset);
+    loadWeightsVec<OFF_COLOR>(wS, offOffset);
+
+    __m256i acc = _mm256_loadu_si256((__m256i *)(&accumulator[0] + idx));
+
+    acc = _mm256_add_epi16(acc, wA);
+    acc = _mm256_sub_epi16(acc, wS);
+
+    _mm256_storeu_si256((__m256i *)(&accumulator[0] + idx), acc);
+}
+
+template<Color ON_COLOR, Color OFF_COLOR, Color CAP_COLOR>
+inline void Net::addSubSubSingle(int sq, int onOffset, int offOffset, int capOffset) {
+    int idx = sq * MINI_ACC_SIZE * 2;
+
+    __m256i wA, wS1, wS2;
+
+    loadWeightsVec<ON_COLOR >(wA,  onOffset);
+    loadWeightsVec<OFF_COLOR>(wS1, offOffset);
+    loadWeightsVec<CAP_COLOR>(wS2, capOffset);
+
+    __m256i acc = _mm256_loadu_si256((__m256i *)(&accumulator[0] + idx));
+
+    acc = _mm256_add_epi16(acc, wA );
+    acc = _mm256_sub_epi16(acc, wS1);
+    acc = _mm256_sub_epi16(acc, wS2);
+
+    _mm256_storeu_si256((__m256i *)(&accumulator[0] + idx), acc);
+}
+
+template<Color C>
+inline void Net::addaddSubSubSingle(int sq, int add1Offset, int add2Offset, int sub1Offset, int sub2Offset) {
+    int idx = sq * MINI_ACC_SIZE * 2;
+
+    __m256i wA1, wA2, wS1, wS2;
+
+    __m256i acc = _mm256_loadu_si256((__m256i *)(&accumulator[0] + idx));
+
+    loadWeightsVec<C>(wA1, add1Offset);
+    loadWeightsVec<C>(wA2, add2Offset);
+
+    acc = _mm256_add_epi16(acc, wA1);
+    acc = _mm256_add_epi16(acc, wA2);
+
+    loadWeightsVec<C>(wS1, sub1Offset);
+    loadWeightsVec<C>(wS2, sub2Offset);
+
+    acc = _mm256_sub_epi16(acc, wS1);
+    acc = _mm256_sub_epi16(acc, wS2);
+
+    _mm256_storeu_si256((__m256i *)(&accumulator[0] + idx), acc);
 }
 
 template<Color ON_COLOR, Color OFF_COLOR>
@@ -176,7 +239,7 @@ inline void Net::addSub(Position& pos, uint64_t cleanBitboard, uint64_t white, i
 
     constexpr bool RPC = ON_COLOR; // colorOf(refreshPc) == colorOf(movedPiece) == ON_COLOR
 
-    int biasIndex = L1_SIZE * 2 * typeOf(refreshPc) + (RPC ? refreshSq : refreshSq ^ 56) * 8;
+    int biasIndex = L1_SIZE * 2 * typeOf(refreshPc) + (RPC ? refreshSq : refreshSq ^ 56) * MINI_ACC_SIZE * 2;
 
     memcpy(&accumulator[refreshSq * MINI_ACC_SIZE * 2                ], &bias0[biasIndex + MINI_ACC_SIZE * !RPC], MINI_ACC_SIZE * sizeof(int16_t));
     memcpy(&accumulator[refreshSq * MINI_ACC_SIZE * 2 + MINI_ACC_SIZE], &bias0[biasIndex + MINI_ACC_SIZE *  RPC], MINI_ACC_SIZE * sizeof(int16_t));
@@ -193,19 +256,7 @@ inline void Net::addSub(Position& pos, uint64_t cleanBitboard, uint64_t white, i
 
         refreshSingle<WHITE>(this, refreshOffset, refreshSq);
 
-        int idx = sq * MINI_ACC_SIZE * 2;
-
-        __m128i wA, wS;
-
-        loadWeightsVec< ON_COLOR>(wA, onOffset);
-        loadWeightsVec<OFF_COLOR>(wS, offOffset);
-
-        __m128i acc = _mm_loadu_si128((__m128i *)(&accumulator[0] + idx));
-
-        acc = _mm_add_epi16(acc, wA);
-        acc = _mm_sub_epi16(acc, wS);
-
-        _mm_storeu_si128((__m128i *)(&accumulator[0] + idx), acc);
+        addSubSingle<ON_COLOR, OFF_COLOR>(sq, onOffset, offOffset);
 
         memcpy(&t[sq * MINI_ACC_SIZE * 2], &accumulator[sq * MINI_ACC_SIZE * 2], MINI_ACC_SIZE * 2 * sizeof(int16_t));
     }
@@ -220,19 +271,7 @@ inline void Net::addSub(Position& pos, uint64_t cleanBitboard, uint64_t white, i
 
         refreshSingle<BLACK>(this, refreshOffset, refreshSq);
 
-        int idx = sq * MINI_ACC_SIZE * 2;
-
-        __m128i wA, wS;
-
-        loadWeightsVec<ON_COLOR >(wA, onOffset);
-        loadWeightsVec<OFF_COLOR>(wS, offOffset);
-
-        __m128i acc = _mm_loadu_si128((__m128i *)(&accumulator[0] + idx));
-
-        acc = _mm_add_epi16(acc, wA);
-        acc = _mm_sub_epi16(acc, wS);
-
-        _mm_storeu_si128((__m128i *)(&accumulator[0] + idx), acc);
+        addSubSingle<ON_COLOR, OFF_COLOR>(sq, onOffset, offOffset);
 
         memcpy(&t[sq * MINI_ACC_SIZE * 2], &accumulator[sq * MINI_ACC_SIZE * 2], MINI_ACC_SIZE * 2 * sizeof(int16_t));
     }
@@ -266,22 +305,8 @@ inline void Net::addSubSub(Position& pos, uint64_t cleanBitboard, uint64_t white
         int refreshOffset = index_new<WHITE, WHITE>(refreshPc, refreshSq, pc, sq);
 
         refreshSingle<WHITE>(this, refreshOffset, refreshSq);
-
-        int idx = sq * MINI_ACC_SIZE * 2;
-
-        __m128i wA, wS1, wS2;
-
-        loadWeightsVec<ON_COLOR >(wA,  onOffset);
-        loadWeightsVec<OFF_COLOR>(wS1, offOffset);
-        loadWeightsVec<CAP_COLOR>(wS2, capOffset);
-
-        __m128i acc = _mm_loadu_si128((__m128i *)(&accumulator[0] + idx));
-
-        acc = _mm_add_epi16(acc, wA );
-        acc = _mm_sub_epi16(acc, wS1);
-        acc = _mm_sub_epi16(acc, wS2);
-
-        _mm_storeu_si128((__m128i *)(&accumulator[0] + idx), acc);
+    
+        addSubSubSingle<ON_COLOR, OFF_COLOR, CAP_COLOR>(sq, onOffset, offOffset, capOffset);
 
         memcpy(&t[sq * MINI_ACC_SIZE * 2], &accumulator[sq * MINI_ACC_SIZE * 2], MINI_ACC_SIZE * 2 * sizeof(int16_t));
     }
@@ -297,21 +322,7 @@ inline void Net::addSubSub(Position& pos, uint64_t cleanBitboard, uint64_t white
 
         refreshSingle<BLACK>(this, refreshOffset, refreshSq);
 
-        int idx = sq * MINI_ACC_SIZE * 2;
-
-        __m128i wA, wS1, wS2;
-
-        loadWeightsVec<ON_COLOR >(wA,  onOffset);
-        loadWeightsVec<OFF_COLOR>(wS1, offOffset);
-        loadWeightsVec<CAP_COLOR>(wS2, capOffset);
-
-        __m128i acc = _mm_loadu_si128((__m128i *)(&accumulator[0] + idx));
-
-        acc = _mm_add_epi16(acc, wA );
-        acc = _mm_sub_epi16(acc, wS1);
-        acc = _mm_sub_epi16(acc, wS2);
-
-        _mm_storeu_si128((__m128i *)(&accumulator[0] + idx), acc);
+        addSubSubSingle<ON_COLOR, OFF_COLOR, CAP_COLOR>(sq, onOffset, offOffset, capOffset);
 
         memcpy(&t[sq * MINI_ACC_SIZE * 2], &accumulator[sq * MINI_ACC_SIZE * 2], MINI_ACC_SIZE * 2 * sizeof(int16_t));
     }
@@ -332,25 +343,7 @@ inline void Net::addaddSubSub(Position& pos, uint64_t cleanBitboard, int from, i
         int sub1Offset = index_new<WHITE>(pc, sq, king, from);
         int sub2Offset = index_new<WHITE>(pc, sq, rook, rFrom);
 
-        int idx = sq * MINI_ACC_SIZE * 2;
-
-        __m128i wA1, wA2, wS1, wS2;
-
-        __m128i acc = _mm_loadu_si128((__m128i *)(&accumulator[0] + idx));
-
-        loadWeightsVec<C>(wA1, add1Offset);
-        loadWeightsVec<C>(wA2, add2Offset);
-
-        acc = _mm_add_epi16(acc, wA1);
-        acc = _mm_add_epi16(acc, wA2);
-
-        loadWeightsVec<C>(wS1, sub1Offset);
-        loadWeightsVec<C>(wS2, sub2Offset);
-
-        acc = _mm_sub_epi16(acc, wS1);
-        acc = _mm_sub_epi16(acc, wS2);
-
-        _mm_storeu_si128((__m128i *)(&accumulator[0] + idx), acc);
+        addaddSubSubSingle<C>(sq, add1Offset, add2Offset, sub1Offset, sub2Offset);
     }
 }
 
