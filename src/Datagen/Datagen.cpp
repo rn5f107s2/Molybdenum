@@ -93,6 +93,8 @@ void playGame(Position &pos, const std::string& filename, u64 &fenCount) {
         st.nodeLimit = 25000;
         st.limit = Nodes;
 
+        // pos.printBoard();
+
         int score = state->startSearch(pos, st, MAXDEPTH, bestMove);
 
         if (abs(score) > 750)
@@ -110,7 +112,7 @@ void playGame(Position &pos, const std::string& filename, u64 &fenCount) {
         else
             adjCounter = 0;
 
-        if ((adjCounter > 12 && adjEnabled) || pos.plys50moveRule >= 100 || bestMove == NO_MOVE) {
+        if ((adjCounter > 12 && adjEnabled) || (pos.phase <= 3 && !(pos.getPieces(PAWN))) || pos.plys50moveRule >= 100 || bestMove == NO_MOVE) {
             result = "0.5";
             break;
         }

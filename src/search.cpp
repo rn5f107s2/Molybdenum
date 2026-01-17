@@ -72,6 +72,40 @@ int SearchState::iterativeDeepening(Position  &pos, SearchTime &st, int maxDepth
         if (thread->id())
             continue;
 
+            //             std::string uciOutput;
+            // auto searchTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - si.st.searchStart).count();
+            // uciOutput += "info depth ";
+            // uciOutput += std::to_string(depth);
+
+            // uciOutput += " seldepth ";
+            // uciOutput += std::to_string(si.selDepth);
+
+            // uciOutput += " currmove ";
+            // uciOutput += moveToString(si.bestRootMove);
+
+            // uciOutput += " score ";
+            // uciOutput += abs(score) > MAXMATE ? "mate " : "cp ";
+            // uciOutput += std::to_string(abs(score) > MAXMATE ? mateInPlies(score) : score);
+
+            // u64 nodeCount = thread->threads->nodes();
+
+            // uciOutput += " nodes ";
+            // uciOutput += std::to_string(nodeCount);
+
+            // uciOutput += " time ";
+            // uciOutput += std::to_string(searchTime);
+
+            // uciOutput += " nps ";
+            // uciOutput += std::to_string((nodeCount / std::max(int(searchTime), 1)) * 1000);
+
+            // uciOutput += outputWDL(pos);
+
+            // uciOutput += " pv ";
+            // for (int i = 0; i < pvLength[0]; i++)
+            //     uciOutput += moveToString(pvMoves[0][i]) + " ";
+
+            // std::cout << uciOutput << std::endl;
+
 #ifndef DATAGEN
         if (prettyprint)
             prettyPrint(pos, si, score, depth);
