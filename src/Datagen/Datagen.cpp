@@ -1,12 +1,22 @@
 #include "../search.h"
 
+#define DATAGEN
+
 #ifdef DATAGEN
 #include <fstream>
 #include <iostream>
 #include "Datagen.h"
 #include "../Position.h"
+#include "../thread.h"
+#include "../nnue.h"
+
+ThreadPool tp;
+SearchState* state;
 
 [[noreturn]] void start(Position &pos, const std::string& filename) {
+    tp.add(Thread(&tp, 0));
+    state = tp.get(0)->getState();
+    state->thread = tp.get(0);
     init();
     u64 gameCount = 0;
     u64 fenCount = 0;
@@ -18,7 +28,7 @@
         playGame(pos, filename, fenCount);
         gameCount++;
 
-        if (gameCount % 100 == 0) {
+        if (gameCount % 10 == 0) {
             int searchTime = int(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - lastTime).count());
             std::cout << gameCount << " Games done\n";
             std::cout << "at " << ((fenCount - lastFenCount) * 1000) / std::max(searchTime, 1) << " Fens per second\n";
@@ -56,16 +66,17 @@ void createExit(Position &pos) {
 }
 
 bool verifyExit(Position &pos) {
-    searchTime st;
+    SearchTime st;
     st.limit = Nodes; st.nodeLimit = 2500;
 
-    return abs(startSearch(pos, st)) < 150;
+    return abs(state->startSearch(pos, st, MAXDEPTH)) < 150;
 }
 
 void playGame(Position &pos, const std::string& filename, u64 &fenCount) {
     int adjCounter = 0;
     int wadjCounter = 0;
-    int wadjReq = int(seedDataGen % 20) + 5;
+    int wadjReq = int(seedDataGen % 8) + 8;
+    bool adjEnabled = int(seedDataGen & (1ULL << 12));
     std::string result;
     Stack<int> scores;
     Stack<std::string> fens;
@@ -73,32 +84,33 @@ void playGame(Position &pos, const std::string& filename, u64 &fenCount) {
     std::ofstream output;
     output.open(filename, std::ios::app);
 
-    clearHistory();
+    TT.clear();
+    state->clearHistory();
 
     while (true) {
         Move bestMove;
-        searchTime st;
+        SearchTime st;
         st.nodeLimit = 25000;
         st.limit = Nodes;
 
-        int score = startSearch(pos, st, MAXDEPTH, bestMove);
+        int score = state->startSearch(pos, st, MAXDEPTH, bestMove);
 
-        if (abs(score) > 300)
+        if (abs(score) > 750)
             wadjCounter++;
         else
             wadjCounter = 0;
 
-        if (abs(score) >= MAXMATE || wadjCounter > wadjReq) {
+        if (abs(score) >= MAXMATE || (wadjCounter > wadjReq && adjEnabled)) {
             result = (score > 0 == pos.sideToMove) ? "1.0" : "0.0";
             break;
         }
 
-        if (abs(score) <= 0)
+        if (abs(score) <= 5)
             adjCounter++;
         else
             adjCounter = 0;
 
-        if (adjCounter > 7 || pos.plys50moveRule >= 100 || bestMove == NO_MOVE) {
+        if ((adjCounter > 12 && adjEnabled) || pos.plys50moveRule >= 100 || bestMove == NO_MOVE) {
             result = "0.5";
             break;
         }
@@ -110,6 +122,8 @@ void playGame(Position &pos, const std::string& filename, u64 &fenCount) {
         }
         pos.makeMove(bestMove);
         pos.movecount++;
+
+        pos.net->initAccumulator(pos);
     }
 
     while (fens.getSize()) {

@@ -41,6 +41,10 @@ public:
         searching.store(false);
         state.clearHistory();
     }
+
+    SearchState* getState() {
+        return &state;
+    }
 };
 
 class ThreadPool {
@@ -53,6 +57,14 @@ public:
     void set(int count);
     void clear();
     bool done();
+
+    void add(Thread t) {
+        threads.push_back(t);
+    }
+
+    Thread* get(int i) {
+        return &threads[i];
+    }
 
     u64 nodes();
 };

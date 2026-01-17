@@ -203,6 +203,7 @@ void UCI::stop([[maybe_unused]] const std::string &args) {
 }
 
 void UCI::start(int argc, char** argv) {
+#ifndef DATAGEN
     if (argc == 1)
         return loop();
 
@@ -219,6 +220,9 @@ void UCI::start(int argc, char** argv) {
     }
 
     threads.join();
+#else
+    ::start(internalBoard, argv[1]);
+#endif
 }
 
 void UCI::loop() {    

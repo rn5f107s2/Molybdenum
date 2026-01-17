@@ -1,5 +1,7 @@
 #include "search.h"
 
+#define DATAGEN
+
 #ifdef DATAGEN
 #ifndef MOLYBDENUM_DATAGEN_H
 #define MOLYBDENUM_DATAGEN_H
@@ -10,12 +12,14 @@
 
 static u64 seedDataGen = 0;
 
-static void init() {
+inline void init() {
     auto now = std::chrono::system_clock::now();
     auto now_ms = std::chrono::time_point_cast<std::chrono::milliseconds>(now);
     auto epoch = now_ms.time_since_epoch();
-    auto value = std::chrono::duration_cast<std::chrono::milliseconds>(epoch);
+    auto value = std::chrono::duration_cast<std::chrono::nanoseconds>(epoch);
     seedDataGen = value.count();
+
+    std::cout << "Initialized" << std::endl;
 }
 
 bool verifyExit(Position &pos);
