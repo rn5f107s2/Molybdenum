@@ -111,7 +111,7 @@ int SearchState::iterativeDeepening(Position  &pos, SearchTime &st, int maxDepth
             std::cout << uciOutput << std::endl;
         }
 
-        if (stop<Soft>(st, si) || thread->threads->nodes() >= 5000) {
+        if (stop<Soft>(st, si) || thread->threads->nodes() >= 1000) {
             thread->threads->stop();
             break;
         }
