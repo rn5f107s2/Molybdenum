@@ -111,7 +111,7 @@ int SearchState::iterativeDeepening(Position  &pos, SearchTime &st, int maxDepth
             std::cout << uciOutput << std::endl;
         }
 
-        if (stop<Soft>(st, si) || thread->threads->nodes() >= 1000) {
+        if (stop<Soft>(st, si)) {
             thread->threads->stop();
             break;
         }
@@ -137,7 +137,7 @@ int SearchState::aspirationWindow(int prevScore, Position &pos, SearchInfo &si, 
     int alpha = -INFINITE;
     int beta  =  INFINITE;
 
-    if (depth >= 2) {
+    if (depth >= 2 && false) {
         alpha = std::max(-INFINITE, prevScore - delta);
         beta  = std::min( INFINITE, prevScore + delta);
     }
@@ -400,7 +400,8 @@ int SearchState::search(int alpha, int beta, Position &pos, int depth, SearchInf
             bestMove = currentMove;
 
             if(score > alpha) {
-                alpha = score;
+                if constexpr (!ROOT)
+                    alpha = score;
                 exact = true;
 
                 if (ROOT || (score >= beta && !pos.isCapture(bestMove))) {
