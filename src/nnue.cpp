@@ -60,6 +60,15 @@ void Net::initAccumulator(Position &pos) {
 
     occupied = pos.getOccupied();
 
+
+    while (occupied) {
+        int wSq   = popLSB(occupied);
+
+        for (int i = 0; i < 16; i++) {
+            std::cout << accumulator[WHITE][wSq * 16 + i] << std::endl;
+        }
+    }
+
     pushAccToStack();
 }
 
