@@ -55,16 +55,40 @@ void SearchState::clearHistory() {
     memset(&killers, 0, sizeof(killers[0]) * killers.size());
 }
 
-int SearchState::iterativeDeepening(Position  &pos, SearchTime &st, int maxDepth, [[maybe_unused]] Move &bestMove) {
+int SearchState::iterativeDeepening(Position &pos, SearchTime &st, int maxDepth, [[maybe_unused]] Move &bestMove) {
     int score = 0;
     int prevScore = 0;
     si.clear();
     si.st = st;
 
+    u64 ksq = pos.getPieces(pos.sideToMove, KING);
+    u64 checkers = attackersTo<false, false>(lsb(ksq),pos.getOccupied(), pos.sideToMove ? BLACK_PAWN : WHITE_PAWN, pos);
+    MoveList ml;
+    generateMoves<false>(pos, ml, checkers);
+
+    for (int i = 0; i < ml.length; i++) {
+        Move m = ml.moves[i].move;
+
+        const double maxStart = 200;
+        const double maxDropoff = 0.98;
+
+        const double tempStart = 1.0;
+        const double tempDropoff = 0.975;
+
+        double max  = maxStart  * std::pow(maxDropoff , pos.movecount);
+        double temp = tempStart * std::pow(tempDropoff, pos.movecount);  
+
+        double r = rand() / double(RAND_MAX);
+
+        r = std::pow(r, 1.0 / temp);
+
+        temps[m] = r * max;
+    }
+
     //prettyInitial();
 
     for (int depth = 1; depth != maxDepth; depth++) {
-        score = aspirationWindow(score, pos, si, depth);
+        score = aspirationWindow(score, pos, si, depth) - temps[si.bestRootMove];
 
         if (si.stop.load(std::memory_order_relaxed))
             break;
@@ -290,6 +314,8 @@ int SearchState::search(int alpha, int beta, Position &pos, int depth, SearchInf
                                             &*(stack-1)->contHist, 
                                             &*(stack-2)->contHist, checkers, ROOT);
     while ((currentMove = mp.pickMove())) {
+        int temperature = ROOT ? temps[currentMove] : 0;
+
         extensions = depth + moveCount <= 13 ? extensions : 0;
     
         if (currentMove == excluded)
@@ -372,23 +398,29 @@ int SearchState::search(int alpha, int beta, Position &pos, int depth, SearchInf
         reductions -= history > 0 ? history / 4085 : history / 25329;
         reductions = std::max(reductions, 0);
 
-        if (depth > 1 && moveCount > 2) {
-            score = -search<NonPvNode>(-alpha - 1, -alpha, pos, depth - 1 - reductions + extensions, si, stack+1);
+        int tempAlpha = alpha < MAXMATE ? alpha - temperature : alpha;
+        int tempBeta  = alpha < MAXMATE ? beta  - temperature : alpha; 
 
-            if (score > alpha && reductions > 0) {
-                bool nightmare = bestScore < alpha - 100 && moveCount > 3;
-                score = -search<NonPvNode>(-alpha - 1, -alpha, pos, depth - 1 + extensions + nightmare, si, stack+1);
+        if (depth > 1 && moveCount > 2) {
+            score = -search<NonPvNode>(-tempAlpha - 1, -tempAlpha, pos, depth - 1 - reductions + extensions, si, stack+1);
+
+            if (score > tempAlpha && reductions > 0) {
+                bool nightmare = bestScore < tempAlpha - 100 && moveCount > 3;
+                score = -search<NonPvNode>(-tempAlpha - 1, -tempAlpha, pos, depth - 1 + extensions + nightmare, si, stack+1);
             }
 
-            if (PvNode && score > alpha && score < beta)
-                score = -search<PVNode>(-beta, -alpha, pos, depth - 1 + extensions, si, stack+1);
+            if (PvNode && score > tempAlpha && score < tempBeta)
+                score = -search<PVNode>(-tempBeta, -tempAlpha, pos, depth - 1 + extensions, si, stack+1);
         } else {
             if (!PvNode || moveCount > 1)
-                score = -search<NonPvNode>(-alpha - 1, -alpha, pos, depth - 1 + extensions, si, stack+1);
+                score = -search<NonPvNode>(-tempAlpha - 1, -tempAlpha, pos, depth - 1 + extensions, si, stack+1);
 
-            if (PvNode && ((score > alpha && score < beta) || moveCount == 1))
-                score = -search<PVNode>(-beta, -alpha, pos, depth - 1 + extensions, si, stack+1);
+            if (PvNode && ((score > tempAlpha && score < tempBeta) || moveCount == 1))
+                score = -search<PVNode>(-tempBeta, -tempAlpha, pos, depth - 1 + extensions, si, stack+1);
         }
+
+        if (score + temperature < MAXMATE && alpha < MAXMATE)
+            score += temperature;
 
         pos.unmakeMove(currentMove);
 

@@ -90,6 +90,9 @@ void UCI::bench([[maybe_unused]] const std::string &args) {
     uint64_t benchNodes = 0;
     threads.clear();
 
+    uint64_t seed = rand();
+    srand(1);
+
     for (int i = 0; i != BENCH_SIZE; i++) {
         internalBoard.setBoard(positions[i]);
         go("depth " + std::to_string(BENCH_DEPTH));
@@ -99,6 +102,8 @@ void UCI::bench([[maybe_unused]] const std::string &args) {
 
         std::cout << "\n";
     }
+
+    srand(seed);
 
     auto milliseconds = int(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - st.searchStart).count());
     auto nps = (benchNodes * 1000) / (milliseconds + 1);
