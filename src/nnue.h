@@ -99,9 +99,13 @@ void Net::toggleFeature(Position& pos, uint64_t cleanBitboard, int piece, int sq
         int bOffset = indexBlack * L1_SIZE * 12 + bSq * 16 + L1_SIZE * bPc;
 
         for (int i = 0; i < 16; i++) {
+            std::cout << weights0[wOffset + i] << std::endl;
             accumulator[WHITE][wSq * 16 + i] += weights0[wOffset + i] * (!STATE ? -1 : 1);
             accumulator[BLACK][bSq * 16 + i] += weights0[bOffset + i] * (!STATE ? -1 : 1);
         }
+
+        for (int i = 0; i < 16; i++)
+            std::cout << weights0[bOffset + i] << std::endl;
     }
 }
 
