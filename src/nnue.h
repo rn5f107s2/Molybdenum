@@ -125,14 +125,9 @@ inline void Net::refreshMiniAcc(Position& pos, Piece piece, int square) {
         int bOffset = indexBlack * L1_SIZE * 12 + bSquare * 16 + L1_SIZE * bPiece;
 
         for (int i = 0; i < 16; i++) {
-                        std::cout << weights0[wOffset + i] << std::endl;
             accumulator[WHITE][ square * 16 + i] += weights0[wOffset + i];
             accumulator[BLACK][bSquare * 16 + i] += weights0[bOffset + i];
         }
-
-
-        for (int i = 0; i < 16; i++)
-            std::cout << weights0[bOffset + i] << std::endl;
     }
 }
 
