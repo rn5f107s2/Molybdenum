@@ -99,13 +99,9 @@ void Net::toggleFeature(Position& pos, uint64_t cleanBitboard, int piece, int sq
         int bOffset = indexBlack * L1_SIZE * 12 + bSq * 16 + L1_SIZE * bPc;
 
         for (int i = 0; i < 16; i++) {
-            std::cout << weights0[wOffset + i] << std::endl;
             accumulator[WHITE][wSq * 16 + i] += weights0[wOffset + i] * (!STATE ? -1 : 1);
             accumulator[BLACK][bSq * 16 + i] += weights0[bOffset + i] * (!STATE ? -1 : 1);
         }
-
-        for (int i = 0; i < 16; i++)
-            std::cout << weights0[bOffset + i] << std::endl;
     }
 }
 
@@ -129,9 +125,14 @@ inline void Net::refreshMiniAcc(Position& pos, Piece piece, int square) {
         int bOffset = indexBlack * L1_SIZE * 12 + bSquare * 16 + L1_SIZE * bPiece;
 
         for (int i = 0; i < 16; i++) {
+                        std::cout << weights0[wOffset + i] << std::endl;
             accumulator[WHITE][ square * 16 + i] += weights0[wOffset + i];
             accumulator[BLACK][bSquare * 16 + i] += weights0[bOffset + i];
         }
+
+
+        for (int i = 0; i < 16; i++)
+            std::cout << weights0[bOffset + i] << std::endl;
     }
 }
 
