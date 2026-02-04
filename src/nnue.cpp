@@ -78,14 +78,11 @@ void Net::initAccumulator(Position &pos) {
         refreshMiniAcc(pos, pos.pieceOn(sq), sq);
     }
 
-    // occupied = pos.getOccupied();
+    occupied = pos.getOccupied();
 
-    // while (occupied) {
-    //     int sq = popLSB(occupied);
-
-    //     for (int i = 0; i < MINI_ACC_SIZE * 2; i++)
-    //         std::cout << accumulator[sq * MINI_ACC_SIZE * 2 + i] << std::endl;
-    // }
+    while (occupied) {
+        int sq = popLSB(occupied);
+    }
 
     occupied = pos.getOccupied();
 
