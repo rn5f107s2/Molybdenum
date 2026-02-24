@@ -36,7 +36,7 @@ const WDLHead defaultWdl     = *reinterpret_cast<const WDLHead*>(gwdlHeadData);
 
 void Net::loadDefaultNet() {
     for (size_t i = 0; i < bias1.size(); i++)
-        bias1[i] = float(defaultWeights.bias1[i]);
+        bias1[i] = int(defaultWeights.bias1[i] * 64 * 255 * 255);
 
     for (int fpc = 0; fpc < 12; fpc++)
        for (int fsq = 0; fsq < 64; fsq++)
@@ -60,8 +60,8 @@ void Net::loadDefaultNet() {
                     int  oldStm = L1_SIZE * pc + (sq * MINI_ACC_SIZE) + n;
                     int oldNstm = L1_SIZE * makePiece(typeOf(pc), !colorOf(pc)) + ((sq ^ 56) * MINI_ACC_SIZE) + n;
 
-                    weights1[stmIdx  * MINI_ACC_SIZE + n] = defaultWeights.weights1[L2_SIZE * oldStm  + m];
-                    weights1[nstmIdx * MINI_ACC_SIZE + n] = defaultWeights.weights1[L2_SIZE * oldNstm + m + L1_SIZE * L2_SIZE * 12];
+                    weights1[stmIdx  * MINI_ACC_SIZE + n] = int16_t(defaultWeights.weights1[L2_SIZE * oldStm  + m] * 64);
+                    weights1[nstmIdx * MINI_ACC_SIZE + n] = int16_t(defaultWeights.weights1[L2_SIZE * oldNstm + m + L1_SIZE * L2_SIZE * 12] * 64);
                 }
             }
         }

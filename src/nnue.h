@@ -44,8 +44,8 @@ class Net {
 public:
     std::array<int16_t , L1_SIZE * INPUT_SIZE * 12> weights0{};
     std::array<int16_t, L1_SIZE * 12> bias0{};
-    std::array<float, L1_SIZE * L2_SIZE * 2 * 12> weights1{};
-    std::array<float, L2_SIZE> bias1{};
+    std::array<int16_t, L1_SIZE * L2_SIZE * 2 * 12> weights1{};
+    std::array<int, L2_SIZE> bias1{};
     std::array<float, L2_SIZE * L3_SIZE> weights2;
     std::array<float, L3_SIZE> bias2;
     std::array<float, L3_SIZE * OUTPUT_SIZE> weights3;
@@ -362,7 +362,7 @@ inline void Net::addaddSubSub(Position& pos, uint64_t cleanBitboard, int from, i
 
 template<Color C> inline
 int Net::calculate(uint64_t occupied, Piece* mailbox) {
-    std::array<float, L2_SIZE> output1 = bias1;
+    std::array<int, L2_SIZE> output1 = bias1;
     std::array<float, L3_SIZE> output2 = bias2;
     float out = bias3[0];
 
@@ -383,15 +383,22 @@ int Net::calculate(uint64_t occupied, Piece* mailbox) {
                 int nUs   = ((sq ^ (56 * (C == BLACK))) * MINI_ACC_SIZE * 2) + (MINI_ACC_SIZE * (C == BLACK)) + i;
                 int nThem = ((sq ^ (56 * (C == BLACK))) * MINI_ACC_SIZE * 2) + (MINI_ACC_SIZE * (C == WHITE)) + i;
 
-                output1[m] += screlu(float(accumulator[nUs  ]) / 255.0f) * weights1[MINI_ACC_SIZE * (64 * L2_SIZE * 2 * ourPiece + (sq * L2_SIZE * 2) + m)                 + i];
-                output1[m] += screlu(float(accumulator[nThem]) / 255.0f) * weights1[MINI_ACC_SIZE * (64 * L2_SIZE * 2 * ourPiece + (sq * L2_SIZE * 2) + m + MINI_ACC_SIZE) + i];
+                int16_t usClamped = std::clamp(accumulator[nUs], int16_t(0), int16_t(255));
+                int16_t themClamped = std::clamp(accumulator[nThem], int16_t(0), int16_t(255));
+
+                int16_t intermediateUs   =   usClamped * weights1[MINI_ACC_SIZE * (64 * L2_SIZE * 2 * ourPiece + (sq * L2_SIZE * 2) + m) + i];
+                int16_t intermediateThem = themClamped * weights1[MINI_ACC_SIZE * (64 * L2_SIZE * 2 * ourPiece + (sq * L2_SIZE * 2) + m + MINI_ACC_SIZE) + i];
+
+
+                output1[m] += intermediateUs   * usClamped;
+                output1[m] += intermediateThem * themClamped;
             }
         }
     }
 
     for (int n = 0; n < L2_SIZE; n++)
         for (int m = 0; m < L3_SIZE; m++)
-            output2[m] += std::max(output1[n], 0.0f) * weights2[n * L3_SIZE + m];
+            output2[m] += std::max(float(output1[n]) / float(255 * 255 * 64), 0.0f) * weights2[n * L3_SIZE + m];
 
     for (int i = 0; i < L3_SIZE; i++)
         out += screlu(output2[i]) * weights3[i];
