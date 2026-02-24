@@ -360,6 +360,15 @@ inline void Net::addaddSubSub(Position& pos, uint64_t cleanBitboard, int from, i
     }
 }
 
+static inline int32_t hsum_8_epi32(__m256i v) {
+    __m128i low = _mm256_castsi256_si128(v);
+    __m128i high = _mm256_extracti128_si256(v, 1);
+    __m128i sum = _mm_add_epi32(low, high);
+    sum = _mm_add_epi32(sum, _mm_shuffle_epi32(sum, _MM_SHUFFLE(1, 0, 3, 2)));
+    sum = _mm_add_epi32(sum, _mm_shuffle_epi32(sum, _MM_SHUFFLE(0, 0, 0, 1)));
+    return _mm_cvtsi128_si32(sum);
+}
+
 template<Color C> inline
 int Net::calculate(uint64_t occupied, Piece* mailbox) {
     std::array<int, L2_SIZE> output1 = bias1;
@@ -389,10 +398,25 @@ int Net::calculate(uint64_t occupied, Piece* mailbox) {
         }
 
         for (int m = 0; m < L2_SIZE; m++) {
-            for (int i = 0; i < MINI_ACC_SIZE; i++) {
-                output1[m] += temp[i                ] * weights1[MINI_ACC_SIZE * (64 * L2_SIZE * 2 * ourPiece + (sq * L2_SIZE * 2) + m) + i];
-                output1[m] += temp[i + MINI_ACC_SIZE] * weights1[MINI_ACC_SIZE * (64 * L2_SIZE * 2 * ourPiece + (sq * L2_SIZE * 2) + m + MINI_ACC_SIZE) + i];
+            __m256i sum_v = _mm256_setzero_si256();
+            
+            const int16_t* w_row_a = &weights1[MINI_ACC_SIZE * (64 * L2_SIZE * 2 * ourPiece + (sq * L2_SIZE * 2) + m)];
+            const int16_t* w_row_b = &weights1[MINI_ACC_SIZE * (64 * L2_SIZE * 2 * ourPiece + (sq * L2_SIZE * 2) + m + MINI_ACC_SIZE)];
+
+            for (int n = 0; n < MINI_ACC_SIZE; n += 8) {
+                __m256i l0_a = _mm256_load_si256((const __m256i*)&temp[n]);
+                __m256i l0_b = _mm256_load_si256((const __m256i*)&temp[n + MINI_ACC_SIZE]);
+
+                __m256i w_a = _mm256_cvtepi16_epi32(_mm_load_si128((const __m128i*)&w_row_a[n]));
+                __m256i w_b = _mm256_cvtepi16_epi32(_mm_load_si128((const __m128i*)&w_row_b[n]));
+
+                __m256i prod_a = _mm256_mullo_epi32(l0_a, w_a);
+                __m256i prod_b = _mm256_mullo_epi32(l0_b, w_b);
+
+                sum_v = _mm256_add_epi32(sum_v, _mm256_add_epi32(prod_a, prod_b));
             }
+
+            output1[m] += hsum_8_epi32(sum_v);
         }
     }
 
