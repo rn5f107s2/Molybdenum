@@ -383,13 +383,14 @@ int Net::calculate(uint64_t occupied, Piece* mailbox) {
                 int nUs   = ((sq ^ (56 * (C == BLACK))) * MINI_ACC_SIZE * 2) + (MINI_ACC_SIZE * (C == BLACK)) + i;
                 int nThem = ((sq ^ (56 * (C == BLACK))) * MINI_ACC_SIZE * 2) + (MINI_ACC_SIZE * (C == WHITE)) + i;
 
-                std::cout << accumulator[nThem] <<  " " << weights1[L2_SIZE * (L1_SIZE * 2 * ourPiece + (sq * MINI_ACC_SIZE * 2) + i + MINI_ACC_SIZE) + m] << std::endl;
-
                 output1[m] += screlu(float(accumulator[nUs  ]) / 255.0f) * weights1[L2_SIZE * (L1_SIZE * 2 * ourPiece + (sq * MINI_ACC_SIZE * 2) + i)                 + m];
                 output1[m] += screlu(float(accumulator[nThem]) / 255.0f) * weights1[L2_SIZE * (L1_SIZE * 2 * ourPiece + (sq * MINI_ACC_SIZE * 2) + i + MINI_ACC_SIZE) + m];
             }
         }
     }
+
+    for (int n = 0; n < L2_SIZE; n++)
+        std::cout << output1[n] << std::endl;
 
     for (int n = 0; n < L2_SIZE; n++)
         for (int m = 0; m < L3_SIZE; m++)
