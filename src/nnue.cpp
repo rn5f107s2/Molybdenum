@@ -49,19 +49,19 @@ void Net::loadDefaultNet() {
         for (int pc = 0; pc < 12; pc++) {
             for (int n = 0; n < MINI_ACC_SIZE; n++) {
                 for (int m = 0; m < L2_SIZE; m++) {
-                    int  stmIdx = L1_SIZE * 2 * pc + (sq * MINI_ACC_SIZE * 2) + n;
-                    int nstmIdx = stmIdx + MINI_ACC_SIZE;
+                    int  stmIdx = 64 * L2_SIZE * 2 * pc + (sq * L2_SIZE * 2) + m;
+                    int nstmIdx = stmIdx + L2_SIZE;
 
                     // original
                     // weights1[side][pc][sq][l1_idx][l2_idx]
                     // target
-                    // weights1[pc][sq][side][l1_idx][l2_idx]
+                    // weights1[pc][sq][side][l2_idx][l1_idx]
 
                     int  oldStm = L1_SIZE * pc + (sq * MINI_ACC_SIZE) + n;
                     int oldNstm = L1_SIZE * makePiece(typeOf(pc), !colorOf(pc)) + ((sq ^ 56) * MINI_ACC_SIZE) + n;
 
-                    weights1[stmIdx  * L2_SIZE + m] = defaultWeights.weights1[L2_SIZE * oldStm  + m];
-                    weights1[nstmIdx * L2_SIZE + m] = defaultWeights.weights1[L2_SIZE * oldNstm + m + L1_SIZE * L2_SIZE * 12];
+                    weights1[stmIdx  * MINI_ACC_SIZE + n] = defaultWeights.weights1[L2_SIZE * oldStm  + m];
+                    weights1[nstmIdx * MINI_ACC_SIZE + n] = defaultWeights.weights1[L2_SIZE * oldNstm + m + L1_SIZE * L2_SIZE * 12];
                 }
             }
         }
