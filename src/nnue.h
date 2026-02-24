@@ -90,6 +90,11 @@ inline int screlu(int16_t input) {
     return clamped * clamped;
 }
 
+inline float screlu(float input) {
+    float clamped = std::clamp(input, 0.0f, 1.0f);
+    return clamped * clamped;
+}
+
 template<Color C> inline
 int index(int pc, int sq) {
     int square = C ? sq : sq ^ 56;
