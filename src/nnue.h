@@ -366,6 +366,8 @@ int Net::calculate(uint64_t occupied, Piece* mailbox) {
     std::array<float, L3_SIZE> output2 = bias2;
     float out = bias3[0];
 
+    int temp[MINI_ACC_SIZE * 2];
+
     while (occupied) {
         int sq = popLSB(occupied);
 
@@ -378,20 +380,18 @@ int Net::calculate(uint64_t occupied, Piece* mailbox) {
             theirPiece = temp;
         }
 
+        for (int i = 0; i < MINI_ACC_SIZE; i++) {
+            int nUs   = ((sq ^ (56 * (C == BLACK))) * MINI_ACC_SIZE * 2) + (MINI_ACC_SIZE * (C == BLACK)) + i;
+            int nThem = ((sq ^ (56 * (C == BLACK))) * MINI_ACC_SIZE * 2) + (MINI_ACC_SIZE * (C == WHITE)) + i;
+
+            temp[i                ] = screlu(accumulator[nUs]);
+            temp[i + MINI_ACC_SIZE] = screlu(accumulator[nThem]);
+        }
+
         for (int m = 0; m < L2_SIZE; m++) {
             for (int i = 0; i < MINI_ACC_SIZE; i++) {
-                int nUs   = ((sq ^ (56 * (C == BLACK))) * MINI_ACC_SIZE * 2) + (MINI_ACC_SIZE * (C == BLACK)) + i;
-                int nThem = ((sq ^ (56 * (C == BLACK))) * MINI_ACC_SIZE * 2) + (MINI_ACC_SIZE * (C == WHITE)) + i;
-
-                int16_t usClamped = std::clamp(accumulator[nUs], int16_t(0), int16_t(255));
-                int16_t themClamped = std::clamp(accumulator[nThem], int16_t(0), int16_t(255));
-
-                int16_t intermediateUs   =   usClamped * weights1[MINI_ACC_SIZE * (64 * L2_SIZE * 2 * ourPiece + (sq * L2_SIZE * 2) + m) + i];
-                int16_t intermediateThem = themClamped * weights1[MINI_ACC_SIZE * (64 * L2_SIZE * 2 * ourPiece + (sq * L2_SIZE * 2) + m + MINI_ACC_SIZE) + i];
-
-
-                output1[m] += intermediateUs   * usClamped;
-                output1[m] += intermediateThem * themClamped;
+                output1[m] += temp[i                ] * weights1[MINI_ACC_SIZE * (64 * L2_SIZE * 2 * ourPiece + (sq * L2_SIZE * 2) + m) + i];
+                output1[m] += temp[i + MINI_ACC_SIZE] * weights1[MINI_ACC_SIZE * (64 * L2_SIZE * 2 * ourPiece + (sq * L2_SIZE * 2) + m + MINI_ACC_SIZE) + i];
             }
         }
     }
