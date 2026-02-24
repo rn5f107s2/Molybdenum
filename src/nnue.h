@@ -44,8 +44,8 @@ class Net {
 public:
     std::array<int16_t , L1_SIZE * INPUT_SIZE * 12> weights0{};
     std::array<int16_t, L1_SIZE * 12> bias0{};
-    std::array<int16_t, L1_SIZE * L2_SIZE * 2 * 12> weights1{};
-    std::array<int16_t, L2_SIZE> bias1{};
+    std::array<float, L1_SIZE * L2_SIZE * 2 * 12> weights1{};
+    std::array<float, L2_SIZE> bias1{};
     std::array<float, L2_SIZE * L3_SIZE> weights2;
     std::array<float, L3_SIZE> bias2;
     std::array<float, L3_SIZE * OUTPUT_SIZE> weights3;
@@ -357,34 +357,11 @@ inline void Net::addaddSubSub(Position& pos, uint64_t cleanBitboard, int from, i
 
 template<Color C> inline
 int Net::calculate(uint64_t occupied, Piece* mailbox) {
-    int output = 0;
+    std::array<float, L2_SIZE> output1 = bias1;
+    std::array<float, L3_SIZE> output2 = bias2;
+    float out = bias3[0];
 
-    while (occupied & (occupied - 1)) {
-        int sq1 = popLSB(occupied);
-        int sq2 = popLSB(occupied);
-
-        int ourPiece1 = mailbox[sq1 ^ (56 * (C == BLACK))];
-        int ourPiece2 = mailbox[sq2 ^ (56 * (C == BLACK))];
-
-        if constexpr (C == BLACK) {
-            ourPiece1 = makePiece(typeOf(ourPiece1), !colorOf(ourPiece1));
-            ourPiece2 = makePiece(typeOf(ourPiece2), !colorOf(ourPiece2));
-        }
-
-        for (int i = 0; i < MINI_ACC_SIZE; i++) {
-            int nUs1   = ((sq1 ^ (56 * (C == BLACK))) * MINI_ACC_SIZE * 2) + (MINI_ACC_SIZE * (C == BLACK)) + i;
-            int nThem1 = ((sq1 ^ (56 * (C == BLACK))) * MINI_ACC_SIZE * 2) + (MINI_ACC_SIZE * (C == WHITE)) + i;
-            int nUs2   = ((sq2 ^ (56 * (C == BLACK))) * MINI_ACC_SIZE * 2) + (MINI_ACC_SIZE * (C == BLACK)) + i;
-            int nThem2 = ((sq2 ^ (56 * (C == BLACK))) * MINI_ACC_SIZE * 2) + (MINI_ACC_SIZE * (C == WHITE)) + i;
-
-            output += screlu(accumulator[nUs1  ]) * weights1[L1_SIZE * 2 * ourPiece1 + (sq1 * MINI_ACC_SIZE * 2) + i                ];
-            output += screlu(accumulator[nThem1]) * weights1[L1_SIZE * 2 * ourPiece1 + (sq1 * MINI_ACC_SIZE * 2) + i + MINI_ACC_SIZE];
-            output += screlu(accumulator[nUs2  ]) * weights1[L1_SIZE * 2 * ourPiece2 + (sq2 * MINI_ACC_SIZE * 2) + i                ];
-            output += screlu(accumulator[nThem2]) * weights1[L1_SIZE * 2 * ourPiece2 + (sq2 * MINI_ACC_SIZE * 2) + i + MINI_ACC_SIZE];
-        }
-    }
-
-    if (occupied) {
+    while (occupied) {
         int sq = popLSB(occupied);
 
         int ourPiece   = mailbox[sq ^ (56 * (C == BLACK))];
@@ -397,15 +374,24 @@ int Net::calculate(uint64_t occupied, Piece* mailbox) {
         }
 
         for (int i = 0; i < MINI_ACC_SIZE; i++) {
-            int nUs   = ((sq ^ (56 * (C == BLACK))) * MINI_ACC_SIZE * 2) + (MINI_ACC_SIZE * (C == BLACK)) + i;
-            int nThem = ((sq ^ (56 * (C == BLACK))) * MINI_ACC_SIZE * 2) + (MINI_ACC_SIZE * (C == WHITE)) + i;
+            for (int m = 0; m < L2_SIZE; m++) {
+                int nUs   = ((sq ^ (56 * (C == BLACK))) * MINI_ACC_SIZE * 2) + (MINI_ACC_SIZE * (C == BLACK)) + i;
+                int nThem = ((sq ^ (56 * (C == BLACK))) * MINI_ACC_SIZE * 2) + (MINI_ACC_SIZE * (C == WHITE)) + i;
 
-            output += screlu(accumulator[nUs  ]) * weights1[L1_SIZE * 2 * ourPiece + (sq * MINI_ACC_SIZE * 2) + i                ];
-            output += screlu(accumulator[nThem]) * weights1[L1_SIZE * 2 * ourPiece + (sq * MINI_ACC_SIZE * 2) + i + MINI_ACC_SIZE];
+                output1[m] += screlu(float(accumulator[nUs  ]) / 255.0f) * weights1[L2_SIZE * (L1_SIZE * 2 * ourPiece + (sq * MINI_ACC_SIZE * 2) + i)                 + m];
+                output1[m] += screlu(float(accumulator[nThem]) / 255.0f) * weights1[L2_SIZE * (L1_SIZE * 2 * ourPiece + (sq * MINI_ACC_SIZE * 2) + i + MINI_ACC_SIZE) + m];
+            }
         }
     }
 
-    return ((output / 255) + bias1[0]) * 133 / (64 * 255);
+    for (int n = 0; n < L2_SIZE; n++)
+        for (int m = 0; m < L3_SIZE; m++)
+            output2[m] += std::max(output1[n], 0.0f) * weights2[n * L3_SIZE + m];
+
+    for (int i = 0; i < L3_SIZE; i++)
+        out += screlu(output2[i]) * weights3[i];
+
+    return int(out * 133);
 }
 
 inline void Net::refreshMiniAcc(Position& pos, Piece piece, int square) {
