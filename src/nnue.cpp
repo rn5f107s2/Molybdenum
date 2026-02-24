@@ -36,7 +36,7 @@ const WDLHead defaultWdl     = *reinterpret_cast<const WDLHead*>(gwdlHeadData);
 
 void Net::loadDefaultNet() {
     for (size_t i = 0; i < bias1.size(); i++)
-        bias1[i] = int16_t(defaultWeights.bias1[i] * 64);
+        bias1[i] = float(defaultWeights.bias1[i]);
 
     for (int fpc = 0; fpc < 12; fpc++)
        for (int fsq = 0; fsq < 64; fsq++)

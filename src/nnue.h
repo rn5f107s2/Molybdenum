@@ -390,9 +390,6 @@ int Net::calculate(uint64_t occupied, Piece* mailbox) {
     }
 
     for (int n = 0; n < L2_SIZE; n++)
-        std::cout << output1[n] << std::endl;
-
-    for (int n = 0; n < L2_SIZE; n++)
         for (int m = 0; m < L3_SIZE; m++)
             output2[m] += std::max(output1[n], 0.0f) * weights2[n * L3_SIZE + m];
 
