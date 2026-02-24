@@ -18,15 +18,19 @@ enum Toggle {
 static const int INPUT_SIZE = 12 * 64;
 static const int MINI_ACC_SIZE = 8;
 static const int L1_SIZE = MINI_ACC_SIZE * 64;
+static const int L2_SIZE = 8;
+static const int L3_SIZE = 16;
 static const int OUTPUT_SIZE = 1;
-static const int NET_SIZE = 3;
-static const std::array<int, NET_SIZE> LAYER_SIZE = {INPUT_SIZE, L1_SIZE, OUTPUT_SIZE};
 
 struct Weights {
-    std::array<int16_t , L1_SIZE * INPUT_SIZE * 12> weights0{};
-    std::array<int16_t, L1_SIZE * 12> bias0{};
-    std::array<int16_t, L1_SIZE * OUTPUT_SIZE * 2 * 12> weights1{};
-    std::array<int16_t, OUTPUT_SIZE> bias1{};
+    std::array<float, L1_SIZE * INPUT_SIZE * 12> weights0{};
+    std::array<float, L1_SIZE * 12> bias0{};
+    std::array<float, L1_SIZE * L2_SIZE * 2 * 12> weights1{};
+    std::array<float, L2_SIZE> bias1{};
+    std::array<float, L2_SIZE * L3_SIZE> weights2;
+    std::array<float, L3_SIZE> bias2;
+    std::array<float, L3_SIZE * OUTPUT_SIZE> weights3;
+    std::array<float, OUTPUT_SIZE> bias3;
 };
 
 struct WDLHead {
@@ -40,8 +44,12 @@ class Net {
 public:
     std::array<int16_t , L1_SIZE * INPUT_SIZE * 12> weights0{};
     std::array<int16_t, L1_SIZE * 12> bias0{};
-    std::array<int16_t, L1_SIZE * OUTPUT_SIZE * 2 * 12> weights1{};
-    std::array<int16_t, OUTPUT_SIZE> bias1{};
+    std::array<int16_t, L1_SIZE * L2_SIZE * 2 * 12> weights1{};
+    std::array<int16_t, L2_SIZE> bias1{};
+    std::array<float, L2_SIZE * L3_SIZE> weights2;
+    std::array<float, L3_SIZE> bias2;
+    std::array<float, L3_SIZE * OUTPUT_SIZE> weights3;
+    std::array<float, OUTPUT_SIZE> bias3;
     std::array<int16_t, L1_SIZE * 2> accumulator{};
     std::array<int16_t, L1_SIZE * 3 * 2> wdlWeights{};
     std::array<int16_t, 3> wdlBias{};
