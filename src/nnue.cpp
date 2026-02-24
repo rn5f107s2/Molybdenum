@@ -55,8 +55,8 @@ void Net::loadDefaultNet() {
                     int  oldStm = L1_SIZE * pc + (sq * MINI_ACC_SIZE) + n;
                     int oldNstm = L1_SIZE * makePiece(typeOf(pc), !colorOf(pc)) + ((sq ^ 56) * MINI_ACC_SIZE) + n;
 
-                    weights1[stmIdx  * L2_SIZE + m                    ] = defaultWeights.weights1[oldStm  + m];
-                    weights1[nstmIdx * L2_SIZE + m + L1_SIZE * L2_SIZE] = defaultWeights.weights1[oldNstm + m + L1_SIZE * L2_SIZE * 12];
+                    weights1[stmIdx  * L2_SIZE + m                    ] = defaultWeights.weights1[L2_SIZE * oldStm  + m];
+                    weights1[nstmIdx * L2_SIZE + m + L1_SIZE * L2_SIZE] = defaultWeights.weights1[L2_SIZE * oldNstm + m + L1_SIZE * L2_SIZE * 12];
                 }
             }
         }
