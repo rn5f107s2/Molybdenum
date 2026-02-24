@@ -52,6 +52,11 @@ void Net::loadDefaultNet() {
                     int  stmIdx = L1_SIZE * 2 * pc + (sq * MINI_ACC_SIZE * 2) + n;
                     int nstmIdx = stmIdx + MINI_ACC_SIZE;
 
+                    // original
+                    // weights1[side][pc][sq][l1_idx][l2_idx]
+                    // target
+                    // weights1[pc][sq][side][l1_idx][l2_idx]
+
                     int  oldStm = L1_SIZE * pc + (sq * MINI_ACC_SIZE) + n;
                     int oldNstm = L1_SIZE * makePiece(typeOf(pc), !colorOf(pc)) + ((sq ^ 56) * MINI_ACC_SIZE) + n;
 
@@ -66,7 +71,7 @@ void Net::loadDefaultNet() {
         for (int pc = 0; pc < 12; pc++)
             for (int n = 0; n < MINI_ACC_SIZE; n++)
                 bias0[L1_SIZE * 2 * typeOf(pc) + (colorOf(pc) ? sq : sq ^ 56) * MINI_ACC_SIZE * 2 + MINI_ACC_SIZE * (!colorOf(pc)) + n]
-                = int16_t(255 * (defaultWeights.bias0[sq * MINI_ACC_SIZE + L1_SIZE * pc + n] + defaultWeights.weights0[index_old<WHITE>(pc, sq, pc, sq) + n]));
+                = int16_t((defaultWeights.bias0[sq * MINI_ACC_SIZE + L1_SIZE * pc + n] + defaultWeights.weights0[index_old<WHITE>(pc, sq, pc, sq) + n]) * 255);
 
     weights2 = defaultWeights.weights2;
     bias2    = defaultWeights.bias2;
