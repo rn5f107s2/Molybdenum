@@ -1,7 +1,7 @@
 #ifndef MOLYBDENUM_TUNE_H
 #define MOLYBDENUM_TUNE_H
 
-//#define TUNE
+#define TUNE
 
 #ifdef TUNE
 
@@ -13,18 +13,22 @@
 struct Tune {
     float LMRDiv, LMRBase, LMRImproving;
     int LMRDepth, LMRMovecount;
-    int AspiBase, AspiLo, AspiHi, AspiDepth, AspiWide;
-    int RFPBase, RFPImproving, RFPDepth;
+    int AspiBase, AspiLo, AspiHi, AspiDepth;
+    float AspiWide;
+    int RFPBase, RFPImproving, RFPDepth, RFPWorse;
     int NMPDepth, NMPSeThreshold, NMPDepthThreshold, NMPBaseRed;
-    int MCPDepth, MCPMultiplier;
-    int FPDepth, FPBase, FPMult;
-    int HistDepth, HistMult;
+    int ExtKeep;
+    int MCPDepth, MCPBase, MCPImproving, MCPQuarterMul, MCPDepthMul;
+    int FPDepth, FPBase, FPMult, FPQuarter;
+    int HistDepth, HistMult, HistQuarter;
+    int SEDepth, SETTDepthDiff, SESBBase, SESBMC, SESBMCMax;
+    int LMRHistPos, LMRHistNeg, LMRNightmareMargin, LMRNightmareMovecount;
     int QsSEEMargin, QsDeltaMargin;
     int HistDepthMult, HistMax, HistLimit;
     int SEEPawn, SEEKnight, SEEBishop, SEERook, SEEQueen;
 };
 
-class TuneOptions: public UCIOptions {
+class TuneOptions : public UCIOptions {
     public:
         bool setOption(const std::string &name, int value) override {
             UCIOptionSpin *option = findOptionSpin(name);
@@ -32,7 +36,8 @@ class TuneOptions: public UCIOptions {
             if (!option)
                 return false;
 
-            option->setter = reinterpret_cast<void (*)(int)>(value);
+            option->current = value;
+
             return true;
         };
 
@@ -44,7 +49,7 @@ class TuneOptions: public UCIOptions {
                 return 0;
             }
 
-            return int(reinterpret_cast<u64>(option->setter));
+            return int(option->current);
         }
 
         void printSPSAConfig() {
@@ -70,10 +75,10 @@ class TuneOptions: public UCIOptions {
 };
 
 
-#define RANGE(x, y, z) int(y), int(z), int(x), reinterpret_cast<void (*)(int)>(x)
+#define RANGE(x, y, z) int(y), int(z), int(x)
 
-#define UPDATEFLOAT(x) tune.x = float(tuneOptions.getValue(#x)) / 100;
-#define UPDATEINT(x) tune.x = tuneOptions.getValue(#x);
+#define UPDATEFLOAT(x) tune.x = float(getValue(#x)) / 100;
+#define UPDATEINT(x) tune.x = getValue(#x);
 #define TUNEFLOAT(w, x, y, z) if (!initialized) {spinOptions.push(UCIOptionSpin(#w, RANGE(int(x * 100), int(y * 100), int(z * 100))));} UPDATEFLOAT(w)
 #define TUNEINT(w, x, y, z) if (!initialized) {spinOptions.push(UCIOptionSpin(#w, RANGE(x, y, z)));} UPDATEINT(w)
 
@@ -81,48 +86,67 @@ extern TuneOptions tuneOptions;
 extern Tune tune;
 
 inline void TuneOptions::init() {
-    TUNEFLOAT(LMRBase, 0.75, 0.01, 4)
-    TUNEFLOAT(LMRDiv, 2.19, 0.01, 8)
-    TUNEFLOAT(LMRImproving, 0.55, 0, 2)
-    TUNEINT(LMRDepth, 2, 1, 4)
+    TUNEFLOAT(LMRBase, 0.66, 0.01, 2)
+    TUNEFLOAT(LMRDiv, 2.10, 0.01, 4)
+    TUNEFLOAT(LMRImproving, 0.46, 0, 2)
+    TUNEINT(LMRDepth, 1, 1, 4)
     TUNEINT(LMRMovecount, 2, 1, 4)
 
-    TUNEINT(AspiBase, 83, 1, 160)
-    TUNEINT(AspiLo, 24, 1, 200)
-    TUNEINT(AspiHi, 49, 1, 300)
+    TUNEINT(AspiBase, 79, 1, 160)
+    TUNEINT(AspiLo, 23, 1, 200)
+    TUNEINT(AspiHi, 34, 1, 300)
     TUNEINT(AspiDepth, 2, 2, 10)
-    TUNEINT(AspiWide, 3, 1, 5)
+    TUNEFLOAT(AspiWide, 1.23, 1.01, 3.00)
 
-    TUNEINT(RFPBase, 115, 1, 300)
-    TUNEINT(RFPImproving, 203, 1, 400)
-    TUNEINT(RFPDepth, 9, 3, 15)
+    TUNEINT(RFPBase, 100, 1, 300)
+    TUNEINT(RFPImproving, 164, 1, 400)
+    TUNEINT(RFPDepth, 10, 3, 15)
+    TUNEINT(RFPWorse, 43, 1, 150)
 
     TUNEINT(NMPDepth, 2, 1, 10)
-    TUNEINT(NMPSeThreshold, 274, 1, 500)
+    TUNEINT(NMPSeThreshold, 290, 1, 500)
     TUNEINT(NMPDepthThreshold, 6, 1, 12)
-    TUNEINT(NMPBaseRed, 3, 1, 6)
+    TUNEINT(NMPBaseRed, 4, 1, 6)
+
+    TUNEINT(ExtKeep, 13, 1, 30)
 
     TUNEINT(MCPDepth, 4, 1, 24)
-    TUNEINT(MCPMultiplier, 12, 1, 24)
+    TUNEINT(MCPBase, 768, 256, 1536)
+    TUNEINT(MCPImproving, 256, 1, 768)
+    TUNEINT(MCPQuarterMul, 10, 1, 20)
+    TUNEINT(MCPDepthMul, 11, 5, 17)
 
     TUNEINT(FPDepth, 7, 1, 24)
-    TUNEINT(FPMult, 209, 1, 400)
-    TUNEINT(FPBase, 179, 1, 350)
+    TUNEINT(FPMult, 212, 1, 400)
+    TUNEINT(FPBase, 192, 1, 350)
+    TUNEINT(FPQuarter, 198, 1, 350);
 
-    TUNEINT(HistDepth, 5, 1, 20)
-    TUNEINT(HistMult, -5460, -9000, -1)
+    TUNEINT(HistDepth, 6, 1, 20)
+    TUNEINT(HistMult, -6011, -9000, -1)
+    TUNEINT(HistQuarter, -6305, -9000, -1)
 
-    TUNEINT(QsSEEMargin, -94, -200, -1)
-    TUNEINT(QsDeltaMargin, 159, 1, 300)
+    TUNEINT(SEDepth, 8, 4, 12)
+    TUNEINT(SETTDepthDiff, 3, 0, 5)
+    TUNEINT(SESBBase, 12, 0, 24)
+    TUNEINT(SESBMC, 2, 1, 3)
+    TUNEINT(SESBMCMax, 12, 1, 24)
 
-    TUNEINT(HistDepthMult, 16, 1, 32)
-    TUNEINT(HistMax, 1638, 1, 3000)
+    TUNEINT(LMRHistPos, 4085, 1000, 20000)
+    TUNEINT(LMRHistNeg, 25329, 10000, 30000)
+    TUNEINT(LMRNightmareMargin, 100, 20, 180);
+    TUNEINT(LMRNightmareMovecount, 3, 1, 6);
+
+    TUNEINT(QsSEEMargin, -108, -200, -1)
+    TUNEINT(QsDeltaMargin, 147, 1, 300)
+
+    TUNEINT(HistDepthMult, 16, 8, 22)
+    TUNEINT(HistMax, 1670, 1, 3000)
     TUNEINT(HistLimit, 15, 1, 20)
 
-    TUNEINT(SEEPawn, 100, 1, 1200)
-    TUNEINT(SEEKnight, 299, 1, 1200)
-    TUNEINT(SEEBishop, 281, 1, 1200)
-    TUNEINT(SEERook, 538, 1, 1200)
+    TUNEINT(SEEPawn, 81, 1, 1200)
+    TUNEINT(SEEKnight, 257, 1, 1200)
+    TUNEINT(SEEBishop, 325, 1, 1200)
+    TUNEINT(SEERook, 491, 1, 1200)
     TUNEINT(SEEQueen, 972, 1, 1200)
 
     initialized = true;

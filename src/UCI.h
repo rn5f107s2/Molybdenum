@@ -13,6 +13,8 @@
 #include <vector>
 #include <sstream>
 
+extern TuneOptions tuneOptions;
+
 class UCI {
 
 private:

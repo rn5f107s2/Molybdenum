@@ -17,12 +17,14 @@ class UCIOptionSpin {
             this->max = max;
             this->dfault = dfault;
             this->setter = setter;
+            this->current = dfault;
         }
 
         std::string name;
         int min;
         int max;
         int dfault;
+        int current;
         void (UCIOptions::*setter)(int);
 };
 
