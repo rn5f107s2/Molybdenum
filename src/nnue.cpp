@@ -29,37 +29,11 @@
 #endif
 
 INCBIN(network, EVALFILE);
-INCBIN(wdlHead, WDLFILE);
 
 const Weights defaultWeights = *reinterpret_cast<const Weights*>(gnetworkData);
-const WDLHead defaultWdl     = *reinterpret_cast<const WDLHead*>(gwdlHeadData);
+const WDLHead defaultWdl     = *reinterpret_cast<const WDLHead*>(gnetworkData);
 
 void Net::loadDefaultNet() {
-    bias1 = defaultWeights.bias1;
-    weights0 = defaultWeights.weights0;
-
-    for (int fpc = 0; fpc < 12; fpc++)
-       for (int fsq = 0; fsq < 64; fsq++)
-            for (int bpc = 0; bpc < 12; bpc++)
-                for (int bsq = 0; bsq < 64; bsq++)
-                    for (int n = 0; n < MINI_ACC_SIZE; n++)
-                        weights0[index_new<WHITE>(bpc, bsq, fpc, fsq) + n] = defaultWeights.weights0[index_old<WHITE>(bpc, bsq, fpc, fsq) + n];
-
-    for (int sq = 0; sq < 64; sq++) {
-        for (int pc = 0; pc < 12; pc++) {
-            for (int n = 0; n < MINI_ACC_SIZE; n++) {
-                weights1[L1_SIZE * 2 * pc + (sq * MINI_ACC_SIZE * 2) +                 n] = defaultWeights.weights1[L1_SIZE * pc + (sq * MINI_ACC_SIZE) + n];
-                weights1[L1_SIZE * 2 * pc + (sq * MINI_ACC_SIZE * 2) + MINI_ACC_SIZE + n] = defaultWeights.weights1[L1_SIZE * makePiece(typeOf(pc), !colorOf(pc)) + ((sq ^ 56) * MINI_ACC_SIZE) + n + L1_SIZE * 12];
-            }
-        }
-    }
-
-    for (int sq = 0; sq < 64; sq++)
-        for (int pc = 0; pc < 12; pc++)
-            for (int n = 0; n < MINI_ACC_SIZE; n++)
-                bias0[L1_SIZE * 2 * typeOf(pc) + (colorOf(pc) ? sq : sq ^ 56) * MINI_ACC_SIZE * 2 + MINI_ACC_SIZE * (!colorOf(pc)) + n]
-                = defaultWeights.bias0[sq * MINI_ACC_SIZE + L1_SIZE * pc + n] + weights0[index_new<WHITE>(pc, sq, pc, sq) + n];
-
     wdlWeights = defaultWdl.weights1;
     wdlBias    = defaultWdl.bias1;
 }
