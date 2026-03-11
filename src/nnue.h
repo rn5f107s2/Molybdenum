@@ -16,7 +16,7 @@ enum Toggle {
 };
 
 static const int INPUT_SIZE = 12 * 64;
-static const int MINI_ACC_SIZE = 8;
+static const int MINI_ACC_SIZE = 16;
 static const int L1_SIZE = MINI_ACC_SIZE * 64;
 static const int OUTPUT_SIZE = 1;
 static const int NET_SIZE = 3;
@@ -55,6 +55,9 @@ public:
 
     template<Color C> inline
     void loadWeightsVec(__m256i& w, int offset);
+
+    template<Color C> inline
+    void loadWeightsVecs(__m256i& w1, __m256i& w2, int offset);
 
     template<Color ON_COLOR, Color OFF_COLOR>
     void addSubSingle(int sq, int onOffset, int offOffset);
@@ -158,78 +161,111 @@ void Net::loadWeightsVec(__m256i& w, int offset) {
     }
 }
 
+template<Color C> inline
+void Net::loadWeightsVecs(__m256i& w1, __m256i& w2, int offset) {
+    if constexpr (C) {
+        w1 = _mm256_loadu_si256((const __m256i *)(&weights0[0] + offset     ));
+        w2 = _mm256_loadu_si256((const __m256i *)(&weights0[0] + offset + 16));
+    } else {
+        w1 = _mm256_loadu_si256((const __m256i *)(&weights0[0] + offset     ));
+        w2 = _mm256_loadu_si256((const __m256i *)(&weights0[0] + offset - 16));
+    }
+}
+
 template<Color C> 
 inline void refreshSingle(Net* net, int offset, int bsq) {
     int idx = bsq * MINI_ACC_SIZE * 2;
 
-    __m256i w;
+    __m256i w1, w2;
    
-    net->loadWeightsVec<C>(w, offset);
+    net->loadWeightsVecs<C>(w1, w2, offset);
 
-    __m256i acc = _mm256_loadu_si256((__m256i *)(&net->accumulator[0] + idx));
+    __m256i acc1 = _mm256_loadu_si256((__m256i *)(&net->accumulator[0] + idx     ));
+    __m256i acc2 = _mm256_loadu_si256((__m256i *)(&net->accumulator[0] + idx + 16));
 
-    acc = _mm256_add_epi16(acc, w);
+    acc1 = _mm256_add_epi16(acc1, w1);
+    acc2 = _mm256_add_epi16(acc2, w2);
 
-    _mm256_storeu_si256((__m256i *)(&net->accumulator[0] + idx), acc);  
+    _mm256_storeu_si256((__m256i *)(&net->accumulator[0] + idx     ), acc1);  
+    _mm256_storeu_si256((__m256i *)(&net->accumulator[0] + idx + 16), acc2);  
 }
 
 template<Color ON_COLOR, Color OFF_COLOR>
 inline void Net::addSubSingle(int sq, int onOffset, int offOffset) {
     int idx = sq * MINI_ACC_SIZE * 2;
 
-    __m256i wA, wS;
+    __m256i wA1, wS1, wA2, wS2;
+    __m256i acc1;
+    __m256i acc2;
 
-    loadWeightsVec< ON_COLOR>(wA, onOffset);
-    loadWeightsVec<OFF_COLOR>(wS, offOffset);
+    loadWeightsVecs< ON_COLOR>(wA1, wA2, onOffset);
+    loadWeightsVecs<OFF_COLOR>(wS1, wS2, offOffset);
 
-    __m256i acc = _mm256_loadu_si256((__m256i *)(&accumulator[0] + idx));
+    acc1 = _mm256_loadu_si256((__m256i *)(&accumulator[0] + idx     ));
+    acc2 = _mm256_loadu_si256((__m256i *)(&accumulator[0] + idx + 16));
 
-    acc = _mm256_add_epi16(acc, wA);
-    acc = _mm256_sub_epi16(acc, wS);
+    acc1 = _mm256_add_epi16(acc1, wA1);
+    acc1 = _mm256_sub_epi16(acc1, wS1);
+    acc2 = _mm256_add_epi16(acc2, wA2);
+    acc2 = _mm256_sub_epi16(acc2, wS2);
 
-    _mm256_storeu_si256((__m256i *)(&accumulator[0] + idx), acc);
+    _mm256_storeu_si256((__m256i *)(&accumulator[0] + idx     ), acc1);
+    _mm256_storeu_si256((__m256i *)(&accumulator[0] + idx + 16), acc2);
 }
 
 template<Color ON_COLOR, Color OFF_COLOR, Color CAP_COLOR>
 inline void Net::addSubSubSingle(int sq, int onOffset, int offOffset, int capOffset) {
     int idx = sq * MINI_ACC_SIZE * 2;
 
-    __m256i wA, wS1, wS2;
+    __m256i wA1, wS11, wS21;
+    __m256i wA2, wS12, wS22;
 
-    loadWeightsVec<ON_COLOR >(wA,  onOffset);
-    loadWeightsVec<OFF_COLOR>(wS1, offOffset);
-    loadWeightsVec<CAP_COLOR>(wS2, capOffset);
+    loadWeightsVecs<ON_COLOR >(wA1, wA2, onOffset);
+    loadWeightsVecs<OFF_COLOR>(wS11, wS12, offOffset);
+    loadWeightsVecs<CAP_COLOR>(wS21, wS22, capOffset);
 
-    __m256i acc = _mm256_loadu_si256((__m256i *)(&accumulator[0] + idx));
+    __m256i acc1 = _mm256_loadu_si256((__m256i *)(&accumulator[0] + idx     ));
+    __m256i acc2 = _mm256_loadu_si256((__m256i *)(&accumulator[0] + idx + 16));
 
-    acc = _mm256_add_epi16(acc, wA );
-    acc = _mm256_sub_epi16(acc, wS1);
-    acc = _mm256_sub_epi16(acc, wS2);
+    acc1 = _mm256_add_epi16(acc1, wA1 );
+    acc1 = _mm256_sub_epi16(acc1, wS11);
+    acc1 = _mm256_sub_epi16(acc1, wS21);
+    acc2 = _mm256_add_epi16(acc2, wA2 );
+    acc2 = _mm256_sub_epi16(acc2, wS12);
+    acc2 = _mm256_sub_epi16(acc2, wS22);
 
-    _mm256_storeu_si256((__m256i *)(&accumulator[0] + idx), acc);
+    _mm256_storeu_si256((__m256i *)(&accumulator[0] + idx     ), acc1);
+    _mm256_storeu_si256((__m256i *)(&accumulator[0] + idx + 16), acc2);
 }
 
 template<Color C>
 inline void Net::addaddSubSubSingle(int sq, int add1Offset, int add2Offset, int sub1Offset, int sub2Offset) {
     int idx = sq * MINI_ACC_SIZE * 2;
 
-    __m256i wA1, wA2, wS1, wS2;
+    __m256i wA11, wA21, wS11, wS21;
+    __m256i wA12, wA22, wS12, wS22;
 
-    __m256i acc = _mm256_loadu_si256((__m256i *)(&accumulator[0] + idx));
+    __m256i acc1 = _mm256_loadu_si256((__m256i *)(&accumulator[0] + idx     ));
+    __m256i acc2 = _mm256_loadu_si256((__m256i *)(&accumulator[0] + idx + 16));
 
-    loadWeightsVec<C>(wA1, add1Offset);
-    loadWeightsVec<C>(wA2, add2Offset);
+    loadWeightsVecs<C>(wA11, wA12, add1Offset);
+    loadWeightsVecs<C>(wA21, wA22, add2Offset);
 
-    acc = _mm256_add_epi16(acc, wA1);
-    acc = _mm256_add_epi16(acc, wA2);
+    acc1 = _mm256_add_epi16(acc1, wA11);
+    acc1 = _mm256_add_epi16(acc1, wA21);
+    acc2 = _mm256_add_epi16(acc2, wA12);
+    acc2 = _mm256_add_epi16(acc2, wA22);
 
-    loadWeightsVec<C>(wS1, sub1Offset);
-    loadWeightsVec<C>(wS2, sub2Offset);
+    loadWeightsVecs<C>(wS11, wS12, sub1Offset);
+    loadWeightsVecs<C>(wS21, wS22, sub2Offset);
 
-    acc = _mm256_sub_epi16(acc, wS1);
-    acc = _mm256_sub_epi16(acc, wS2);
+    acc1 = _mm256_sub_epi16(acc1, wS11);
+    acc1 = _mm256_sub_epi16(acc1, wS21);
+    acc2 = _mm256_sub_epi16(acc2, wS12);
+    acc2 = _mm256_sub_epi16(acc2, wS22);
 
-    _mm256_storeu_si256((__m256i *)(&accumulator[0] + idx), acc);
+    _mm256_storeu_si256((__m256i *)(&accumulator[0] + idx     ), acc1);
+    _mm256_storeu_si256((__m256i *)(&accumulator[0] + idx + 16), acc2);
 }
 
 template<Color ON_COLOR, Color OFF_COLOR>
