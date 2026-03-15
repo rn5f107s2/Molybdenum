@@ -18,6 +18,7 @@
 #include "nnue.h"
 #include "Datagen/Datagen.h"
 #include "thread.h"
+#include "bookgen.h"
 
 void UCI::d([[maybe_unused]] const std::string &args) {
     internalBoard.printBoard();
@@ -208,6 +209,8 @@ void UCI::stop([[maybe_unused]] const std::string &args) {
 }
 
 void UCI::start(int argc, char** argv) {
+    generate(internalBoard, "testbook.txt", 10000);
+
     if (argc == 1)
         return loop();
 

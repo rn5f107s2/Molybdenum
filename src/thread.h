@@ -44,8 +44,6 @@ public:
 };
 
 class ThreadPool {
-    std::vector<Thread> threads;
-
 public:
     void start(Position &pos, SearchTime &st, int depth);
     void join();
@@ -55,6 +53,8 @@ public:
     bool done();
 
     u64 nodes();
+
+    std::vector<Thread> threads;
 };
 
 #endif
