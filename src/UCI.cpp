@@ -209,7 +209,9 @@ void UCI::stop([[maybe_unused]] const std::string &args) {
 }
 
 void UCI::start(int argc, char** argv) {
-    generate(internalBoard, "testbook.txt", 10000);
+    internalBoard.setBoard("r1bq1rk1/pp2ppbp/2np1np1/8/3NP3/2N1BP2/PPPQ2PP/R3KB1R w KQ - 3 9");
+
+    generate(internalBoard, "testbook.txt", 5000);
 
     if (argc == 1)
         return loop();

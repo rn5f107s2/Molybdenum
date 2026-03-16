@@ -54,19 +54,38 @@ void generateSingle(Position& pos, Node* current, ThreadPool& tp, SearchTime& st
         current->visited = true;
 }
 
-void collect(Position& pos, std::ofstream& outfile, Node* current) {
+void collect(Position& pos, std::ofstream& outfile, Node* current, ThreadPool& tp, FilterSettings& settings) {
     if (!current->visited)
         return;
 
     if (!current->children) {
-        outfile << pos.fen() << "\n";
+        if ((rand() / double(RAND_MAX)) <= settings.randomFilter)
+            return;
+
+        SearchTime st; 
+
+        st.limit = Nodes; 
+        st.nodeLimit = settings.filterNodes;
+
+        int t = maxTemp;
+        maxTemp = 0;
+
+        tp.start(pos, st, settings.filterDepth);
+        tp.join();
+
+        maxTemp = t;
+
+        if (   abs(tp.threads[0].state.si.prevScore) >= settings.filterLowerBound 
+            && abs(tp.threads[0].state.si.prevScore) <= settings.filterUpperBound)
+            outfile << pos.fen() << std::endl;
+
         return;
     }
 
     for (int i = 0; i < current->ml.length; i++) {
         pos.makeMove(current->ml.moves[i].move); pos.movecount++;
 
-        collect(pos, outfile, current->children + i);
+        collect(pos, outfile, current->children + i, tp, settings);
 
         pos.unmakeMove(current->ml.moves[i].move); pos.movecount--;
     }
@@ -85,7 +104,9 @@ void generate(Position& pos, const std::string& bookName, int positions) {
 
     std::ofstream outfile(bookName);
 
-    collect(pos, outfile, &root);
+    FilterSettings settings;
+
+    collect(pos, outfile, &root, tp, settings);
 
     std::cout << "Done!" << std::endl;
 }

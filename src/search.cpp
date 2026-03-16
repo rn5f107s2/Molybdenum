@@ -18,6 +18,7 @@ Tune tune;
 #endif
 
 bool prettyprint = false;
+int maxTemp = 100;
 
 std::string SearchState::outputWDL(Position &pos) {
     // currently not working
@@ -69,7 +70,7 @@ int SearchState::iterativeDeepening(Position &pos, SearchTime &st, int maxDepth,
     for (int i = 0; i < ml.length; i++) {
         Move m = ml.moves[i].move;
 
-        const double maxStart = 100;
+        const double maxStart = maxTemp;
         const double maxDropoff = 1.0;
 
         const double tempStart = 1.0;
@@ -139,6 +140,8 @@ int SearchState::iterativeDeepening(Position &pos, SearchTime &st, int maxDepth,
             thread->threads->stop();
             break;
         }
+
+        si.prevScore = score;
     }
 
     thread->searching.store(false, std::memory_order_relaxed);
@@ -174,7 +177,7 @@ int SearchState::aspirationWindow(int prevScore, Position &pos, SearchInfo &si, 
 
     int score = search<Root>(alpha, beta, pos, depth, si, &stack[2]);
 
-    while ((score >= beta || score <= alpha) && !stop<Hard>(si.st, si)) {
+    while ((score >= beta || score <= alpha) && !si.stop.load(std::memory_order_relaxed)) {
         delta *= 1.23;
 
         if (score >= beta)

@@ -18,6 +18,7 @@ extern Tune tune;
 #endif
 
 extern bool prettyprint;
+extern int maxTemp;
 
 class Thread;
 
@@ -26,6 +27,7 @@ struct SearchInfo {
     SearchTime st;
     int rootMoveCount = 0;
     int selDepth = 0;
+    int prevScore = 0;
 
 public:
     std::atomic_uint64_t nodeCount = 0;
