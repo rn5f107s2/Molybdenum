@@ -385,36 +385,27 @@ inline void Net::addaddSubSub(Position& pos, uint64_t cleanBitboard, int from, i
     }
 }
 
+// https://stackoverflow.com/a/35270026
+inline int reduce_sum_avx2(__m256i v) {
+    __m128i hi128 = _mm256_extracti128_si256(v, 1);
+    __m128i lo128 = _mm256_castsi256_si128(v);
+    __m128i sum128 = _mm_add_epi32(hi128, lo128);
+    __m128i sum64 = _mm_add_epi32(sum128, _mm_unpackhi_epi64(sum128, sum128));
+    __m128i sum32 = _mm_add_epi32(sum64, _mm_shufflelo_epi16(sum64, _MM_SHUFFLE(1, 0, 3, 2)));
+
+    return _mm_cvtsi128_si32(sum32);
+}
+
 template<Color C> inline
+__attribute__ ((noinline))
 int Net::calculate(uint64_t occupied, Piece* mailbox) {
     int output = 0;
 
-    while (occupied & (occupied - 1)) {
-        int sq1 = popLSB(occupied);
-        int sq2 = popLSB(occupied);
+    __m256i sum  = _mm256_setzero_ps();
+    __m256i zero = _mm256_setzero_ps();
+    __m256i qa   = _mm256_set1_epi16(255);
 
-        int ourPiece1 = mailbox[sq1 ^ (56 * (C == BLACK))];
-        int ourPiece2 = mailbox[sq2 ^ (56 * (C == BLACK))];
-
-        if constexpr (C == BLACK) {
-            ourPiece1 = makePiece(typeOf(ourPiece1), !colorOf(ourPiece1));
-            ourPiece2 = makePiece(typeOf(ourPiece2), !colorOf(ourPiece2));
-        }
-
-        for (int i = 0; i < MINI_ACC_SIZE; i++) {
-            int nUs1   = ((sq1 ^ (56 * (C == BLACK))) * MINI_ACC_SIZE * 2) + (MINI_ACC_SIZE * (C == BLACK)) + i;
-            int nThem1 = ((sq1 ^ (56 * (C == BLACK))) * MINI_ACC_SIZE * 2) + (MINI_ACC_SIZE * (C == WHITE)) + i;
-            int nUs2   = ((sq2 ^ (56 * (C == BLACK))) * MINI_ACC_SIZE * 2) + (MINI_ACC_SIZE * (C == BLACK)) + i;
-            int nThem2 = ((sq2 ^ (56 * (C == BLACK))) * MINI_ACC_SIZE * 2) + (MINI_ACC_SIZE * (C == WHITE)) + i;
-
-            output += screlu(accumulator[nUs1  ]) * weights1[L1_SIZE * 2 * ourPiece1 + (sq1 * MINI_ACC_SIZE * 2) + i                ];
-            output += screlu(accumulator[nThem1]) * weights1[L1_SIZE * 2 * ourPiece1 + (sq1 * MINI_ACC_SIZE * 2) + i + MINI_ACC_SIZE];
-            output += screlu(accumulator[nUs2  ]) * weights1[L1_SIZE * 2 * ourPiece2 + (sq2 * MINI_ACC_SIZE * 2) + i                ];
-            output += screlu(accumulator[nThem2]) * weights1[L1_SIZE * 2 * ourPiece2 + (sq2 * MINI_ACC_SIZE * 2) + i + MINI_ACC_SIZE];
-        }
-    }
-
-    if (occupied) {
+    while (occupied) {
         int sq = popLSB(occupied);
 
         int ourPiece   = mailbox[sq ^ (56 * (C == BLACK))];
@@ -426,14 +417,28 @@ int Net::calculate(uint64_t occupied, Piece* mailbox) {
             theirPiece = temp;
         }
 
-        for (int i = 0; i < MINI_ACC_SIZE; i++) {
+        for (int i = 0; i < MINI_ACC_SIZE; i += (sizeof(__m256i) / sizeof(int16_t))) {
             int nUs   = ((sq ^ (56 * (C == BLACK))) * MINI_ACC_SIZE * 2) + (MINI_ACC_SIZE * (C == BLACK)) + i;
             int nThem = ((sq ^ (56 * (C == BLACK))) * MINI_ACC_SIZE * 2) + (MINI_ACC_SIZE * (C == WHITE)) + i;
 
-            output += screlu(accumulator[nUs  ]) * weights1[L1_SIZE * 2 * ourPiece + (sq * MINI_ACC_SIZE * 2) + i                ];
-            output += screlu(accumulator[nThem]) * weights1[L1_SIZE * 2 * ourPiece + (sq * MINI_ACC_SIZE * 2) + i + MINI_ACC_SIZE];
+            __m256i accUs   = _mm256_load_si256((__m256i*) &accumulator[nUs  ]);
+            __m256i accThem = _mm256_load_si256((__m256i*) &accumulator[nThem]);
+
+            __m256i cUs   = _mm256_max_epi16(_mm256_min_epi16(accUs  , qa), zero);
+            __m256i cThem = _mm256_max_epi16(_mm256_min_epi16(accThem, qa), zero);
+
+            __m256i wUs   = _mm256_load_si256((__m256i*) &weights1[L1_SIZE * 2 * ourPiece + (sq * MINI_ACC_SIZE * 2) + i                ]);
+            __m256i wThem = _mm256_load_si256((__m256i*) &weights1[L1_SIZE * 2 * ourPiece + (sq * MINI_ACC_SIZE * 2) + i + MINI_ACC_SIZE]);
+
+            __m256i prodUs   =  _mm256_madd_epi16(cUs  , _mm256_mullo_epi16(cUs  , wUs  ));
+            __m256i prodThem =  _mm256_madd_epi16(cThem, _mm256_mullo_epi16(cThem, wThem));
+
+            sum = _mm256_add_epi32(sum, prodUs  );
+            sum = _mm256_add_epi32(sum, prodThem);
         }
     }
+
+    output = reduce_sum_avx2(sum);
 
     return ((output / 255) + bias1[0]) * 133 / (64 * 255);
 }
