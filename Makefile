@@ -8,20 +8,23 @@ DEFAULT_WDL_HEAD_NAME=70302DAC
 
 DEFAULT_EXE = $(OBJ_DIR)/Molybdenum
 DATAGEN_EXE = $(OBJ_DIR)/Datagen
+PREPROCESS_EXE = $(OBJ_DIR)/Preprocess
 DEFAULT_NET = $(DEFAULT_NET_NAME)
 DEFAULT_WDL_HEAD = $(DEFAULT_WDL_HEAD_NAME)
+
+PREPROCESSED_NET = $(OBJ_DIR)/preprocessed.nnue
 
 EVALFILE ?= $(DEFAULT_NET)
 WDLFILE = $(EVALFILE)
 
-all: $(DEFAULT_EXE)
+all: $(DEFAULT_EXE) clean_preprocess
 
-datagen: $(DATAGEN_EXE)
+datagen: $(DATAGEN_EXE) clean_preprocess
 
 CXXFLAGS = -static -Ofast -std=c++17
 CXXFLAGS += -Wall -Wextra -pedantic
 CXXFLAGS += -march=native
-CXXFLAGS += -DEVALFILE=\"$(EVALFILE)\" -DWDLFILE=\"$(WDLFILE)\"
+CXXFLAGS += -DWDLFILE=\"$(WDLFILE)\"
 
 LDFLAGS += -static -Ofast -march=native
 
@@ -32,15 +35,19 @@ endif
 SOURCES := $(wildcard $(SRC_DIR)/*.cpp)
 OBJECTS := $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SOURCES))
 DG_OBJECTS := $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%_dg.o, $(SOURCES)) $(OBJ_DIR)/Datagen.o
+PP_OBJECTS := $(OBJ_DIR)/preprocess.o
 
-$(OBJ_DIR)/%_dg.o: $(SRC_DIR)/%.cpp
-	$(CXX) -I$(SRC_DIR) $(CXXFLAGS) -DDATAGEN -c $< -o $@
+$(OBJ_DIR)/%_dg.o: $(SRC_DIR)/%.cpp $(PREPROCESSED_NET)
+	$(CXX) -I$(SRC_DIR) $(CXXFLAGS) -DEVALFILE=\"$(PREPROCESSED_NET)\" -DDATAGEN -c $< -o $@
 
-$(OBJ_DIR)/Datagen.o: $(SRC_DIR)/Datagen/Datagen.cpp
-	$(CXX) -I$(SRC_DIR) $(CXXFLAGS) -DDATAGEN -c $< -o $@
+$(OBJ_DIR)/Datagen.o: $(SRC_DIR)/Datagen/Datagen.cpp $(PREPROCESSED_NET)
+	$(CXX) -I$(SRC_DIR) $(CXXFLAGS) -DEVALFILE=\"$(PREPROCESSED_NET)\" -DDATAGEN -c $< -o $@
 
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
-	$(CXX) -I$(SRC_DIR) $(CXXFLAGS) -c $< -o $@
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp $(PREPROCESSED_NET)
+	$(CXX) -I$(SRC_DIR) $(CXXFLAGS) -DEVALFILE=\"$(PREPROCESSED_NET)\" -c $< -o $@
+
+$(OBJ_DIR)/preprocess.o: $(SRC_DIR)/util/preprocess.cpp
+	$(CXX) -I$(SRC_DIR) -DEVALFILE=\"$(EVALFILE)\" -c $< -o $@
 
 $(OBJECTS): | $(OBJ_DIR)
 
@@ -58,6 +65,16 @@ $(DEFAULT_EXE): $(OBJECTS)
 $(DATAGEN_EXE): $(DG_OBJECTS)
 	$(CXX) $(LDFLAGS) $(DG_OBJECTS) -o $(DATAGEN_EXE)
 
+$(PREPROCESS_EXE): $(PP_OBJECTS) $(EVALFILE)
+	$(CXX) $(LDFLAGS) $(PP_OBJECTS) -o $(PREPROCESS_EXE)
+
+$(PREPROCESSED_NET): $(PREPROCESS_EXE)
+	./$(PREPROCESS_EXE) $(PREPROCESSED_NET)
+
+.PHONY: clean_preprocess
+clean_preprocess:
+	rm -f $(PREPROCESSED_NET)
+
 .PHONY: clean
 clean:
-	rm -f $(OBJECTS) $(DG_OBJECTS) $(DEFAULT_EXE)
+	rm -f $(OBJECTS) $(DG_OBJECTS) $(PP_OBJECTS) $(DEFAULT_EXE) $(DATAGEN_EXE) $(PREPROCESS_EXE)
