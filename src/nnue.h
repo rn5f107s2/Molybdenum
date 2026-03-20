@@ -397,7 +397,6 @@ inline int reduce_sum_avx2(__m256i v) {
 }
 
 template<Color C> inline
-__attribute__ ((noinline))
 int Net::calculate(uint64_t occupied, Piece* mailbox) {
     int output = 0;
 
