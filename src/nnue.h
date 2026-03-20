@@ -426,6 +426,18 @@ inline void Net::addaddSubSub(Position& pos, uint64_t cleanBitboard, int from, i
     refreshMiniAcc(pos, Piece(rook), rTo);
 }
 
+
+// https://stackoverflow.com/a/35270026
+inline int reduce_sum_avx2(__m256i v) {
+    __m128i hi128 = _mm256_extracti128_si256(v, 1);
+    __m128i lo128 = _mm256_castsi256_si128(v);
+    __m128i sum128 = _mm_add_epi32(hi128, lo128);
+    __m128i sum64 = _mm_add_epi32(sum128, _mm_unpackhi_epi64(sum128, sum128));
+    __m128i sum32 = _mm_add_epi32(sum64, _mm_shufflelo_epi16(sum64, _MM_SHUFFLE(1, 0, 3, 2)));
+
+    return _mm_cvtsi128_si32(sum32);
+}
+
 template<Color C> inline
 int Net::calculate(uint64_t occupied, Piece* mailbox) {
     int output = 0;
