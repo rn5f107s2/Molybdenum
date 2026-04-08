@@ -44,7 +44,7 @@ struct MarlinFormatPackedBoard {
             if (colorOf(molyPc) == BLACK)
                 viriPc |= 0b1000;
 
-            if (~i & 1)
+            if (i & 1)
                 viriPc <<= 4;
 
             pieces[i / 2] |= viriPc;
@@ -128,7 +128,7 @@ inline ViriFormatMove toVFMove(Move move) {
     int vfType = (flag == ENPASSANT) ? 1 : (flag == CASTLING) ? 2 : (flag == PROMOTION) ? 3 : 0;
 
     if (flag == CASTLING)
-        to = ((1ULL << to) & lsb(FILEG)) ? createSquare(0, rankOf(to)) : createSquare(7, rankOf(to));
+        to = ((1ULL << to) & FILEG) ? lsb(createSquare(0, rankOf(to))) : lsb(createSquare(7, rankOf(to)));
 
     // Moly uses h1 = 0, a1 = 0 is more widespread, so convert in order to keep compatibility
     // with other tools
