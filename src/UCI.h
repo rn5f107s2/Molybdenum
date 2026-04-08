@@ -47,6 +47,7 @@ public:
         commands["position"] = &UCI::position;
         commands["setoption"] = &UCI::setoption;
         commands["ucinewgame"] = &UCI::ucinewgame;
+        commands["filteredlegacytovf"] = &UCI::filteredlegacytovf;
 
 
         options.init();
@@ -71,6 +72,7 @@ public:
     void position(const std::string &args);
     void setoption(const std::string &args);
     void ucinewgame(const std::string &args);
+    void filteredlegacytovf(const std::string& args);
 
     void start(int argc, char** argv);
     void loop();

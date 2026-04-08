@@ -4,6 +4,7 @@
 #include <sstream>
 #include <vector>
 #include <iomanip>
+#include <fstream>
 
 #include "tune.h"
 #include "UCI.h"
@@ -18,6 +19,7 @@
 #include "nnue.h"
 #include "Datagen/Datagen.h"
 #include "thread.h"
+#include "util/vfutils.h"
 
 void UCI::d([[maybe_unused]] const std::string &args) {
     internalBoard.printBoard();
@@ -219,6 +221,22 @@ void UCI::start(int argc, char** argv) {
     }
 
     threads.join();
+}
+
+void UCI::filteredlegacytovf(const std::string& args) {
+    std::vector<std::string> splitArgs = split(args);
+
+    if (splitArgs.size() != 2) {
+        std::cout << "Expected exactly two args, infile and outfile, got " << splitArgs.size() << std::endl;
+        return;
+    }
+
+    std::ifstream in(splitArgs[0], std::ios::binary);
+    std::ofstream out(splitArgs[1], std::ios::binary);
+
+    filteredLegacyToVF(in, out);
+
+    std::cout << "Done" << std::endl;
 }
 
 void UCI::loop() {    
