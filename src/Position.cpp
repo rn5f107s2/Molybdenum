@@ -10,6 +10,10 @@ Position::Position() {
     net = new Net();
 }
 
+Position::Position(Net* n) {
+    net = n;
+}
+
 void Position::setBoard(std::string fen) {
     clearBoard();
 

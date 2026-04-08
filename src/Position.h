@@ -46,6 +46,8 @@ class Position {
         inline int ambigious(Move move, u64 attacks);
 
         Position();
+        Position(Net* n);
+
 
     private:
         Stack<Piece>  capturedHistory;

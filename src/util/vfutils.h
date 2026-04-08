@@ -13,6 +13,8 @@ struct Entry {
     int result; // 2 = White win, 1 = Draw, 0 = Black win
 };
 
+static int skipped = 0;
+
 Entry parseNextGame(std::ifstream& in, std::vector<Entry>& entries);
 void processGame(std::vector<Entry>& entries, std::ofstream& out);
 bool findPos(Position& pos, Position& target, int depthDiff, std::vector<Move>& moves, bool first = false);
@@ -21,16 +23,21 @@ void filteredLegacyToVF(std::ifstream& in, std::ofstream& out) {
     std::vector<Entry> entries;
 
     int count = 0;
+    int positions = 0;
+
+    // throw away first game in case of bad split
+    parseNextGame(in, entries);
+    entries.clear();
 
     while (!in.eof()) {
         Entry next = parseNextGame(in, entries);
 
         processGame(entries, out);
 
-        count++;
+        positions += entries.size();
 
-        if (count % 1000 == 0)
-            std::cout << count << " Games done" << std::endl;
+        if (++count % 1000 == 0)
+            std::cout << count << " games with " << positions << " Positions done" << std::endl;
 
         entries.clear();
         entries.push_back(next);
@@ -48,11 +55,16 @@ void processGame(std::vector<Entry>& entries, std::ofstream& out) {
     int16_t score = entries.rbegin()->score;
 
     for (auto it = entries.rbegin() + 1; it < entries.rend(); ++it) {
-        Position target; target.setBoard(it->fen);
+        Position target(pos.net); target.setBoard(it->fen);
         moves.clear();
 
         int entryMc   = std::stoi(split(it->fen, ' ')[5]);
         int depthDiff = entryMc - pos.movecount;
+
+        if (depthDiff >= 9 || depthDiff < 0) {
+            std::cout << "Skipped " << skipped++ << std::endl;
+            return;
+        }
 
         bool found = findPos(pos, target, depthDiff, moves, true);
 
@@ -119,10 +131,7 @@ bool findPos(Position& pos, Position& target, int depthDiff, std::vector<Move>& 
     MoveList ml;
     u64 checkers = attackersTo<false, false>(lsb(pos.bitBoards[pos.sideToMove ? WHITE_KING : BLACK_KING]),pos.getOccupied(), pos.sideToMove ? BLACK_PAWN : WHITE_PAWN, pos);
 
-    if (first)
-        generateMoves<false>(pos, ml, checkers);
-    else
-        generateMoves<true>(pos, ml, checkers);
+    generateMoves<false>(pos, ml, checkers);
 
     for (int i = 0; i < ml.length; i++) {
         Move m = ml.moves[i].move;
