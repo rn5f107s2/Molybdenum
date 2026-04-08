@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <vector> 
+#include <algorithm>
 
 #include "../UCI.h"
 #include "util/viriformat.h"
@@ -14,15 +15,22 @@ struct Entry {
 
 Entry parseNextGame(std::ifstream& in, std::vector<Entry>& entries);
 void processGame(std::vector<Entry>& entries, std::ofstream& out);
-bool findPos(Position& pos, std::string& targetFen, int depthDiff, std::vector<Move>& moves, bool first = false);
+bool findPos(Position& pos, Position& target, int depthDiff, std::vector<Move>& moves, bool first = false);
 
 void filteredLegacyToVF(std::ifstream& in, std::ofstream& out) {
     std::vector<Entry> entries;
+
+    int count = 0;
 
     while (!in.eof()) {
         Entry next = parseNextGame(in, entries);
 
         processGame(entries, out);
+
+        count++;
+
+        if (count % 1000 == 0)
+            std::cout << count << " Games done" << std::endl;
 
         entries.clear();
         entries.push_back(next);
@@ -40,12 +48,13 @@ void processGame(std::vector<Entry>& entries, std::ofstream& out) {
     int16_t score = entries.rbegin()->score;
 
     for (auto it = entries.rbegin() + 1; it < entries.rend(); ++it) {
+        Position target; target.setBoard(it->fen);
         moves.clear();
 
         int entryMc   = std::stoi(split(it->fen, ' ')[5]);
         int depthDiff = entryMc - pos.movecount;
 
-        bool found = findPos(pos, it->fen, depthDiff, moves, true);
+        bool found = findPos(pos, target, depthDiff, moves, true);
 
         if (!found) {
             std::cout << "Did NOT find pos " << it->fen << " from " << pos.fen() << " ! quitting." << std::endl; 
@@ -100,14 +109,20 @@ Entry parseNextGame(std::ifstream& in, std::vector<Entry>& entries) {
     }
 }
 
-bool findPos(Position& pos, std::string& targetFen, int depthDiff, std::vector<Move>& moves, bool first) {
-    if (depthDiff <= 0)
-        return pos.fen() == targetFen;
+bool findPos(Position& pos, Position& target, int depthDiff, std::vector<Move>& moves, bool first) {
+    if (depthDiff <= 0) {
+        return    pos.enPassantSquare == target.enPassantSquare
+               && pos.castlingRights == target.castlingRights
+               && std::equal(&pos.pieceLocations[0], &pos.pieceLocations[0] + pos.pieceLocations.size(), &target.pieceLocations[0]);
+    }
 
     MoveList ml;
     u64 checkers = attackersTo<false, false>(lsb(pos.bitBoards[pos.sideToMove ? WHITE_KING : BLACK_KING]),pos.getOccupied(), pos.sideToMove ? BLACK_PAWN : WHITE_PAWN, pos);
 
-    generateMoves<false>(pos, ml, checkers);
+    if (first)
+        generateMoves<false>(pos, ml, checkers);
+    else
+        generateMoves<true>(pos, ml, checkers);
 
     for (int i = 0; i < ml.length; i++) {
         Move m = ml.moves[i].move;
@@ -119,7 +134,7 @@ bool findPos(Position& pos, std::string& targetFen, int depthDiff, std::vector<M
         pos.movecount++;
         moves.push_back(m);
 
-        bool found = findPos(pos, targetFen, depthDiff - 1, moves);
+        bool found = findPos(pos, target, depthDiff - 1, moves);
 
         pos.movecount--;
         pos.unmakeMove(m);

@@ -187,11 +187,10 @@ inline void pushTargetsToMoveList(int fromSquare, u64 possibleTargets, MoveList 
             }
         }
 
-
         Move move = createMove(fromSquare, toSquare, PROMO_QUEEN, FLAG);
         pushBack(ml, move);
 
-        if constexpr (FLAG == PROMOTION && !CAPTURESONLY)
+        if constexpr (FLAG == PROMOTION)
             for(int promoPiece = PROMO_KNIGHT; promoPiece != PROMO_QUEEN; promoPiece++) {
                 move = createMove(fromSquare, toSquare, promoPiece, FLAG);
                 pushBack(ml, move);
