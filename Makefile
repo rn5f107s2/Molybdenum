@@ -8,6 +8,7 @@ DEFAULT_WDL_HEAD_NAME=70302DAC
 
 DEFAULT_EXE = $(OBJ_DIR)/Molybdenum
 DATAGEN_EXE = $(OBJ_DIR)/Datagen
+UTIL_EXE = $(OBJ_DIR)/vfutils
 PREPROCESS_EXE = $(OBJ_DIR)/Preprocess
 DEFAULT_NET = $(DEFAULT_NET_NAME)
 DEFAULT_WDL_HEAD = $(DEFAULT_WDL_HEAD_NAME)
@@ -20,6 +21,8 @@ WDLFILE = $(EVALFILE)
 all: $(DEFAULT_EXE) clean_preprocess
 
 datagen: $(DATAGEN_EXE) clean_preprocess
+
+util: $(UTIL_EXE) clean_preprocess
 
 CXXFLAGS = -static -Ofast -std=c++17
 CXXFLAGS += -Wall -Wextra -pedantic
@@ -36,6 +39,7 @@ SOURCES := $(wildcard $(SRC_DIR)/*.cpp)
 OBJECTS := $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SOURCES))
 DG_OBJECTS := $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%_dg.o, $(SOURCES)) $(OBJ_DIR)/Datagen.o
 PP_OBJECTS := $(OBJ_DIR)/preprocess.o
+U_OBJECTS := $(OBJ_DIR)/vfutils.o
 
 $(OBJ_DIR)/%_dg.o: $(SRC_DIR)/%.cpp $(PREPROCESSED_NET)
 	$(CXX) -I$(SRC_DIR) $(CXXFLAGS) -DEVALFILE=\"$(PREPROCESSED_NET)\" -DDATAGEN -c $< -o $@
@@ -47,6 +51,9 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp $(PREPROCESSED_NET)
 	$(CXX) -I$(SRC_DIR) $(CXXFLAGS) -DEVALFILE=\"$(PREPROCESSED_NET)\" -c $< -o $@
 
 $(OBJ_DIR)/preprocess.o: $(SRC_DIR)/util/preprocess.cpp
+	$(CXX) -I$(SRC_DIR) -DEVALFILE=\"$(EVALFILE)\" -c $< -o $@
+
+$(OBJ_DIR)/vfutils.o: $(SRC_DIR)/util/preprocess.cpp
 	$(CXX) -I$(SRC_DIR) -DEVALFILE=\"$(EVALFILE)\" -c $< -o $@
 
 $(OBJECTS): | $(OBJ_DIR)
@@ -67,6 +74,9 @@ $(DATAGEN_EXE): $(DG_OBJECTS)
 
 $(PREPROCESS_EXE): $(PP_OBJECTS) $(EVALFILE)
 	$(CXX) $(LDFLAGS) $(PP_OBJECTS) -o $(PREPROCESS_EXE)
+
+$(UTIL_EXE): $(U_OBJECTS)
+	$(CXX) $(LDFLAGS) $(U_OBJECTS) -o $(UTIL_EXE)
 
 $(PREPROCESSED_NET): $(PREPROCESS_EXE)
 	./$(PREPROCESS_EXE) $(PREPROCESSED_NET)
