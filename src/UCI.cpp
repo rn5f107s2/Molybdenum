@@ -239,6 +239,22 @@ void UCI::filteredlegacytovf(const std::string& args) {
     std::cout << "Done" << std::endl;
 }
 
+void UCI::unfilteredlegacytovf(const std::string& args) {
+    std::vector<std::string> splitArgs = split(args);
+
+    if (splitArgs.size() != 2) {
+        std::cout << "Expected exactly two args, infile and outfile, got " << splitArgs.size() << std::endl;
+        return;
+    }
+
+    std::ifstream in(splitArgs[0], std::ios::binary);
+    std::ofstream out(splitArgs[1], std::ios::binary);
+
+    unfilteredLegacyToVF(in, out);
+
+    std::cout << "Done" << std::endl;
+}
+
 void UCI::loop() {    
     while (true) {
         std::string input;

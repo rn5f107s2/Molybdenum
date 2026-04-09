@@ -11,13 +11,42 @@ struct Entry {
     std::string fen;
     int16_t score;
     int result; // 2 = White win, 1 = Draw, 0 = Black win
+    std::string move;
 };
 
 static int skipped = 0;
 
 Entry parseNextGame(std::ifstream& in, std::vector<Entry>& entries);
+Entry parseNextUnfilteredGame(std::ifstream& in, std::vector<Entry>& entries);
 void processGame(std::vector<Entry>& entries, std::ofstream& out);
+void processUnfilteredGame(std::vector<Entry>& entries, std::ofstream& out);
 bool findPos(Position& pos, Position& target, int depthDiff, std::vector<Move>& moves, bool first = false);
+Move moveFromUci(Position& pos, std::string move);
+
+void unfilteredLegacyToVF(std::ifstream& in, std::ofstream& out) {
+    std::vector<Entry> entries;
+
+    int count = 0;
+    int positions = 0;
+
+    // throw away first game in case of bad split
+    //parseNextUnfilteredGame(in, entries);
+    entries.clear();
+
+    while (!in.eof()) {
+        Entry next = parseNextUnfilteredGame(in, entries);
+
+        processUnfilteredGame(entries, out);
+
+        positions += entries.size();
+
+        if (++count % 1000 == 0)
+            std::cout << count << " games with " << positions << " Positions done" << std::endl;
+
+        entries.clear();
+        entries.push_back(next);
+    }
+}
 
 void filteredLegacyToVF(std::ifstream& in, std::ofstream& out) {
     std::vector<Entry> entries;
@@ -93,6 +122,32 @@ void processGame(std::vector<Entry>& entries, std::ofstream& out) {
     out << game;
 }
 
+void processUnfilteredGame(std::vector<Entry>& entries, std::ofstream& out) {
+    Position pos;
+    pos.setBoard(entries.begin()->fen);
+    Move m = moveFromUci(pos, entries.begin()->move);
+
+    ViriFormatGame game(MarlinFormatPackedBoard(pos, entries.begin()->result));
+
+    pos.makeMove(m);
+    game.moves.push_back(ViriFormatMoveEntry(m, entries.begin()->score));
+
+    for (auto it = entries.begin() + 1; it < entries.end(); it++) {
+        if (pos.fen() != it->fen) {
+            std::cout << "Position mismatch when going from " << pos.fen() << " to " << it->fen << " with " << (it - 1)->move << ". Skipping." << std::endl;
+            return;
+        }
+
+        Move m = moveFromUci(pos, it->move);
+        pos.makeMove(m);
+        game.moves.push_back(ViriFormatMoveEntry(m, it->score));
+    }
+
+    out << game;
+
+    delete pos.net;
+}
+
 Entry parseNextGame(std::ifstream& in, std::vector<Entry>& entries) {
     std::string line;
 
@@ -114,6 +169,35 @@ Entry parseNextGame(std::ifstream& in, std::vector<Entry>& entries) {
         int moveCount = std::stoi(split(entry.fen, ' ')[5]);
 
         if (moveCount >= mc)
+            return entry;
+
+        entries.push_back(entry);
+        mc = moveCount;
+    }
+}
+
+Entry parseNextUnfilteredGame(std::ifstream& in, std::vector<Entry>& entries) {
+    std::string line;
+
+    int mc = 0;
+
+    while (true) {
+        Entry entry;
+
+        std::getline(in, line);
+        std::vector<std::string> l = split(line, '|');
+
+        if (in.eof())
+            return entry;
+
+        entry.fen    = l[0].substr(0, l[0].size() - 1);
+        entry.score  = std::stoi(l[1].substr(1, l[1].size() - 1));
+        entry.result = (l[2] == " 1.0") ? 2 : (l[2] == " 0.5") ? 1 : 0;
+        entry.move   = l[3].substr(1);
+
+        int moveCount = std::stoi(split(entry.fen, ' ')[5]);
+
+        if (mc >= moveCount)
             return entry;
 
         entries.push_back(entry);
@@ -155,4 +239,13 @@ bool findPos(Position& pos, Position& target, int depthDiff, std::vector<Move>& 
     }
 
     return false;
+}
+
+Move moveFromUci(Position& pos, std::string move) {
+    int from       = lsb(stringToSquare(move.substr(0, 2)));
+    int to         = lsb(stringToSquare(move.substr(2, 4)));
+    int flag       = (move.size() == 5) ? PROMOTION : NORMAL;
+    int promoPiece = flag ? charIntToPiece(toupper(move.at(4)) - '0') - 1 : PROMO_KNIGHT;
+
+    return pos.fromToToMove(from, to, promoPiece, flag);
 }
