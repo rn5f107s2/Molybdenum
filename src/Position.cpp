@@ -454,3 +454,92 @@ std::string Position::fen() {
 
     return fen;
 }
+
+Move Position::sanToMove(std::string san) {
+    const int NONE = 9;
+
+    bool cap  = false;
+    int flag  = NORMAL;
+    int promo = PROMO_QUEEN;
+    int file  = NONE;
+    int rank  = NONE;
+
+    char c = san.at(san.size() - 1);
+
+    if (c == '+' || c == '#')
+        san = san.substr(0, san.size() - 1);
+
+    if (san == "O-O") {
+        return sideToMove ? createMove(3, 1, PROMO_QUEEN, CASTLING) : createMove(59, 57, PROMO_QUEEN, CASTLING);
+    }
+
+    if (san == "O-O-O") {
+        return sideToMove ? createMove(3, 5, PROMO_QUEEN, CASTLING) : createMove(59, 61, PROMO_QUEEN, CASTLING);
+    }
+
+    if (san.at(san.size() - 2) == '=') {
+        flag = PROMOTION;
+        promo = charIntToPiece(san.at(san.size() - 1) - '0') - 1;
+        san = san.substr(0, san.size() - 2);
+    }
+
+    int toSq = lsb(stringToSquare(san.substr(san.size() - 2, 2)));
+    san = san.substr(0, san.size() - 2);
+
+    if ((cap = (san.size() && san.at(san.size() - 1) == 'x')))
+        san = san.substr(0, san.size() - 1);
+
+    int movingPt = PAWN;
+
+    if (san.size() && std::isupper(san.at(0))) {
+        movingPt = typeOf(charIntToPiece(san.at(0) - '0'));
+        san = san.substr(1);
+    }
+
+    if (san.size() && std::isalpha(san.at(0))) {
+        file = 7 - (san.at(0) - 'a');
+        san = san.substr(1);
+    }
+
+    if (san.size() && std::isdigit(san.at(0))) {
+        rank = (san.at(0) - '1');
+        san = san.substr(1);
+    }
+
+    u64 mask = -1;
+
+    if (file != NONE)
+        mask &= FILEH << file;
+
+    if (rank != NONE)
+        mask &= RANK1 << (8 * rank);
+
+    u64 attacks = getAttacks(movingPt, toSq, getOccupied(), sideToMove != WHITE);
+    
+    if (movingPt == PAWN && !cap) {
+        attacks  = movePawn(1ULL << toSq, sideToMove != WHITE);
+        attacks |= movePawn(attacks & ~getOccupied(), sideToMove != WHITE);
+    }
+
+
+    u64 f    = attacks & mask & getPieces(sideToMove, PieceType(movingPt));
+    int from = popLSB(f);
+
+    if (f) {
+        MovegenVariables mv; 
+        mv.kingSquare = lsb(getPieces(sideToMove, KING)); 
+        mv.pawnIdx = makePiece(PAWN, sideToMove); 
+        mv.oppPawnIdx = makePiece(PAWN, !sideToMove);
+        mv.occupied = getOccupied();
+
+        u64 pinned = generatePinnedPieces(*this, mv);
+
+        while (((1ULL << from) & pinned) && !(extendedMasksBBs[mv.kingSquare][from] & (1ULL << toSq)))
+            from = popLSB(f);
+    }
+
+    if (cap && pieceLocations[toSq] == NO_PIECE)
+        flag = ENPASSANT;
+
+    return createMove(from, toSq, promo, flag);
+}

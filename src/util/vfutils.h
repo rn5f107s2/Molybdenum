@@ -73,6 +73,85 @@ void filteredLegacyToVF(std::ifstream& in, std::ofstream& out) {
     }
 }
 
+inline bool isLegal(Position& pos, Move m) {
+    MoveList ml;
+    u64 checkers = attackersTo<false, false>(lsb(pos.bitBoards[pos.sideToMove ? WHITE_KING : BLACK_KING]),pos.getOccupied(), pos.sideToMove ? BLACK_PAWN : WHITE_PAWN, pos);
+    generateMoves<false>(pos, ml, checkers);
+
+    bool found = false;
+
+    for (int i = 0; i < ml.length; i++) {
+        found |= ml.moves[i].move == m;
+    }
+
+    return found;
+}
+
+inline void pgnToVF(std::ifstream& in, std::ofstream& out) {
+    Position pos;
+    std::string line;
+
+    while (!in.eof()) {
+        Entry entry;
+
+        while (std::getline(in, line), !line.empty()) {
+            if (line.substr(1, 3) == "FEN") {
+                entry.fen = line.substr(6, line.size() - 8);
+            }
+
+            if (line.substr(1, 6) == "Result") {
+                std::string res = line.substr(9, line.size() - 11);
+                entry.result = res == "1-0" ? 2 : res == "0-1" ? 0 : 1;
+            }
+        }
+
+        if (in.eof())
+            break;
+
+        if (entry.fen.empty()) {
+            std::cout << "Did not find FEN in header!" << std::endl;
+            exit(-1);
+        }
+
+        pos.setBoard(entry.fen);
+
+        ViriFormatGame game(MarlinFormatPackedBoard(pos, entry.result));
+
+        std::getline(in, line);
+        std::vector<std::string> moveComments = split(line);
+
+        for (auto it = moveComments.begin(); it < moveComments.end() - 1; it += 2) {
+            std::string move    = *it;
+            std::string comment = *(it + 1);
+
+            Move m = pos.sanToMove(move);
+            std::string s = split(comment.substr(1, comment.size() - 2), '/')[0];
+            int score = 0;
+
+            if (!isLegal(pos, m)) {
+                std::cout << "Did not find move " << moveToString(m) << " with SAN " << move << "!" << std::endl;
+                pos.printBoard();
+                exit(-1);
+            }
+
+            if (s == "unknown" || contains(s, "M"))
+                score = 32767 * (pos.sideToMove == WHITE ? 1 : -1);
+            else
+                score = int(std::stod(s) * 100) * (pos.sideToMove == WHITE ? 1 : -1);
+
+            game.moves.push_back(ViriFormatMoveEntry(m, score));
+
+            pos.makeMove(m);
+        }
+
+        std::getline(in, line);
+
+        out << game;
+    }
+
+    delete pos.net;
+}
+
 void processGame(std::vector<Entry>& entries, std::ofstream& out) {
     Position pos;
     std::vector<Move> moves;

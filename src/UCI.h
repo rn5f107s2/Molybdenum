@@ -43,6 +43,7 @@ public:
         commands["bench"] = &UCI::bench;
         commands["pretty"] = &UCI::pretty;
         commands["isready"] = &UCI::isready;
+        commands["pgntovf"] = &UCI::pgntovf;
         commands["goPerft"] = &UCI::goPerft;
         commands["position"] = &UCI::position;
         commands["setoption"] = &UCI::setoption;
@@ -69,6 +70,7 @@ public:
     void bench(const std::string &args);
     void pretty(const std::string &args);
     void goPerft(const std::string &args);
+    void pgntovf(const std::string &args);
     void isready(const std::string &args);
     void position(const std::string &args);
     void setoption(const std::string &args);

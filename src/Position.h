@@ -44,6 +44,7 @@ class Position {
         template<Color c> u64 getOccupied();
         inline std::string moveToSAN(Move move, u64 attacks);
         inline int ambigious(Move move, u64 attacks);
+        Move sanToMove(std::string san);
 
         Position();
         Position(Net* n);
