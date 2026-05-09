@@ -15,12 +15,18 @@ enum Toggle {
     Off, On
 };
 
-static const int INPUT_SIZE = 12 * 64;
-static const int MINI_ACC_SIZE = 16;
-static const int L1_SIZE = MINI_ACC_SIZE * 64;
-static const int OUTPUT_SIZE = 1;
-static const int NET_SIZE = 3;
-static const std::array<int, NET_SIZE> LAYER_SIZE = {INPUT_SIZE, L1_SIZE, OUTPUT_SIZE};
+static constexpr int INPUT_SIZE = 12 * 64;
+static constexpr int MINI_ACC_SIZE = 16;
+static constexpr int L1_SIZE = MINI_ACC_SIZE * 64;
+static constexpr int OUTPUT_SIZE = 1;
+
+static constexpr int NUM_REGS      = (MINI_ACC_SIZE * 2) / (sizeof(__m256i) / sizeof(int16_t));
+
+static constexpr int NUM_REGS_PERS = MINI_ACC_SIZE / (sizeof(__m256i) / sizeof(int16_t));
+static constexpr int NUM_REGS_DUAL = 2 * NUM_REGS_PERS == NUM_REGS? 0 : 1;
+
+static_assert(NUM_REGS == NUM_REGS_PERS * 2 + NUM_REGS_DUAL);
+static_assert((MINI_ACC_SIZE * 2) % (sizeof(__m256i) / sizeof(int16_t)) == 0);
 
 struct Weights {
     std::array<int16_t , L1_SIZE * INPUT_SIZE * 12> weights0{};
@@ -56,10 +62,13 @@ public:
     void loadDefaultNet();
 
     template<Color C> inline
-    void loadWeightsVec(__m256i& w, int offset);
+    void loadWeightsVecDual(__m256i& w, int offset, int i);
 
     template<Color C> inline
-    void loadWeightsVecs(__m256i& w1, __m256i& w2, int offset);
+    void loadWeightsVec(__m256i& w, int offset, int i);
+
+    template<Color C> inline
+    void loadWeightsVecs(__m256i* w, int offset);
 
     template<Color ON_COLOR, Color OFF_COLOR>
     void addSubSingle(int sq, int onOffset, int offOffset);
@@ -152,25 +161,41 @@ int index_new(int bucketPc, int bucketSq, int featurePc, int featureSq) {
 }
 
 template<Color C> inline
-void Net::loadWeightsVec(__m256i& w, int offset) {
+void Net::loadWeightsVecDual(__m256i& w, int offset, int i) {
     if constexpr (C) {
-        w = _mm256_loadu_si256((const __m256i *)(&weights0[0] + offset));
+        w = _mm256_loadu_si256((const __m256i *)(&weights0[0] + offset + MINI_ACC_SIZE * i));
     } else {
+        constexpr int INT16_PER_REG = (sizeof(__m256i) / sizeof(int16_t));
+        constexpr int HALF = INT16_PER_REG / 2;
+
         w = _mm256_loadu2_m128i(
-            (const __m128i*)(&weights0[offset - MINI_ACC_SIZE]),
-            (const __m128i*)(&weights0[offset                ])
+            (const __m128i*)(&weights0[offset - MINI_ACC_SIZE * i - HALF]),
+            (const __m128i*)(&weights0[offset - MINI_ACC_SIZE * i       ])
         );
     }
 }
 
 template<Color C> inline
-void Net::loadWeightsVecs(__m256i& w1, __m256i& w2, int offset) {
+void Net::loadWeightsVecs(__m256i* w, int offset) {
+    int i = 0;
+
+    for (; i < NUM_REGS_PERS; i++)
+        loadWeightsVec<C>(w[i], offset, i);
+
+    // untested
+    for (; i < NUM_REGS_PERS + NUM_REGS_DUAL; i++) 
+        loadWeightsVecDual<C>(w[i], offset, i);
+
+    for (; i < NUM_REGS; i++)
+        loadWeightsVec<C>(w[i], offset, i);
+}
+
+template<Color C> inline
+void Net::loadWeightsVec(__m256i& w, int offset, int i) {
     if constexpr (C) {
-        w1 = _mm256_loadu_si256((const __m256i *)(&weights0[0] + offset     ));
-        w2 = _mm256_loadu_si256((const __m256i *)(&weights0[0] + offset + 16));
+        w = _mm256_loadu_si256((const __m256i *)(&weights0[0] + offset + 16 * i));
     } else {
-        w1 = _mm256_loadu_si256((const __m256i *)(&weights0[0] + offset     ));
-        w2 = _mm256_loadu_si256((const __m256i *)(&weights0[0] + offset - 16));
+        w = _mm256_loadu_si256((const __m256i *)(&weights0[0] + offset - 16 * i));
     }
 }
 
@@ -178,96 +203,101 @@ template<Color C>
 inline void refreshSingle(Net* net, int offset, int bsq) {
     int idx = bsq * MINI_ACC_SIZE * 2;
 
-    __m256i w1, w2;
-   
-    net->loadWeightsVecs<C>(w1, w2, offset);
+    __m256i w  [NUM_REGS];
+    __m256i acc[NUM_REGS];
 
-    __m256i acc1 = _mm256_loadu_si256((__m256i *)(&net->accumulator[0] + idx     ));
-    __m256i acc2 = _mm256_loadu_si256((__m256i *)(&net->accumulator[0] + idx + 16));
+    net->loadWeightsVecs<C>(w, offset);
 
-    acc1 = _mm256_add_epi16(acc1, w1);
-    acc2 = _mm256_add_epi16(acc2, w2);
+    for (int i = 0; i < NUM_REGS; i++)
+        acc[i] = _mm256_loadu_si256((__m256i *)(&net->accumulator[0] + idx + 16 * i));
 
-    _mm256_storeu_si256((__m256i *)(&net->accumulator[0] + idx     ), acc1);  
-    _mm256_storeu_si256((__m256i *)(&net->accumulator[0] + idx + 16), acc2);  
+    for (int i = 0; i < NUM_REGS; i++)
+        acc[i] = _mm256_add_epi16(acc[i], w[i]);
+
+    for (int i = 0; i < NUM_REGS; i++)
+        _mm256_storeu_si256((__m256i *)(&net->accumulator[0] + idx + 16 * i), acc[i]);  
 }
 
 template<Color ON_COLOR, Color OFF_COLOR>
 inline void Net::addSubSingle(int sq, int onOffset, int offOffset) {
     int idx = sq * MINI_ACC_SIZE * 2;
 
-    __m256i wA1, wS1, wA2, wS2;
-    __m256i acc1;
-    __m256i acc2;
+    __m256i wA[NUM_REGS];
+    __m256i wS[NUM_REGS];
+    __m256i acc[NUM_REGS];
 
-    loadWeightsVecs< ON_COLOR>(wA1, wA2, onOffset);
-    loadWeightsVecs<OFF_COLOR>(wS1, wS2, offOffset);
+    loadWeightsVecs< ON_COLOR>(wA,  onOffset);
+    loadWeightsVecs<OFF_COLOR>(wS, offOffset);
 
-    acc1 = _mm256_loadu_si256((__m256i *)(&accumulator[0] + idx     ));
-    acc2 = _mm256_loadu_si256((__m256i *)(&accumulator[0] + idx + 16));
+    for (int i = 0; i < NUM_REGS; i++)
+        acc[i] = _mm256_loadu_si256((__m256i *)(&accumulator[0] + idx + 16 * i));
 
-    acc1 = _mm256_add_epi16(acc1, wA1);
-    acc1 = _mm256_sub_epi16(acc1, wS1);
-    acc2 = _mm256_add_epi16(acc2, wA2);
-    acc2 = _mm256_sub_epi16(acc2, wS2);
+    for (int i = 0; i < NUM_REGS; i++) {
+        acc[i] = _mm256_add_epi16(acc[i], wA[i]);
+        acc[i] = _mm256_sub_epi16(acc[i], wS[i]);
+    }
 
-    _mm256_storeu_si256((__m256i *)(&accumulator[0] + idx     ), acc1);
-    _mm256_storeu_si256((__m256i *)(&accumulator[0] + idx + 16), acc2);
+    for (int i = 0; i < NUM_REGS; i++)
+        _mm256_storeu_si256((__m256i *)(&accumulator[0] + idx + 16 * i), acc[i]);
 }
 
 template<Color ON_COLOR, Color OFF_COLOR, Color CAP_COLOR>
 inline void Net::addSubSubSingle(int sq, int onOffset, int offOffset, int capOffset) {
     int idx = sq * MINI_ACC_SIZE * 2;
 
-    __m256i wA1, wS11, wS21;
-    __m256i wA2, wS12, wS22;
+    __m256i wA [NUM_REGS]; 
+    __m256i wS1[NUM_REGS];
+    __m256i wS2[NUM_REGS];
+    __m256i acc[NUM_REGS];
 
-    loadWeightsVecs<ON_COLOR >(wA1, wA2, onOffset);
-    loadWeightsVecs<OFF_COLOR>(wS11, wS12, offOffset);
-    loadWeightsVecs<CAP_COLOR>(wS21, wS22, capOffset);
+    loadWeightsVecs<ON_COLOR >(wA , onOffset );
+    loadWeightsVecs<OFF_COLOR>(wS1, offOffset);
+    loadWeightsVecs<CAP_COLOR>(wS2, capOffset);
 
-    __m256i acc1 = _mm256_loadu_si256((__m256i *)(&accumulator[0] + idx     ));
-    __m256i acc2 = _mm256_loadu_si256((__m256i *)(&accumulator[0] + idx + 16));
+    for (int i = 0; i < NUM_REGS; i++)
+        acc[i] = _mm256_loadu_si256((__m256i *)(&accumulator[0] + idx + 16 * i));
 
-    acc1 = _mm256_add_epi16(acc1, wA1 );
-    acc1 = _mm256_sub_epi16(acc1, wS11);
-    acc1 = _mm256_sub_epi16(acc1, wS21);
-    acc2 = _mm256_add_epi16(acc2, wA2 );
-    acc2 = _mm256_sub_epi16(acc2, wS12);
-    acc2 = _mm256_sub_epi16(acc2, wS22);
+    for (int i = 0; i < NUM_REGS; i++) {
+        acc[i] = _mm256_add_epi16(acc[i], wA [i]);
+        acc[i] = _mm256_sub_epi16(acc[i], wS1[i]);
+        acc[i] = _mm256_sub_epi16(acc[i], wS2[i]);
+    }
 
-    _mm256_storeu_si256((__m256i *)(&accumulator[0] + idx     ), acc1);
-    _mm256_storeu_si256((__m256i *)(&accumulator[0] + idx + 16), acc2);
+    for (int i = 0; i < NUM_REGS; i++)
+        _mm256_storeu_si256((__m256i *)(&accumulator[0] + idx + 16 * i), acc[i]);
 }
 
 template<Color C>
 inline void Net::addaddSubSubSingle(int sq, int add1Offset, int add2Offset, int sub1Offset, int sub2Offset) {
     int idx = sq * MINI_ACC_SIZE * 2;
 
-    __m256i wA11, wA21, wS11, wS21;
-    __m256i wA12, wA22, wS12, wS22;
+    __m256i wA1[NUM_REGS];
+    __m256i wA2[NUM_REGS];
+    __m256i wS1[NUM_REGS];
+    __m256i wS2[NUM_REGS];
+    __m256i acc[NUM_REGS];
 
-    __m256i acc1 = _mm256_loadu_si256((__m256i *)(&accumulator[0] + idx     ));
-    __m256i acc2 = _mm256_loadu_si256((__m256i *)(&accumulator[0] + idx + 16));
+    for (int i = 0; i < NUM_REGS; i++)
+        acc[i] = _mm256_loadu_si256((__m256i *)(&accumulator[0] + idx + 16 * i));
 
-    loadWeightsVecs<C>(wA11, wA12, add1Offset);
-    loadWeightsVecs<C>(wA21, wA22, add2Offset);
+    loadWeightsVecs<C>(wA1, add1Offset);
+    loadWeightsVecs<C>(wA2, add2Offset);
 
-    acc1 = _mm256_add_epi16(acc1, wA11);
-    acc1 = _mm256_add_epi16(acc1, wA21);
-    acc2 = _mm256_add_epi16(acc2, wA12);
-    acc2 = _mm256_add_epi16(acc2, wA22);
+    for (int i = 0; i < NUM_REGS; i++) {
+        acc[i] = _mm256_add_epi16(acc[i], wA1[i]);
+        acc[i] = _mm256_add_epi16(acc[i], wA2[i]);
+    }
 
-    loadWeightsVecs<C>(wS11, wS12, sub1Offset);
-    loadWeightsVecs<C>(wS21, wS22, sub2Offset);
+    loadWeightsVecs<C>(wS1, sub1Offset);
+    loadWeightsVecs<C>(wS2, sub2Offset);
 
-    acc1 = _mm256_sub_epi16(acc1, wS11);
-    acc1 = _mm256_sub_epi16(acc1, wS21);
-    acc2 = _mm256_sub_epi16(acc2, wS12);
-    acc2 = _mm256_sub_epi16(acc2, wS22);
+    for (int i = 0; i < NUM_REGS; i++) {
+        acc[i] = _mm256_sub_epi16(acc[i], wS1[i]);
+        acc[i] = _mm256_sub_epi16(acc[i], wS2[i]);
+    }
 
-    _mm256_storeu_si256((__m256i *)(&accumulator[0] + idx     ), acc1);
-    _mm256_storeu_si256((__m256i *)(&accumulator[0] + idx + 16), acc2);
+    for (int i = 0; i < NUM_REGS; i++)
+        _mm256_storeu_si256((__m256i *)(&accumulator[0] + idx + 16 * i), acc[i]);
 }
 
 template<Color ON_COLOR, Color OFF_COLOR>
@@ -416,24 +446,32 @@ int Net::calculate(uint64_t occupied, Piece* mailbox) {
             theirPiece = temp;
         }
 
-        for (int i = 0; i < MINI_ACC_SIZE; i += (sizeof(__m256i) / sizeof(int16_t))) {
-            int nUs   = ((sq ^ (56 * (C == BLACK))) * MINI_ACC_SIZE * 2) + (MINI_ACC_SIZE * (C == BLACK)) + i;
-            int nThem = ((sq ^ (56 * (C == BLACK))) * MINI_ACC_SIZE * 2) + (MINI_ACC_SIZE * (C == WHITE)) + i;
+        constexpr int STEP  = sizeof(__m256i) / sizeof(int16_t);
+        constexpr int HALF  = STEP / 2;
+        constexpr int SPLIT = C == BLACK && NUM_REGS_DUAL != 0 ? NUM_REGS_PERS * STEP : -1; 
 
-            __m256i accUs   = _mm256_load_si256((__m256i*) &accumulator[nUs  ]);
-            __m256i accThem = _mm256_load_si256((__m256i*) &accumulator[nThem]);
+        for (int i = 0; i < MINI_ACC_SIZE * 2; i += STEP) {
+            int wOffset = C == WHITE ? i : (2 * MINI_ACC_SIZE - STEP) - i;
 
-            __m256i cUs   = _mm256_max_epi16(_mm256_min_epi16(accUs  , qa), zero);
-            __m256i cThem = _mm256_max_epi16(_mm256_min_epi16(accThem, qa), zero);
+            int n = ((sq ^ (56 * (C == BLACK))) * MINI_ACC_SIZE * 2) + i;
 
-            __m256i wUs   = _mm256_load_si256((__m256i*) &weights1[L1_SIZE * 2 * ourPiece + (sq * MINI_ACC_SIZE * 2) + i                ]);
-            __m256i wThem = _mm256_load_si256((__m256i*) &weights1[L1_SIZE * 2 * ourPiece + (sq * MINI_ACC_SIZE * 2) + i + MINI_ACC_SIZE]);
+            __m256i acc = _mm256_load_si256((__m256i*) &accumulator[n]);
+            __m256i c   = _mm256_max_epi16(_mm256_min_epi16(acc, qa), zero);
 
-            __m256i prodUs   =  _mm256_madd_epi16(cUs  , _mm256_mullo_epi16(cUs  , wUs  ));
-            __m256i prodThem =  _mm256_madd_epi16(cThem, _mm256_mullo_epi16(cThem, wThem));
+            __m256i w;
 
-            sum = _mm256_add_epi32(sum, prodUs  );
-            sum = _mm256_add_epi32(sum, prodThem);
+            if (i != SPLIT) {
+                w = _mm256_load_si256((__m256i*) &weights1[L1_SIZE * 2 * ourPiece + (sq * MINI_ACC_SIZE * 2) + wOffset]);
+            } else {
+                w = _mm256_loadu2_m128i(
+                    (const __m128i*)(&weights1[L1_SIZE * 2 * ourPiece + (sq * MINI_ACC_SIZE * 2) + wOffset       ]),
+                    (const __m128i*)(&weights1[L1_SIZE * 2 * ourPiece + (sq * MINI_ACC_SIZE * 2) + wOffset + HALF])
+                );
+            }
+
+            __m256i prod   =  _mm256_madd_epi16(c, _mm256_mullo_epi16(c, w));
+
+            sum = _mm256_add_epi32(sum, prod);
         }
     }
 
