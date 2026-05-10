@@ -47,7 +47,7 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp $(PREPROCESSED_NET)
 	$(CXX) -I$(SRC_DIR) $(CXXFLAGS) -DEVALFILE=\"$(PREPROCESSED_NET)\" -c $< -o $@
 
 $(OBJ_DIR)/preprocess.o: $(SRC_DIR)/util/preprocess.cpp
-	$(CXX) -I$(SRC_DIR) -DEVALFILE=\"$(EVALFILE)\" -c $< -o $@
+	$(CXX) -I$(SRC_DIR) $(CXXFLAGS) -DEVALFILE=\"$(EVALFILE)\" -c $< -o $@
 
 $(OBJECTS): | $(OBJ_DIR)
 
