@@ -148,6 +148,10 @@ void Position::makeMove(Move move) {
         cleanBitboard &= ~(1ULL << rookFrom); 
         cleanBitboard &= ~(1ULL << rookTo);
 
+        pieceLocations[to] = movedPiece;
+        bitBoards[movedPiece] ^= 1ULL << to;
+        updateKey(movedPiece, to, key);
+
         updateKey(rook, rookFrom, key);
         updateKey(rook, rookTo, key);
         
@@ -184,9 +188,11 @@ void Position::makeMove(Move move) {
         plys50moveRule = 0;
     }
 
-    pieceLocations[to] = movedPiece;
-    bitBoards[movedPiece] ^= 1ULL << to;
-    updateKey(movedPiece, to, key);
+    if (flag != CASTLING) {
+        pieceLocations[to] = movedPiece;
+        bitBoards[movedPiece] ^= 1ULL << to;
+        updateKey(movedPiece, to, key);
+    }
     updateKey(key);
     keyHistory.push(key);
     sideToMove = !sideToMove;
@@ -235,22 +241,7 @@ void Position::makeMove(Move move) {
                 else
                     net->addSub<BLACK, BLACK>(*this, cleanBitboard, white, movedPiece, to, mp, from, pc, sq);
         }
-    } else {
-        int sq = popLSB(dirty);
-        Piece pc = pieceOn(sq);
-
-        net->refreshMiniAcc(*this, pc, sq);
     }
-
-    if (flag == CASTLING) {
-        int sq = popLSB(dirty);
-        Piece pc = pieceOn(sq);
-
-        net->refreshMiniAcc(*this, pc, sq);
-    }
-
-    if (flag == CASTLING)
-        net->pushAccToStack(white | black);
 }
 
 void Position::unmakeMove(Move move) {

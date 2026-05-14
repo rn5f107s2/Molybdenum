@@ -51,10 +51,12 @@ public:
     const std::array<int16_t, L1_SIZE * 12>& bias0;
     const std::array<int16_t, L1_SIZE * OUTPUT_SIZE * 2 * 12>& weights1;
     const std::array<int16_t, OUTPUT_SIZE>& bias1;
-    std::array<int16_t, L1_SIZE * 2> accumulator{};
     std::array<int16_t, L1_SIZE * 3 * 2> wdlWeights{};
     std::array<int16_t, 3> wdlBias{};
-    Stack<std::array<int16_t, L1_SIZE * 2>, MAXDEPTH> accumulatorStack;
+
+    int16_t* accumulator;
+    int16_t  accumulatorStack[MAXDEPTH + 7][L1_SIZE * 2];
+    int accumulatorHead = 0;
 
     Net() : weights0(defaultWeights.weights0), bias0(defaultWeights.bias0), weights1(defaultWeights.weights1), bias1(defaultWeights.bias1) {}
 
@@ -216,7 +218,7 @@ void Net::loadWeightsVec(vec_t& w, int offset, int i) {
 }
 
 template<Color C> 
-inline void refreshSingle(Net* net, int offset, int bsq) {
+inline void refreshSingle(Net* net, int offset, int bsq, int16_t* accum) {
     int idx = bsq * MINI_ACC_SIZE * 2;
 
     vec_t w  [NUM_REGS];
@@ -225,13 +227,13 @@ inline void refreshSingle(Net* net, int offset, int bsq) {
     net->loadWeightsVecs<C>(w, offset);
 
     for (int i = 0; i < NUM_REGS; i++)
-        acc[i] = vec_loadu((vec_t *)(&net->accumulator[0] + idx + I16_PER_REG * i));
+        acc[i] = vec_loadu((vec_t *)(accum + idx + I16_PER_REG * i));
 
     for (int i = 0; i < NUM_REGS; i++)
         acc[i] = vec_add_epi16(acc[i], w[i]);
 
     for (int i = 0; i < NUM_REGS; i++)
-        vec_storeu((vec_t *)(&net->accumulator[0] + idx + I16_PER_REG * i), acc[i]);  
+        vec_storeu((vec_t *)(accum + idx + I16_PER_REG * i), acc[i]);  
 }
 
 template<Color ON_COLOR, Color OFF_COLOR>
@@ -246,7 +248,7 @@ inline void Net::addSubSingle(int sq, int onOffset, int offOffset) {
     loadWeightsVecs<OFF_COLOR>(wS, offOffset);
 
     for (int i = 0; i < NUM_REGS; i++)
-        acc[i] = vec_loadu((vec_t *)(&accumulator[0] + idx + I16_PER_REG * i));
+        acc[i] = vec_loadu((vec_t *)(accumulator + idx + I16_PER_REG * i));
 
     for (int i = 0; i < NUM_REGS; i++) {
         acc[i] = vec_add_epi16(acc[i], wA[i]);
@@ -254,7 +256,7 @@ inline void Net::addSubSingle(int sq, int onOffset, int offOffset) {
     }
 
     for (int i = 0; i < NUM_REGS; i++)
-        vec_storeu((vec_t *)(&accumulator[0] + idx + I16_PER_REG * i), acc[i]);
+        vec_storeu((vec_t *)(accumulatorStack[accumulatorHead + 1] + idx + I16_PER_REG * i), acc[i]);
 }
 
 template<Color ON_COLOR, Color OFF_COLOR, Color CAP_COLOR>
@@ -271,7 +273,7 @@ inline void Net::addSubSubSingle(int sq, int onOffset, int offOffset, int capOff
     loadWeightsVecs<CAP_COLOR>(wS2, capOffset);
 
     for (int i = 0; i < NUM_REGS; i++)
-        acc[i] = vec_loadu((vec_t *)(&accumulator[0] + idx + I16_PER_REG * i));
+        acc[i] = vec_loadu((vec_t *)(accumulator + idx + I16_PER_REG * i));
 
     for (int i = 0; i < NUM_REGS; i++) {
         acc[i] = vec_add_epi16(acc[i], wA [i]);
@@ -280,7 +282,7 @@ inline void Net::addSubSubSingle(int sq, int onOffset, int offOffset, int capOff
     }
 
     for (int i = 0; i < NUM_REGS; i++)
-        vec_storeu((vec_t *)(&accumulator[0] + idx + I16_PER_REG * i), acc[i]);
+        vec_storeu((vec_t *)(accumulatorStack[accumulatorHead + 1] + idx + I16_PER_REG * i), acc[i]);
 }
 
 template<Color C>
@@ -294,7 +296,7 @@ inline void Net::addaddSubSubSingle(int sq, int add1Offset, int add2Offset, int 
     vec_t acc[NUM_REGS];
 
     for (int i = 0; i < NUM_REGS; i++)
-        acc[i] = vec_loadu((vec_t *)(&accumulator[0] + idx + I16_PER_REG * i));
+        acc[i] = vec_loadu((vec_t *)(accumulator + idx + I16_PER_REG * i));
 
     loadWeightsVecs<C>(wA1, add1Offset);
     loadWeightsVecs<C>(wA2, add2Offset);
@@ -313,7 +315,7 @@ inline void Net::addaddSubSubSingle(int sq, int add1Offset, int add2Offset, int 
     }
 
     for (int i = 0; i < NUM_REGS; i++)
-        vec_storeu((vec_t *)(&accumulator[0] + idx + I16_PER_REG * i), acc[i]);
+        vec_storeu((vec_t *)(accumulatorStack[accumulatorHead + 1] + idx + I16_PER_REG * i), acc[i]);
 }
 
 template<Color ON_COLOR, Color OFF_COLOR>
@@ -325,10 +327,10 @@ inline void Net::addSub(Position& pos, uint64_t cleanBitboard, uint64_t white, i
 
     int biasIndex = L1_SIZE * 2 * typeOf(refreshPc) + (RPC ? refreshSq : refreshSq ^ 56) * MINI_ACC_SIZE * 2;
 
-    memcpy(&accumulator[refreshSq * MINI_ACC_SIZE * 2                ], &bias0[biasIndex + MINI_ACC_SIZE * !RPC], MINI_ACC_SIZE * sizeof(int16_t));
-    memcpy(&accumulator[refreshSq * MINI_ACC_SIZE * 2 + MINI_ACC_SIZE], &bias0[biasIndex + MINI_ACC_SIZE *  RPC], MINI_ACC_SIZE * sizeof(int16_t));
+    int16_t* t = accumulatorStack[accumulatorHead + 1];
 
-    auto& t = accumulatorStack.at(accumulatorStack.getSize());
+    memcpy(&t[refreshSq * MINI_ACC_SIZE * 2                ], &bias0[biasIndex + MINI_ACC_SIZE * !RPC], MINI_ACC_SIZE * sizeof(int16_t));
+    memcpy(&t[refreshSq * MINI_ACC_SIZE * 2 + MINI_ACC_SIZE], &bias0[biasIndex + MINI_ACC_SIZE *  RPC], MINI_ACC_SIZE * sizeof(int16_t));
 
     while (w) {
         int sq   = popLSB(w);
@@ -338,11 +340,9 @@ inline void Net::addSub(Position& pos, uint64_t cleanBitboard, uint64_t white, i
         int offOffset     = index_new<WHITE, WHITE, OFF_COLOR>(pc, sq, offPiece, offSquare);
         int refreshOffset = index_new<WHITE, WHITE>(refreshPc, refreshSq, pc, sq);
 
-        refreshSingle<WHITE>(this, refreshOffset, refreshSq);
+        refreshSingle<WHITE>(this, refreshOffset, refreshSq, t);
 
         addSubSingle<ON_COLOR, OFF_COLOR>(sq, onOffset, offOffset);
-
-        memcpy(&t[sq * MINI_ACC_SIZE * 2], &accumulator[sq * MINI_ACC_SIZE * 2], MINI_ACC_SIZE * 2 * sizeof(int16_t));
     }
 
     while (b) {
@@ -353,16 +353,12 @@ inline void Net::addSub(Position& pos, uint64_t cleanBitboard, uint64_t white, i
         int offOffset     = index_new<WHITE, BLACK, OFF_COLOR>(pc, sq, offPiece, offSquare);
         int refreshOffset = index_new<WHITE, BLACK>(refreshPc, refreshSq, pc, sq);
 
-        refreshSingle<BLACK>(this, refreshOffset, refreshSq);
+        refreshSingle<BLACK>(this, refreshOffset, refreshSq, t);
 
         addSubSingle<ON_COLOR, OFF_COLOR>(sq, onOffset, offOffset);
-
-        memcpy(&t[sq * MINI_ACC_SIZE * 2], &accumulator[sq * MINI_ACC_SIZE * 2], MINI_ACC_SIZE * 2 * sizeof(int16_t));
     }
 
-    memcpy(&t[refreshSq * MINI_ACC_SIZE * 2], &accumulator[refreshSq * MINI_ACC_SIZE * 2], MINI_ACC_SIZE * 2 * sizeof(int16_t));
-
-    accumulatorStack.incSize();
+    accumulator = accumulatorStack[++accumulatorHead];
 }
 
 template<Color ON_COLOR, Color OFF_COLOR, Color CAP_COLOR>
@@ -374,10 +370,10 @@ inline void Net::addSubSub(Position& pos, uint64_t cleanBitboard, uint64_t white
 
     int biasIndex = L1_SIZE * 2 * typeOf(refreshPc) + (RPC ? refreshSq : refreshSq ^ 56) * MINI_ACC_SIZE * 2;
 
-    memcpy(&accumulator[refreshSq * MINI_ACC_SIZE * 2                ], &bias0[biasIndex + MINI_ACC_SIZE * !RPC], MINI_ACC_SIZE * sizeof(int16_t));
-    memcpy(&accumulator[refreshSq * MINI_ACC_SIZE * 2 + MINI_ACC_SIZE], &bias0[biasIndex + MINI_ACC_SIZE *  RPC], MINI_ACC_SIZE * sizeof(int16_t));
+    int16_t* t = accumulatorStack[accumulatorHead + 1];
 
-    auto& t = accumulatorStack.at(accumulatorStack.getSize());
+    memcpy(&t[refreshSq * MINI_ACC_SIZE * 2                ], &bias0[biasIndex + MINI_ACC_SIZE * !RPC], MINI_ACC_SIZE * sizeof(int16_t));
+    memcpy(&t[refreshSq * MINI_ACC_SIZE * 2 + MINI_ACC_SIZE], &bias0[biasIndex + MINI_ACC_SIZE *  RPC], MINI_ACC_SIZE * sizeof(int16_t));
 
     while (w) {
         int sq   = popLSB(w);
@@ -388,11 +384,9 @@ inline void Net::addSubSub(Position& pos, uint64_t cleanBitboard, uint64_t white
         int capOffset     = index_new<WHITE, WHITE, CAP_COLOR>(pc, sq, capPiece,     capSq);
         int refreshOffset = index_new<WHITE, WHITE>(refreshPc, refreshSq, pc, sq);
 
-        refreshSingle<WHITE>(this, refreshOffset, refreshSq);
+        refreshSingle<WHITE>(this, refreshOffset, refreshSq, t);
     
         addSubSubSingle<ON_COLOR, OFF_COLOR, CAP_COLOR>(sq, onOffset, offOffset, capOffset);
-
-        memcpy(&t[sq * MINI_ACC_SIZE * 2], &accumulator[sq * MINI_ACC_SIZE * 2], MINI_ACC_SIZE * 2 * sizeof(int16_t));
     }
 
     while (b) {
@@ -404,16 +398,12 @@ inline void Net::addSubSub(Position& pos, uint64_t cleanBitboard, uint64_t white
         int capOffset = index_new<WHITE, BLACK, CAP_COLOR>(pc, sq, capPiece,     capSq);
         int refreshOffset = index_new<WHITE, BLACK>(refreshPc, refreshSq, pc, sq);
 
-        refreshSingle<BLACK>(this, refreshOffset, refreshSq);
+        refreshSingle<BLACK>(this, refreshOffset, refreshSq, t);
 
         addSubSubSingle<ON_COLOR, OFF_COLOR, CAP_COLOR>(sq, onOffset, offOffset, capOffset);
-
-        memcpy(&t[sq * MINI_ACC_SIZE * 2], &accumulator[sq * MINI_ACC_SIZE * 2], MINI_ACC_SIZE * 2 * sizeof(int16_t));
     }
 
-    memcpy(&t[refreshSq * MINI_ACC_SIZE * 2], &accumulator[refreshSq * MINI_ACC_SIZE * 2], MINI_ACC_SIZE * 2 * sizeof(int16_t));
-
-    accumulatorStack.incSize();
+    accumulator = accumulatorStack[++accumulatorHead];
 }
 
 template<Color C>
@@ -429,6 +419,11 @@ inline void Net::addaddSubSub(Position& pos, uint64_t cleanBitboard, int from, i
 
         addaddSubSubSingle<C>(sq, add1Offset, add2Offset, sub1Offset, sub2Offset);
     }
+
+    accumulator = accumulatorStack[++accumulatorHead];
+
+    refreshMiniAcc(pos, Piece(king), to);
+    refreshMiniAcc(pos, Piece(rook), rTo);
 }
 
 template<Color C> inline
@@ -524,7 +519,7 @@ inline void Net::refreshMiniAcc(Position& pos, Piece piece, int square) {
 
         int wOffset = index_new<WHITE>(piece, square, pc, sq);
 
-        refreshSingle<WHITE>(this, wOffset, square);
+        refreshSingle<WHITE>(this, wOffset, square, accumulator);
     }
 
     while (black) {
@@ -533,26 +528,16 @@ inline void Net::refreshMiniAcc(Position& pos, Piece piece, int square) {
 
         int wOffset = index_new<WHITE>(piece, square, pc, sq);
 
-        refreshSingle<BLACK>(this, wOffset, square);
+        refreshSingle<BLACK>(this, wOffset, square, accumulator);
     }
 }
 
-inline void
- Net::pushAccToStack(uint64_t occupied) {
-    auto& t = accumulatorStack.at(accumulatorStack.getSize());
-
-    while (occupied) {
-        int sq = popLSB(occupied);
-
-        memcpy(&t[sq * MINI_ACC_SIZE * 2], &accumulator[sq * MINI_ACC_SIZE * 2], MINI_ACC_SIZE * 2 * sizeof(int16_t));
-    }
-    
-    accumulatorStack.incSize();
+inline void Net::pushAccToStack(uint64_t occupied) {
+    accumulator = accumulatorStack[++accumulatorHead];
 }
 
 inline void Net::popAccStack() {
-    accumulatorStack.pop();
-    accumulator = accumulatorStack.top();
+    accumulator = accumulatorStack[--accumulatorHead];
 }
 
 

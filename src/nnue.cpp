@@ -39,10 +39,8 @@ void Net::loadDefaultNet() {
 }
 
 void Net::initAccumulator(Position &pos) {
-    accumulatorStack.clear();
-
-    memcpy(&accumulator[WHITE], &bias0[0], sizeof(int16_t) * L1_SIZE);
-    memcpy(&accumulator[BLACK], &bias0[0], sizeof(int16_t) * L1_SIZE);
+    accumulatorHead = 0;
+    accumulator = accumulatorStack[0];
 
     uint64_t occupied = pos.getOccupied();
 
@@ -53,14 +51,6 @@ void Net::initAccumulator(Position &pos) {
     }
 
     occupied = pos.getOccupied();
-
-    while (occupied) {
-        int sq = popLSB(occupied);
-    }
-
-    occupied = pos.getOccupied();
-
-    pushAccToStack(occupied);
 }
 
 std::tuple<float, float, float> Net::getWDL([[maybe_unused]] Color c) {
