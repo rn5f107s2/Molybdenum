@@ -83,7 +83,7 @@ public:
 };
 
 inline int screlu(int16_t input) {
-    int clamped = std::clamp(input, int16_t(0), int16_t(255));
+    int clamped = std::clamp(input, int16_t(0), int16_t(403));
     return clamped * clamped;
 }
 
@@ -402,7 +402,7 @@ int Net::calculate(uint64_t occupied, Piece* mailbox) {
 
     __m256i sum  = _mm256_setzero_ps();
     __m256i zero = _mm256_setzero_ps();
-    __m256i qa   = _mm256_set1_epi16(255);
+    __m256i qa   = _mm256_set1_epi16(403);
 
     while (occupied) {
         int sq = popLSB(occupied);
@@ -439,7 +439,7 @@ int Net::calculate(uint64_t occupied, Piece* mailbox) {
 
     output = reduce_sum_avx2(sum);
 
-    return ((output / 255) + bias1[0]) * 133 / (64 * 255);
+    return ((output / 403) + bias1[0]) * 133 / (64 * 403);
 }
 
 inline void Net::refreshMiniAcc(Position& pos, Piece piece, int square) {
