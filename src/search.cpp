@@ -69,11 +69,11 @@ int SearchState::iterativeDeepening(Position &pos, SearchTime &st, int maxDepth,
     for (int i = 0; i < ml.length; i++) {
         Move m = ml.moves[i].move;
 
-        const double maxStart = 200;
-        const double maxDropoff = 0.98;
+        const double maxStart = 40;
+        const double maxDropoff = 0.97;
 
         const double tempStart = 1.0;
-        const double tempDropoff = 0.975;
+        const double tempDropoff = 1.0;
 
         double max  = maxStart  * std::pow(maxDropoff , pos.movecount);
         double temp = tempStart * std::pow(tempDropoff, pos.movecount);  
