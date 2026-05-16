@@ -17,7 +17,7 @@ enum Toggle {
 };
 
 static constexpr int INPUT_SIZE = 12 * 64;
-static constexpr int MINI_ACC_SIZE = 16;
+static constexpr int MINI_ACC_SIZE = 32;
 static constexpr int L1_SIZE = MINI_ACC_SIZE * 64;
 static constexpr int OUTPUT_SIZE = 1;
 
