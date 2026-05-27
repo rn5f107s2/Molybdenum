@@ -236,6 +236,16 @@ inline void refreshSingle(Net* net, int offset, int bsq, int16_t* accum) {
         vec_storeu((vec_t *)(accum + idx + I16_PER_REG * i), acc[i]);  
 }
 
+template<Color C> 
+inline void refreshSingle(Net* net, int offset, vec_t* acc) {
+    vec_t w  [NUM_REGS];
+
+    net->loadWeightsVecs<C>(w, offset);
+
+    for (int i = 0; i < NUM_REGS; i++)
+        acc[i] = vec_add_epi16(acc[i], w[i]);
+}
+
 template<Color ON_COLOR, Color OFF_COLOR>
 inline void Net::addSubSingle(int sq, int onOffset, int offOffset) {
     int idx = sq * MINI_ACC_SIZE * 2;
@@ -332,6 +342,13 @@ inline void Net::addSub(Position& pos, uint64_t cleanBitboard, uint64_t white, i
     memcpy(&t[refreshSq * MINI_ACC_SIZE * 2                ], &bias0[biasIndex + MINI_ACC_SIZE * !RPC], MINI_ACC_SIZE * sizeof(int16_t));
     memcpy(&t[refreshSq * MINI_ACC_SIZE * 2 + MINI_ACC_SIZE], &bias0[biasIndex + MINI_ACC_SIZE *  RPC], MINI_ACC_SIZE * sizeof(int16_t));
 
+    int idx = refreshSq * MINI_ACC_SIZE * 2;
+
+    vec_t refreshAccs[NUM_REGS];
+
+    for (int i = 0; i < NUM_REGS; i++)
+        refreshAccs[i] = vec_loadu((vec_t *)(t + idx + I16_PER_REG * i));
+
     while (w) {
         int sq   = popLSB(w);
         Piece pc = pos.pieceOn(sq);
@@ -340,7 +357,7 @@ inline void Net::addSub(Position& pos, uint64_t cleanBitboard, uint64_t white, i
         int offOffset     = index_new<WHITE, WHITE, OFF_COLOR>(pc, sq, offPiece, offSquare);
         int refreshOffset = index_new<WHITE, WHITE>(refreshPc, refreshSq, pc, sq);
 
-        refreshSingle<WHITE>(this, refreshOffset, refreshSq, t);
+        refreshSingle<WHITE>(this, refreshOffset, refreshAccs);
 
         addSubSingle<ON_COLOR, OFF_COLOR>(sq, onOffset, offOffset);
     }
@@ -353,10 +370,13 @@ inline void Net::addSub(Position& pos, uint64_t cleanBitboard, uint64_t white, i
         int offOffset     = index_new<WHITE, BLACK, OFF_COLOR>(pc, sq, offPiece, offSquare);
         int refreshOffset = index_new<WHITE, BLACK>(refreshPc, refreshSq, pc, sq);
 
-        refreshSingle<BLACK>(this, refreshOffset, refreshSq, t);
+        refreshSingle<BLACK>(this, refreshOffset, refreshAccs);
 
         addSubSingle<ON_COLOR, OFF_COLOR>(sq, onOffset, offOffset);
     }
+
+    for (int i = 0; i < NUM_REGS; i++)
+        vec_storeu((vec_t *)(t + idx + I16_PER_REG * i), refreshAccs[i]);  
 
     accumulator = accumulatorStack[++accumulatorHead];
 }
@@ -375,6 +395,17 @@ inline void Net::addSubSub(Position& pos, uint64_t cleanBitboard, uint64_t white
     memcpy(&t[refreshSq * MINI_ACC_SIZE * 2                ], &bias0[biasIndex + MINI_ACC_SIZE * !RPC], MINI_ACC_SIZE * sizeof(int16_t));
     memcpy(&t[refreshSq * MINI_ACC_SIZE * 2 + MINI_ACC_SIZE], &bias0[biasIndex + MINI_ACC_SIZE *  RPC], MINI_ACC_SIZE * sizeof(int16_t));
 
+    int idx = refreshSq * MINI_ACC_SIZE * 2;
+
+
+     //  Last time checking (at num regs == 4) this function used 12 regs in total, 
+     //  this may be a slowdown if num regs grows beyond that.
+
+    vec_t refreshAccs[NUM_REGS];
+
+    for (int i = 0; i < NUM_REGS; i++)
+        refreshAccs[i] = vec_loadu((vec_t *)(t + idx + I16_PER_REG * i));
+
     while (w) {
         int sq   = popLSB(w);
         Piece pc = pos.pieceOn(sq);
@@ -384,7 +415,7 @@ inline void Net::addSubSub(Position& pos, uint64_t cleanBitboard, uint64_t white
         int capOffset     = index_new<WHITE, WHITE, CAP_COLOR>(pc, sq, capPiece,     capSq);
         int refreshOffset = index_new<WHITE, WHITE>(refreshPc, refreshSq, pc, sq);
 
-        refreshSingle<WHITE>(this, refreshOffset, refreshSq, t);
+        refreshSingle<WHITE>(this, refreshOffset, refreshAccs);
     
         addSubSubSingle<ON_COLOR, OFF_COLOR, CAP_COLOR>(sq, onOffset, offOffset, capOffset);
     }
@@ -398,10 +429,13 @@ inline void Net::addSubSub(Position& pos, uint64_t cleanBitboard, uint64_t white
         int capOffset = index_new<WHITE, BLACK, CAP_COLOR>(pc, sq, capPiece,     capSq);
         int refreshOffset = index_new<WHITE, BLACK>(refreshPc, refreshSq, pc, sq);
 
-        refreshSingle<BLACK>(this, refreshOffset, refreshSq, t);
+        refreshSingle<BLACK>(this, refreshOffset, refreshAccs);
 
         addSubSubSingle<ON_COLOR, OFF_COLOR, CAP_COLOR>(sq, onOffset, offOffset, capOffset);
     }
+
+    for (int i = 0; i < NUM_REGS; i++)
+        vec_storeu((vec_t *)(t + idx + I16_PER_REG * i), refreshAccs[i]);  
 
     accumulator = accumulatorStack[++accumulatorHead];
 }
