@@ -335,7 +335,9 @@ inline void Net::addSub(Position& pos, uint64_t cleanBitboard, uint64_t white, i
 
     constexpr bool RPC = ON_COLOR; // colorOf(refreshPc) == colorOf(movedPiece) == ON_COLOR
 
-    int biasIndex = L1_SIZE * 2 * typeOf(refreshPc) + (RPC ? refreshSq : refreshSq ^ 56) * MINI_ACC_SIZE * 2;
+    int rFlip = (refreshSq & 4) ? 7 : 0; 
+
+    int biasIndex = L1_SIZE * 2 * typeOf(refreshPc) + (RPC ? refreshSq ^ rFlip : refreshSq ^ 56 ^ rFlip) * MINI_ACC_SIZE * 2;
 
     int16_t* t = accumulatorStack[accumulatorHead + 1];
 
@@ -353,9 +355,11 @@ inline void Net::addSub(Position& pos, uint64_t cleanBitboard, uint64_t white, i
         int sq   = popLSB(w);
         Piece pc = pos.pieceOn(sq);
 
-        int  onOffset     = index_new<WHITE, WHITE, ON_COLOR >(pc, sq,  onPiece, onSquare);
-        int offOffset     = index_new<WHITE, WHITE, OFF_COLOR>(pc, sq, offPiece, offSquare);
-        int refreshOffset = index_new<WHITE, WHITE>(refreshPc, refreshSq, pc, sq);
+        int flip = (sq & 4) ? 7 : 0;
+
+        int  onOffset     = index_new<WHITE, WHITE, ON_COLOR >(pc, sq ^ flip,  onPiece, onSquare  ^ flip);
+        int offOffset     = index_new<WHITE, WHITE, OFF_COLOR>(pc, sq ^ flip, offPiece, offSquare ^ flip);
+        int refreshOffset = index_new<WHITE, WHITE>(refreshPc, refreshSq ^ rFlip, pc, sq ^ rFlip);
 
         refreshSingle<WHITE>(this, refreshOffset, refreshAccs);
 
@@ -366,9 +370,11 @@ inline void Net::addSub(Position& pos, uint64_t cleanBitboard, uint64_t white, i
         int sq   = popLSB(b);
         Piece pc = pos.pieceOn(sq);
 
-        int  onOffset     = index_new<WHITE, BLACK, ON_COLOR >(pc, sq,  onPiece, onSquare);
-        int offOffset     = index_new<WHITE, BLACK, OFF_COLOR>(pc, sq, offPiece, offSquare);
-        int refreshOffset = index_new<WHITE, BLACK>(refreshPc, refreshSq, pc, sq);
+        int flip = (sq & 4) ? 7 : 0;
+
+        int  onOffset     = index_new<WHITE, BLACK, ON_COLOR >(pc, sq ^ flip,  onPiece, onSquare ^ flip);
+        int offOffset     = index_new<WHITE, BLACK, OFF_COLOR>(pc, sq ^ flip, offPiece, offSquare ^ flip);
+        int refreshOffset = index_new<WHITE, BLACK>(refreshPc, refreshSq ^ rFlip, pc, sq ^ rFlip);
 
         refreshSingle<BLACK>(this, refreshOffset, refreshAccs);
 
@@ -388,7 +394,9 @@ inline void Net::addSubSub(Position& pos, uint64_t cleanBitboard, uint64_t white
 
     constexpr bool RPC = ON_COLOR; // colorOf(refreshPc) == colorOf(movedPiece) == ON_COLOR
 
-    int biasIndex = L1_SIZE * 2 * typeOf(refreshPc) + (RPC ? refreshSq : refreshSq ^ 56) * MINI_ACC_SIZE * 2;
+    int rFlip = (refreshSq & 4) ? 7 : 0; 
+
+    int biasIndex = L1_SIZE * 2 * typeOf(refreshPc) + (RPC ? refreshSq ^ rFlip : refreshSq ^ 56 ^ rFlip) * MINI_ACC_SIZE * 2;
 
     int16_t* t = accumulatorStack[accumulatorHead + 1];
 
@@ -410,10 +418,12 @@ inline void Net::addSubSub(Position& pos, uint64_t cleanBitboard, uint64_t white
         int sq   = popLSB(w);
         Piece pc = pos.pieceOn(sq);
 
-        int  onOffset     = index_new<WHITE, WHITE, ON_COLOR >(pc, sq,  onPiece,  onSquare);
-        int offOffset     = index_new<WHITE, WHITE, OFF_COLOR>(pc, sq, offPiece, offSquare);
-        int capOffset     = index_new<WHITE, WHITE, CAP_COLOR>(pc, sq, capPiece,     capSq);
-        int refreshOffset = index_new<WHITE, WHITE>(refreshPc, refreshSq, pc, sq);
+        int flip = (sq & 4) ? 7 : 0;
+
+        int  onOffset     = index_new<WHITE, WHITE, ON_COLOR >(pc, sq ^ flip,  onPiece,  onSquare ^ flip);
+        int offOffset     = index_new<WHITE, WHITE, OFF_COLOR>(pc, sq ^ flip, offPiece, offSquare ^ flip);
+        int capOffset     = index_new<WHITE, WHITE, CAP_COLOR>(pc, sq ^ flip, capPiece,     capSq ^ flip);
+        int refreshOffset = index_new<WHITE, WHITE>(refreshPc, refreshSq ^ rFlip, pc, sq ^ rFlip);
 
         refreshSingle<WHITE>(this, refreshOffset, refreshAccs);
     
@@ -424,10 +434,12 @@ inline void Net::addSubSub(Position& pos, uint64_t cleanBitboard, uint64_t white
         int sq   = popLSB(b);
         Piece pc = pos.pieceOn(sq);
 
-        int  onOffset = index_new<WHITE, BLACK, ON_COLOR >(pc, sq,  onPiece,  onSquare);
-        int offOffset = index_new<WHITE, BLACK, OFF_COLOR>(pc, sq, offPiece, offSquare);
-        int capOffset = index_new<WHITE, BLACK, CAP_COLOR>(pc, sq, capPiece,     capSq);
-        int refreshOffset = index_new<WHITE, BLACK>(refreshPc, refreshSq, pc, sq);
+        int flip = (sq & 4) ? 7 : 0;
+
+        int  onOffset = index_new<WHITE, BLACK, ON_COLOR >(pc, sq ^ flip,  onPiece,  onSquare ^ flip);
+        int offOffset = index_new<WHITE, BLACK, OFF_COLOR>(pc, sq ^ flip, offPiece, offSquare ^ flip);
+        int capOffset = index_new<WHITE, BLACK, CAP_COLOR>(pc, sq ^ flip, capPiece,     capSq ^ flip);
+        int refreshOffset = index_new<WHITE, BLACK>(refreshPc, refreshSq ^ rFlip, pc, sq ^ rFlip);
 
         refreshSingle<BLACK>(this, refreshOffset, refreshAccs);
 
@@ -446,10 +458,12 @@ inline void Net::addaddSubSub(Position& pos, uint64_t cleanBitboard, int from, i
         int sq   = popLSB(cleanBitboard);
         Piece pc = pos.pieceOn(sq);
 
-        int add1Offset = index_new<WHITE>(pc, sq, king, to);
-        int add2Offset = index_new<WHITE>(pc, sq, rook, rTo);
-        int sub1Offset = index_new<WHITE>(pc, sq, king, from);
-        int sub2Offset = index_new<WHITE>(pc, sq, rook, rFrom);
+        int flip = (sq & 4) ? 7 : 0;
+
+        int add1Offset = index_new<WHITE>(pc, sq ^ flip, king, to ^ flip);
+        int add2Offset = index_new<WHITE>(pc, sq ^ flip, rook, rTo ^ flip);
+        int sub1Offset = index_new<WHITE>(pc, sq ^ flip, king, from ^ flip);
+        int sub2Offset = index_new<WHITE>(pc, sq ^ flip, rook, rFrom ^ flip);
 
         addaddSubSubSingle<C>(sq, add1Offset, add2Offset, sub1Offset, sub2Offset);
     }
@@ -542,7 +556,12 @@ inline void Net::refreshMiniAcc(Position& pos, Piece piece, int square) {
     uint64_t white = pos.getOccupied<WHITE>() & ~(1ULL << square);
     uint64_t black = pos.getOccupied<BLACK>() & ~(1ULL << square);
 
-    int biasIndex = L1_SIZE * 2 * typeOf(piece) + (colorOf(piece) ? square : square ^ 56) * MINI_ACC_SIZE * 2;
+    int flip = 0;
+    
+    if (square & 4)
+        flip = 7;
+
+    int biasIndex = L1_SIZE * 2 * typeOf(piece) + (colorOf(piece) ? square ^ flip : square ^ 56 ^ flip) * MINI_ACC_SIZE * 2;
 
     memcpy(&accumulator[square * MINI_ACC_SIZE * 2                ], &bias0[biasIndex + MINI_ACC_SIZE * !colorOf(piece)], MINI_ACC_SIZE * sizeof(int16_t));
     memcpy(&accumulator[square * MINI_ACC_SIZE * 2 + MINI_ACC_SIZE], &bias0[biasIndex + MINI_ACC_SIZE *  colorOf(piece)], MINI_ACC_SIZE * sizeof(int16_t));
@@ -551,7 +570,7 @@ inline void Net::refreshMiniAcc(Position& pos, Piece piece, int square) {
         int sq = popLSB(white);
         Piece pc = pos.pieceOn(sq);
 
-        int wOffset = index_new<WHITE>(piece, square, pc, sq);
+        int wOffset = index_new<WHITE>(piece, square ^ flip, pc, sq ^ flip);
 
         refreshSingle<WHITE>(this, wOffset, square, accumulator);
     }
@@ -560,7 +579,7 @@ inline void Net::refreshMiniAcc(Position& pos, Piece piece, int square) {
         int sq = popLSB(black);
         Piece pc = pos.pieceOn(sq);
 
-        int wOffset = index_new<WHITE>(piece, square, pc, sq);
+        int wOffset = index_new<WHITE>(piece, square ^ flip, pc, sq ^ flip);
 
         refreshSingle<BLACK>(this, wOffset, square, accumulator);
     }
