@@ -3,8 +3,8 @@ OBJ_DIR=build
 MOLY_DIR=src
 CXX=clang++
 
-DEFAULT_NET_NAME=leftover.nnue
-DEFAULT_WDL_HEAD_NAME=leftover.nnue
+DEFAULT_NET_NAME=rich.nnue
+DEFAULT_WDL_HEAD_NAME=rich.nnue
 
 DEFAULT_EXE = $(OBJ_DIR)/Molybdenum
 DATAGEN_EXE = $(OBJ_DIR)/Datagen
