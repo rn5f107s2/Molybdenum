@@ -124,12 +124,13 @@ int index_new(int bucketPc, int bucketSq, int featurePc, int featureSq) {
     int bpc = colorOf(bucketPc) == C;
     int fpc = colorOf(featurePc) == C;
     int bsq = colorOf(bucketPc)  ? bucketSq  : bucketSq  ^ 56;
+    bsq = (bsq >> 1) | (2 * (bsq & 1));
     int fsq = colorOf(featurePc) ? featureSq : featureSq ^ 56;
     int ci  = ((bpc ^ fpc) << 1) | !fpc;
 
-    return   fpt * 64 * 64 * MINI_ACC_SIZE * 4 * 6 
-           + fsq * 64 * MINI_ACC_SIZE * 4 * 6 
-           + bpt * 64 * MINI_ACC_SIZE * 4 
+    return   fpt * 32 * 64 * MINI_ACC_SIZE * 4 * 6 
+           + fsq * 32 * MINI_ACC_SIZE * 4 * 6 
+           + bpt * 32 * MINI_ACC_SIZE * 4 
            + bsq * MINI_ACC_SIZE * 4 
            + ci * MINI_ACC_SIZE;
 }
@@ -140,12 +141,13 @@ int index_new(int bucketPc, int bucketSq, int featurePc, int featureSq) {
     int fpt = typeOf(featurePc);
     int bpc = colorOf(bucketPc);
     int bsq = bpc ? bucketSq  : bucketSq  ^ 56;
+    bsq = (bsq >> 1) | (2 * (bsq & 1));
     int fsq = FPC ? featureSq : featureSq ^ 56;
     int ci  = ((bpc ^ FPC) << 1) | !FPC;
 
-    return     fpt * 64 * 64 * MINI_ACC_SIZE * 4 * 6
-             + fsq * 64 * MINI_ACC_SIZE * 4 * 6 
-             + bpt * 64 * MINI_ACC_SIZE * 4 
+    return     fpt * 32 * 64 * MINI_ACC_SIZE * 4 * 6
+             + fsq * 32 * MINI_ACC_SIZE * 4 * 6 
+             + bpt * 32 * MINI_ACC_SIZE * 4 
              + bsq * MINI_ACC_SIZE * 4 
              + ci * MINI_ACC_SIZE;
 }
@@ -155,12 +157,13 @@ int index_new(int bucketPc, int bucketSq, int featurePc, int featureSq) {
     int bpt = typeOf(bucketPc);
     int fpt = typeOf(featurePc);
     int bsq = BPC ? bucketSq  : bucketSq  ^ 56;
+    bsq = (bsq >> 1) | (2 * (bsq & 1));
     int fsq = FPC ? featureSq : featureSq ^ 56;
     int ci  = ((BPC ^ FPC) << 1) | !FPC;
 
-    return    fpt * 64 * 64 * MINI_ACC_SIZE * 4 * 6 
-            + fsq * 64 * MINI_ACC_SIZE * 4 * 6 
-            + bpt * 64 * MINI_ACC_SIZE * 4 
+    return    fpt * 32 * 64 * MINI_ACC_SIZE * 4 * 6 
+            + fsq * 32 * MINI_ACC_SIZE * 4 * 6 
+            + bpt * 32 * MINI_ACC_SIZE * 4 
             + bsq * MINI_ACC_SIZE * 4 
             + ci * MINI_ACC_SIZE;
 }

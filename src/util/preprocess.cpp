@@ -35,7 +35,8 @@ void preprocess(std::ofstream& outfile) {
             for (int bpc = 0; bpc < 12; bpc++)
                 for (int bsq = 0; bsq < 64; bsq++)
                     for (int n = 0; n < MINI_ACC_SIZE; n++)
-                        preprocessed.weights0[index_new<WHITE>(bpc, bsq, fpc, fsq) + n] = weights.weights0[index_old<WHITE>(bpc, bsq, fpc, fsq) + n];
+                        if (!(bsq & 4))
+                            preprocessed.weights0[index_new<WHITE>(bpc, bsq, fpc, fsq) + n] = weights.weights0[index_old<WHITE>(bpc, bsq, fpc, fsq) + n];
 
     for (int sq = 0; sq < 64; sq++) {
         for (int pc = 0; pc < 12; pc++) {
