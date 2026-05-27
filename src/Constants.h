@@ -45,6 +45,9 @@ constexpr u64 FILEC = FILEH << 5;
 constexpr u64 FILEB = FILEH << 6;
 constexpr u64 FILEA = FILEH << 7;
 
+constexpr u64 KINGSIDE  = 0xf0f0f0f0f0f0f0f;
+constexpr u64 QUEENSIDE = 0xf0f0f0f0f0f0f0f0;
+
 constexpr int WHITE_CASTLE_KINGSIDE  = 1;
 constexpr int WHITE_CASTLE_QUEENSIDE = 2;
 constexpr int WHITE_CASTLING = WHITE_CASTLE_KINGSIDE | WHITE_CASTLE_QUEENSIDE;

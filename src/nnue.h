@@ -344,8 +344,10 @@ inline void Net::addaddSubSubSingle(int sq, int add1Offset, int add2Offset, int 
 
 template<Color ON_COLOR, Color OFF_COLOR>
 inline void Net::addSub(Position& pos, uint64_t cleanBitboard, uint64_t white, int onPiece, int onSquare, int offPiece, int offSquare, int refreshPc, int refreshSq) {
-    uint64_t w = cleanBitboard & white;
-    uint64_t b = cleanBitboard & ~white;
+    uint64_t wK = cleanBitboard & white & KINGSIDE;
+    uint64_t wQ = cleanBitboard & white & QUEENSIDE;
+    uint64_t bK = cleanBitboard & ~white & KINGSIDE;
+    uint64_t bQ = cleanBitboard & ~white & QUEENSIDE;
 
     constexpr bool RPC = ON_COLOR; // colorOf(refreshPc) == colorOf(movedPiece) == ON_COLOR
 
@@ -365,11 +367,11 @@ inline void Net::addSub(Position& pos, uint64_t cleanBitboard, uint64_t white, i
     for (int i = 0; i < NUM_REGS; i++)
         refreshAccs[i] = vec_loadu((vec_t *)(t + idx + I16_PER_REG * i));
 
-    while (w) {
-        int sq   = popLSB(w);
+    while (wK) {
+        int sq   = popLSB(wK);
         Piece pc = pos.pieceOn(sq);
 
-        int flip = (sq & 4) ? 7 : 0;
+        int flip = 0;
 
         int  onOffset     = index_new<WHITE, WHITE, ON_COLOR >(pc, sq ^ flip,  onPiece, onSquare  ^ flip);
         int offOffset     = index_new<WHITE, WHITE, OFF_COLOR>(pc, sq ^ flip, offPiece, offSquare ^ flip);
@@ -380,11 +382,41 @@ inline void Net::addSub(Position& pos, uint64_t cleanBitboard, uint64_t white, i
         addSubSingle<ON_COLOR, OFF_COLOR>(sq, onOffset, offOffset);
     }
 
-    while (b) {
-        int sq   = popLSB(b);
+    while (wQ) {
+        int sq   = popLSB(wQ);
         Piece pc = pos.pieceOn(sq);
 
-        int flip = (sq & 4) ? 7 : 0;
+        int flip = 7;
+
+        int  onOffset     = index_new<WHITE, WHITE, ON_COLOR >(pc, sq ^ flip,  onPiece, onSquare  ^ flip);
+        int offOffset     = index_new<WHITE, WHITE, OFF_COLOR>(pc, sq ^ flip, offPiece, offSquare ^ flip);
+        int refreshOffset = index_new<WHITE, RPC, WHITE>(refreshPc, refreshSq ^ rFlip, pc, sq ^ rFlip);
+
+        refreshSingle<WHITE>(this, refreshOffset, refreshAccs);
+
+        addSubSingle<ON_COLOR, OFF_COLOR>(sq, onOffset, offOffset);
+    }
+
+    while (bK) {
+        int sq   = popLSB(bK);
+        Piece pc = pos.pieceOn(sq);
+
+        int flip = 0;
+
+        int  onOffset     = index_new<WHITE, BLACK, ON_COLOR >(pc, sq ^ flip,  onPiece, onSquare ^ flip);
+        int offOffset     = index_new<WHITE, BLACK, OFF_COLOR>(pc, sq ^ flip, offPiece, offSquare ^ flip);
+        int refreshOffset = index_new<WHITE, RPC, BLACK>(refreshPc, refreshSq ^ rFlip, pc, sq ^ rFlip);
+
+        refreshSingle<BLACK>(this, refreshOffset, refreshAccs);
+
+        addSubSingle<ON_COLOR, OFF_COLOR>(sq, onOffset, offOffset);
+    }
+
+    while (bQ) {
+        int sq   = popLSB(bQ);
+        Piece pc = pos.pieceOn(sq);
+
+        int flip = 7;
 
         int  onOffset     = index_new<WHITE, BLACK, ON_COLOR >(pc, sq ^ flip,  onPiece, onSquare ^ flip);
         int offOffset     = index_new<WHITE, BLACK, OFF_COLOR>(pc, sq ^ flip, offPiece, offSquare ^ flip);
@@ -403,8 +435,10 @@ inline void Net::addSub(Position& pos, uint64_t cleanBitboard, uint64_t white, i
 
 template<Color ON_COLOR, Color OFF_COLOR, Color CAP_COLOR>
 inline void Net::addSubSub(Position& pos, uint64_t cleanBitboard, uint64_t white, int onPiece, int onSquare, int offPiece, int offSquare, int capPiece, int capSq, int refreshPc, int refreshSq) {
-    uint64_t w = cleanBitboard &  white;
-    uint64_t b = cleanBitboard & ~white;
+    uint64_t wK = cleanBitboard & white & KINGSIDE;
+    uint64_t wQ = cleanBitboard & white & QUEENSIDE;
+    uint64_t bK = cleanBitboard & ~white & KINGSIDE;
+    uint64_t bQ = cleanBitboard & ~white & QUEENSIDE;
 
     constexpr bool RPC = ON_COLOR; // colorOf(refreshPc) == colorOf(movedPiece) == ON_COLOR
 
@@ -428,11 +462,11 @@ inline void Net::addSubSub(Position& pos, uint64_t cleanBitboard, uint64_t white
     for (int i = 0; i < NUM_REGS; i++)
         refreshAccs[i] = vec_loadu((vec_t *)(t + idx + I16_PER_REG * i));
 
-    while (w) {
-        int sq   = popLSB(w);
+    while (wK) {
+        int sq   = popLSB(wK);
         Piece pc = pos.pieceOn(sq);
 
-        int flip = (sq & 4) ? 7 : 0;
+        int flip = 0;
 
         int  onOffset     = index_new<WHITE, WHITE, ON_COLOR >(pc, sq ^ flip,  onPiece,  onSquare ^ flip);
         int offOffset     = index_new<WHITE, WHITE, OFF_COLOR>(pc, sq ^ flip, offPiece, offSquare ^ flip);
@@ -444,11 +478,43 @@ inline void Net::addSubSub(Position& pos, uint64_t cleanBitboard, uint64_t white
         addSubSubSingle<ON_COLOR, OFF_COLOR, CAP_COLOR>(sq, onOffset, offOffset, capOffset);
     }
 
-    while (b) {
-        int sq   = popLSB(b);
+    while (wQ) {
+        int sq   = popLSB(wQ);
         Piece pc = pos.pieceOn(sq);
 
-        int flip = (sq & 4) ? 7 : 0;
+        int flip = 7;
+
+        int  onOffset     = index_new<WHITE, WHITE, ON_COLOR >(pc, sq ^ flip,  onPiece,  onSquare ^ flip);
+        int offOffset     = index_new<WHITE, WHITE, OFF_COLOR>(pc, sq ^ flip, offPiece, offSquare ^ flip);
+        int capOffset     = index_new<WHITE, WHITE, CAP_COLOR>(pc, sq ^ flip, capPiece,     capSq ^ flip);
+        int refreshOffset = index_new<WHITE, RPC, WHITE>(refreshPc, refreshSq ^ rFlip, pc, sq ^ rFlip);
+
+        refreshSingle<WHITE>(this, refreshOffset, refreshAccs);
+    
+        addSubSubSingle<ON_COLOR, OFF_COLOR, CAP_COLOR>(sq, onOffset, offOffset, capOffset);
+    }
+
+    while (bK) {
+        int sq   = popLSB(bK);
+        Piece pc = pos.pieceOn(sq);
+
+        int flip = 0;
+
+        int  onOffset = index_new<WHITE, BLACK, ON_COLOR >(pc, sq ^ flip,  onPiece,  onSquare ^ flip);
+        int offOffset = index_new<WHITE, BLACK, OFF_COLOR>(pc, sq ^ flip, offPiece, offSquare ^ flip);
+        int capOffset = index_new<WHITE, BLACK, CAP_COLOR>(pc, sq ^ flip, capPiece,     capSq ^ flip);
+        int refreshOffset = index_new<WHITE, RPC, BLACK>(refreshPc, refreshSq ^ rFlip, pc, sq ^ rFlip);
+
+        refreshSingle<BLACK>(this, refreshOffset, refreshAccs);
+
+        addSubSubSingle<ON_COLOR, OFF_COLOR, CAP_COLOR>(sq, onOffset, offOffset, capOffset);
+    }
+
+    while (bQ) {
+        int sq   = popLSB(bQ);
+        Piece pc = pos.pieceOn(sq);
+
+        int flip = 7;
 
         int  onOffset = index_new<WHITE, BLACK, ON_COLOR >(pc, sq ^ flip,  onPiece,  onSquare ^ flip);
         int offOffset = index_new<WHITE, BLACK, OFF_COLOR>(pc, sq ^ flip, offPiece, offSquare ^ flip);
