@@ -21,14 +21,13 @@
 
 INCBIN(network, EVALFILE);
 
-const Weights weights = *reinterpret_cast<const Weights*>(gnetworkData);
+const RawWeights weights = *reinterpret_cast<const RawWeights*>(gnetworkData);
 
 void preprocess(std::ofstream& outfile) {
     Weights* pp = new Weights();
     Weights& preprocessed = *pp;
 
     preprocessed.bias1    = weights.bias1;
-    preprocessed.weights0 = weights.weights0;
 
     for (int fpc = 0; fpc < 12; fpc++)
        for (int fsq = 0; fsq < 64; fsq++)

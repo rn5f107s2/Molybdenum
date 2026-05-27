@@ -31,12 +31,19 @@ static constexpr int NUM_REGS_DUAL = 2 * NUM_REGS_PERS == NUM_REGS? 0 : 1;
 static_assert(NUM_REGS == NUM_REGS_PERS * 2 + NUM_REGS_DUAL);
 static_assert((MINI_ACC_SIZE * 2) % I16_PER_REG == 0);
 
-struct Weights {
-    std::array<int16_t , L1_SIZE * INPUT_SIZE * 12> weights0{};
+template<bool PREPROCESSED>
+struct NetWeights {
+    constexpr static int N_WEIGHTS0 = PREPROCESSED ? L1_SIZE / 2 * INPUT_SIZE * 12
+                                                   : L1_SIZE * INPUT_SIZE * 12;
+
+    std::array<int16_t, N_WEIGHTS0> weights0{};
     std::array<int16_t, L1_SIZE * 12> bias0{};
     std::array<int16_t, L1_SIZE * OUTPUT_SIZE * 2 * 12> weights1{};
     std::array<int16_t, OUTPUT_SIZE> bias1{};
 };
+
+using Weights = NetWeights<true>;
+using RawWeights = NetWeights<false>;
 
 struct WDLHead {
     std::array<int16_t, L1_SIZE * 3 * 2> weights1{};
@@ -47,7 +54,7 @@ const extern Weights defaultWeights;
 
 class Net {
 public:
-    const std::array<int16_t , L1_SIZE * INPUT_SIZE * 12>& weights0;
+    const std::array<int16_t, L1_SIZE / 2 * INPUT_SIZE * 12>& weights0;
     const std::array<int16_t, L1_SIZE * 12>& bias0;
     const std::array<int16_t, L1_SIZE * OUTPUT_SIZE * 2 * 12>& weights1;
     const std::array<int16_t, OUTPUT_SIZE>& bias1;
