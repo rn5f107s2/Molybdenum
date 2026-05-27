@@ -123,15 +123,14 @@ int index_new(int bucketPc, int bucketSq, int featurePc, int featureSq) {
     int fpt = typeOf(featurePc);
     int bpc = colorOf(bucketPc) == C;
     int fpc = colorOf(featurePc) == C;
-    int bsq = colorOf(bucketPc)  ? bucketSq  : bucketSq  ^ 56;
-    bsq = (bsq >> 1) | (2 * (bsq & 1));
+    int bsq = (bpc ? bucketSq  : bucketSq  ^ 56) | ((bpc ^ fpc) << 2);
     int fsq = colorOf(featurePc) ? featureSq : featureSq ^ 56;
-    int ci  = ((bpc ^ fpc) << 1) | !fpc;
+    int ci  = !fpc;
 
-    return   fpt * 32 * 64 * MINI_ACC_SIZE * 4 * 6 
-           + fsq * 32 * MINI_ACC_SIZE * 4 * 6 
-           + bpt * 32 * MINI_ACC_SIZE * 4 
-           + bsq * MINI_ACC_SIZE * 4 
+    return   fpt * 64 * 64 * MINI_ACC_SIZE * 2 * 6 
+           + fsq * 64 * MINI_ACC_SIZE * 2 * 6 
+           + bpt * 64 * MINI_ACC_SIZE * 2 
+           + bsq * MINI_ACC_SIZE * 2 
            + ci * MINI_ACC_SIZE;
 }
 
@@ -140,15 +139,14 @@ int index_new(int bucketPc, int bucketSq, int featurePc, int featureSq) {
     int bpt = typeOf(bucketPc);
     int fpt = typeOf(featurePc);
     int bpc = colorOf(bucketPc);
-    int bsq = bpc ? bucketSq  : bucketSq  ^ 56;
-    bsq = (bsq >> 1) | (2 * (bsq & 1));
+    int bsq = (bpc ? bucketSq  : bucketSq  ^ 56) | ((bpc ^ FPC) << 2);
     int fsq = FPC ? featureSq : featureSq ^ 56;
-    int ci  = ((bpc ^ FPC) << 1) | !FPC;
+    int ci  = !FPC;
 
-    return     fpt * 32 * 64 * MINI_ACC_SIZE * 4 * 6
-             + fsq * 32 * MINI_ACC_SIZE * 4 * 6 
-             + bpt * 32 * MINI_ACC_SIZE * 4 
-             + bsq * MINI_ACC_SIZE * 4 
+    return     fpt * 64 * 64 * MINI_ACC_SIZE * 2 * 6
+             + fsq * 64 * MINI_ACC_SIZE * 2 * 6 
+             + bpt * 64 * MINI_ACC_SIZE * 2 
+             + bsq * MINI_ACC_SIZE * 2
              + ci * MINI_ACC_SIZE;
 }
 
@@ -157,14 +155,27 @@ int index_new(int bucketPc, int bucketSq, int featurePc, int featureSq) {
     int bpt = typeOf(bucketPc);
     int fpt = typeOf(featurePc);
     int bsq = BPC ? bucketSq  : bucketSq  ^ 56;
-    bsq = (bsq >> 1) | (2 * (bsq & 1));
     int fsq = FPC ? featureSq : featureSq ^ 56;
-    int ci  = ((BPC ^ FPC) << 1) | !FPC;
+    int ci  = !FPC;
+    int ci2 = ((BPC ^ FPC) << 2);
 
-    return    fpt * 32 * 64 * MINI_ACC_SIZE * 4 * 6 
-            + fsq * 32 * MINI_ACC_SIZE * 4 * 6 
-            + bpt * 32 * MINI_ACC_SIZE * 4 
-            + bsq * MINI_ACC_SIZE * 4 
+
+    // Color indexing maps the following way:
+    // 1 1 -> 0 
+    // 0 0 -> 1
+    // 0 1 -> 2
+    // 1 0 -> 3 
+    // since we hm on bsq, the 3rd bit can never be set. Normally mapping
+    // the bsq into 0...31 is slow, so instead as we only really need 1 1, 0 0 and 0 1, 1 0
+    // to be next to each other, we map !FPC to the color index, but use BPC ^ FPC as the 3rd bit 
+    // in the bsq since that is almost free. Since the bit is never set, setting it is equivalant to adding 4,
+    // since FPC and BPC are constexpr, we can rewrite that into the index calculation without ever actually needint to set the bit.
+
+    return    fpt * 64 * 64 * MINI_ACC_SIZE * 2 * 6 
+            + fsq * 64 * MINI_ACC_SIZE * 2 * 6 
+            + bpt * 64 * MINI_ACC_SIZE * 2
+            + ci2 * MINI_ACC_SIZE * 2 
+            + bsq * MINI_ACC_SIZE * 2
             + ci * MINI_ACC_SIZE;
 }
 
@@ -362,7 +373,7 @@ inline void Net::addSub(Position& pos, uint64_t cleanBitboard, uint64_t white, i
 
         int  onOffset     = index_new<WHITE, WHITE, ON_COLOR >(pc, sq ^ flip,  onPiece, onSquare  ^ flip);
         int offOffset     = index_new<WHITE, WHITE, OFF_COLOR>(pc, sq ^ flip, offPiece, offSquare ^ flip);
-        int refreshOffset = index_new<WHITE, WHITE>(refreshPc, refreshSq ^ rFlip, pc, sq ^ rFlip);
+        int refreshOffset = index_new<WHITE, RPC, WHITE>(refreshPc, refreshSq ^ rFlip, pc, sq ^ rFlip);
 
         refreshSingle<WHITE>(this, refreshOffset, refreshAccs);
 
@@ -377,7 +388,7 @@ inline void Net::addSub(Position& pos, uint64_t cleanBitboard, uint64_t white, i
 
         int  onOffset     = index_new<WHITE, BLACK, ON_COLOR >(pc, sq ^ flip,  onPiece, onSquare ^ flip);
         int offOffset     = index_new<WHITE, BLACK, OFF_COLOR>(pc, sq ^ flip, offPiece, offSquare ^ flip);
-        int refreshOffset = index_new<WHITE, BLACK>(refreshPc, refreshSq ^ rFlip, pc, sq ^ rFlip);
+        int refreshOffset = index_new<WHITE, RPC, BLACK>(refreshPc, refreshSq ^ rFlip, pc, sq ^ rFlip);
 
         refreshSingle<BLACK>(this, refreshOffset, refreshAccs);
 
@@ -426,7 +437,7 @@ inline void Net::addSubSub(Position& pos, uint64_t cleanBitboard, uint64_t white
         int  onOffset     = index_new<WHITE, WHITE, ON_COLOR >(pc, sq ^ flip,  onPiece,  onSquare ^ flip);
         int offOffset     = index_new<WHITE, WHITE, OFF_COLOR>(pc, sq ^ flip, offPiece, offSquare ^ flip);
         int capOffset     = index_new<WHITE, WHITE, CAP_COLOR>(pc, sq ^ flip, capPiece,     capSq ^ flip);
-        int refreshOffset = index_new<WHITE, WHITE>(refreshPc, refreshSq ^ rFlip, pc, sq ^ rFlip);
+        int refreshOffset = index_new<WHITE, RPC, WHITE>(refreshPc, refreshSq ^ rFlip, pc, sq ^ rFlip);
 
         refreshSingle<WHITE>(this, refreshOffset, refreshAccs);
     
@@ -442,7 +453,7 @@ inline void Net::addSubSub(Position& pos, uint64_t cleanBitboard, uint64_t white
         int  onOffset = index_new<WHITE, BLACK, ON_COLOR >(pc, sq ^ flip,  onPiece,  onSquare ^ flip);
         int offOffset = index_new<WHITE, BLACK, OFF_COLOR>(pc, sq ^ flip, offPiece, offSquare ^ flip);
         int capOffset = index_new<WHITE, BLACK, CAP_COLOR>(pc, sq ^ flip, capPiece,     capSq ^ flip);
-        int refreshOffset = index_new<WHITE, BLACK>(refreshPc, refreshSq ^ rFlip, pc, sq ^ rFlip);
+        int refreshOffset = index_new<WHITE, RPC, BLACK>(refreshPc, refreshSq ^ rFlip, pc, sq ^ rFlip);
 
         refreshSingle<BLACK>(this, refreshOffset, refreshAccs);
 
