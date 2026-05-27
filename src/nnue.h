@@ -31,12 +31,19 @@ static constexpr int NUM_REGS_DUAL = 2 * NUM_REGS_PERS == NUM_REGS? 0 : 1;
 static_assert(NUM_REGS == NUM_REGS_PERS * 2 + NUM_REGS_DUAL);
 static_assert((MINI_ACC_SIZE * 2) % I16_PER_REG == 0);
 
-struct Weights {
-    std::array<int16_t , L1_SIZE * INPUT_SIZE * 12> weights0{};
+template<bool PREPROCESSED>
+struct NetWeights {
+    constexpr static int N_WEIGHTS0 = PREPROCESSED ? L1_SIZE / 2 * INPUT_SIZE * 12
+                                                   : L1_SIZE * INPUT_SIZE * 12;
+
+    std::array<int16_t, N_WEIGHTS0> weights0{};
     std::array<int16_t, L1_SIZE * 12> bias0{};
     std::array<int16_t, L1_SIZE * OUTPUT_SIZE * 2 * 12> weights1{};
     std::array<int16_t, OUTPUT_SIZE> bias1{};
 };
+
+using Weights = NetWeights<true>;
+using RawWeights = NetWeights<false>;
 
 struct WDLHead {
     std::array<int16_t, L1_SIZE * 3 * 2> weights1{};
@@ -47,7 +54,7 @@ const extern Weights defaultWeights;
 
 class Net {
 public:
-    const std::array<int16_t , L1_SIZE * INPUT_SIZE * 12>& weights0;
+    const std::array<int16_t, L1_SIZE / 2 * INPUT_SIZE * 12>& weights0;
     const std::array<int16_t, L1_SIZE * 12>& bias0;
     const std::array<int16_t, L1_SIZE * OUTPUT_SIZE * 2 * 12>& weights1;
     const std::array<int16_t, OUTPUT_SIZE>& bias1;
@@ -123,14 +130,14 @@ int index_new(int bucketPc, int bucketSq, int featurePc, int featureSq) {
     int fpt = typeOf(featurePc);
     int bpc = colorOf(bucketPc) == C;
     int fpc = colorOf(featurePc) == C;
-    int bsq = colorOf(bucketPc)  ? bucketSq  : bucketSq  ^ 56;
+    int bsq = (bpc ? bucketSq  : bucketSq  ^ 56) | ((bpc ^ fpc) << 2);
     int fsq = colorOf(featurePc) ? featureSq : featureSq ^ 56;
-    int ci  = ((bpc ^ fpc) << 1) | !fpc;
+    int ci  = !fpc;
 
-    return   fpt * 64 * 64 * MINI_ACC_SIZE * 4 * 6 
-           + fsq * 64 * MINI_ACC_SIZE * 4 * 6 
-           + bpt * 64 * MINI_ACC_SIZE * 4 
-           + bsq * MINI_ACC_SIZE * 4 
+    return   fpt * 64 * 64 * MINI_ACC_SIZE * 2 * 6 
+           + fsq * 64 * MINI_ACC_SIZE * 2 * 6 
+           + bpt * 64 * MINI_ACC_SIZE * 2 
+           + bsq * MINI_ACC_SIZE * 2 
            + ci * MINI_ACC_SIZE;
 }
 
@@ -139,14 +146,14 @@ int index_new(int bucketPc, int bucketSq, int featurePc, int featureSq) {
     int bpt = typeOf(bucketPc);
     int fpt = typeOf(featurePc);
     int bpc = colorOf(bucketPc);
-    int bsq = bpc ? bucketSq  : bucketSq  ^ 56;
+    int bsq = (bpc ? bucketSq  : bucketSq  ^ 56) | ((bpc ^ FPC) << 2);
     int fsq = FPC ? featureSq : featureSq ^ 56;
-    int ci  = ((bpc ^ FPC) << 1) | !FPC;
+    int ci  = !FPC;
 
-    return     fpt * 64 * 64 * MINI_ACC_SIZE * 4 * 6
-             + fsq * 64 * MINI_ACC_SIZE * 4 * 6 
-             + bpt * 64 * MINI_ACC_SIZE * 4 
-             + bsq * MINI_ACC_SIZE * 4 
+    return     fpt * 64 * 64 * MINI_ACC_SIZE * 2 * 6
+             + fsq * 64 * MINI_ACC_SIZE * 2 * 6 
+             + bpt * 64 * MINI_ACC_SIZE * 2 
+             + bsq * MINI_ACC_SIZE * 2
              + ci * MINI_ACC_SIZE;
 }
 
@@ -156,12 +163,26 @@ int index_new(int bucketPc, int bucketSq, int featurePc, int featureSq) {
     int fpt = typeOf(featurePc);
     int bsq = BPC ? bucketSq  : bucketSq  ^ 56;
     int fsq = FPC ? featureSq : featureSq ^ 56;
-    int ci  = ((BPC ^ FPC) << 1) | !FPC;
+    int ci  = !FPC;
+    int ci2 = ((BPC ^ FPC) << 2);
 
-    return    fpt * 64 * 64 * MINI_ACC_SIZE * 4 * 6 
-            + fsq * 64 * MINI_ACC_SIZE * 4 * 6 
-            + bpt * 64 * MINI_ACC_SIZE * 4 
-            + bsq * MINI_ACC_SIZE * 4 
+
+    // Color indexing maps the following way:
+    // 1 1 -> 0 
+    // 0 0 -> 1
+    // 0 1 -> 2
+    // 1 0 -> 3 
+    // since we hm on bsq, the 3rd bit can never be set. Normally mapping
+    // the bsq into 0...31 is slow, so instead as we only really need 1 1, 0 0 and 0 1, 1 0
+    // to be next to each other, we map !FPC to the color index, but use BPC ^ FPC as the 3rd bit 
+    // in the bsq since that is almost free. Since the bit is never set, setting it is equivalant to adding 4,
+    // since FPC and BPC are constexpr, we can rewrite that into the index calculation without ever actually needint to set the bit.
+
+    return    fpt * 64 * 64 * MINI_ACC_SIZE * 2 * 6 
+            + fsq * 64 * MINI_ACC_SIZE * 2 * 6 
+            + bpt * 64 * MINI_ACC_SIZE * 2
+            + ci2 * MINI_ACC_SIZE * 2 
+            + bsq * MINI_ACC_SIZE * 2
             + ci * MINI_ACC_SIZE;
 }
 
@@ -330,12 +351,16 @@ inline void Net::addaddSubSubSingle(int sq, int add1Offset, int add2Offset, int 
 
 template<Color ON_COLOR, Color OFF_COLOR>
 inline void Net::addSub(Position& pos, uint64_t cleanBitboard, uint64_t white, int onPiece, int onSquare, int offPiece, int offSquare, int refreshPc, int refreshSq) {
-    uint64_t w = cleanBitboard & white;
-    uint64_t b = cleanBitboard & ~white;
+    uint64_t wK = cleanBitboard & white & KINGSIDE;
+    uint64_t wQ = cleanBitboard & white & QUEENSIDE;
+    uint64_t bK = cleanBitboard & ~white & KINGSIDE;
+    uint64_t bQ = cleanBitboard & ~white & QUEENSIDE;
 
     constexpr bool RPC = ON_COLOR; // colorOf(refreshPc) == colorOf(movedPiece) == ON_COLOR
 
-    int biasIndex = L1_SIZE * 2 * typeOf(refreshPc) + (RPC ? refreshSq : refreshSq ^ 56) * MINI_ACC_SIZE * 2;
+    int rFlip = (refreshSq & 4) ? 7 : 0; 
+
+    int biasIndex = L1_SIZE * 2 * typeOf(refreshPc) + (RPC ? refreshSq ^ rFlip : refreshSq ^ 56 ^ rFlip) * MINI_ACC_SIZE * 2;
 
     int16_t* t = accumulatorStack[accumulatorHead + 1];
 
@@ -349,26 +374,60 @@ inline void Net::addSub(Position& pos, uint64_t cleanBitboard, uint64_t white, i
     for (int i = 0; i < NUM_REGS; i++)
         refreshAccs[i] = vec_loadu((vec_t *)(t + idx + I16_PER_REG * i));
 
-    while (w) {
-        int sq   = popLSB(w);
+    while (wK) {
+        int sq   = popLSB(wK);
         Piece pc = pos.pieceOn(sq);
 
-        int  onOffset     = index_new<WHITE, WHITE, ON_COLOR >(pc, sq,  onPiece, onSquare);
-        int offOffset     = index_new<WHITE, WHITE, OFF_COLOR>(pc, sq, offPiece, offSquare);
-        int refreshOffset = index_new<WHITE, WHITE>(refreshPc, refreshSq, pc, sq);
+        int flip = 0;
+
+        int  onOffset     = index_new<WHITE, WHITE, ON_COLOR >(pc, sq ^ flip,  onPiece, onSquare  ^ flip);
+        int offOffset     = index_new<WHITE, WHITE, OFF_COLOR>(pc, sq ^ flip, offPiece, offSquare ^ flip);
+        int refreshOffset = index_new<WHITE, RPC, WHITE>(refreshPc, refreshSq ^ rFlip, pc, sq ^ rFlip);
 
         refreshSingle<WHITE>(this, refreshOffset, refreshAccs);
 
         addSubSingle<ON_COLOR, OFF_COLOR>(sq, onOffset, offOffset);
     }
 
-    while (b) {
-        int sq   = popLSB(b);
+    while (wQ) {
+        int sq   = popLSB(wQ);
         Piece pc = pos.pieceOn(sq);
 
-        int  onOffset     = index_new<WHITE, BLACK, ON_COLOR >(pc, sq,  onPiece, onSquare);
-        int offOffset     = index_new<WHITE, BLACK, OFF_COLOR>(pc, sq, offPiece, offSquare);
-        int refreshOffset = index_new<WHITE, BLACK>(refreshPc, refreshSq, pc, sq);
+        int flip = 7;
+
+        int  onOffset     = index_new<WHITE, WHITE, ON_COLOR >(pc, sq ^ flip,  onPiece, onSquare  ^ flip);
+        int offOffset     = index_new<WHITE, WHITE, OFF_COLOR>(pc, sq ^ flip, offPiece, offSquare ^ flip);
+        int refreshOffset = index_new<WHITE, RPC, WHITE>(refreshPc, refreshSq ^ rFlip, pc, sq ^ rFlip);
+
+        refreshSingle<WHITE>(this, refreshOffset, refreshAccs);
+
+        addSubSingle<ON_COLOR, OFF_COLOR>(sq, onOffset, offOffset);
+    }
+
+    while (bK) {
+        int sq   = popLSB(bK);
+        Piece pc = pos.pieceOn(sq);
+
+        int flip = 0;
+
+        int  onOffset     = index_new<WHITE, BLACK, ON_COLOR >(pc, sq ^ flip,  onPiece, onSquare ^ flip);
+        int offOffset     = index_new<WHITE, BLACK, OFF_COLOR>(pc, sq ^ flip, offPiece, offSquare ^ flip);
+        int refreshOffset = index_new<WHITE, RPC, BLACK>(refreshPc, refreshSq ^ rFlip, pc, sq ^ rFlip);
+
+        refreshSingle<BLACK>(this, refreshOffset, refreshAccs);
+
+        addSubSingle<ON_COLOR, OFF_COLOR>(sq, onOffset, offOffset);
+    }
+
+    while (bQ) {
+        int sq   = popLSB(bQ);
+        Piece pc = pos.pieceOn(sq);
+
+        int flip = 7;
+
+        int  onOffset     = index_new<WHITE, BLACK, ON_COLOR >(pc, sq ^ flip,  onPiece, onSquare ^ flip);
+        int offOffset     = index_new<WHITE, BLACK, OFF_COLOR>(pc, sq ^ flip, offPiece, offSquare ^ flip);
+        int refreshOffset = index_new<WHITE, RPC, BLACK>(refreshPc, refreshSq ^ rFlip, pc, sq ^ rFlip);
 
         refreshSingle<BLACK>(this, refreshOffset, refreshAccs);
 
@@ -383,12 +442,16 @@ inline void Net::addSub(Position& pos, uint64_t cleanBitboard, uint64_t white, i
 
 template<Color ON_COLOR, Color OFF_COLOR, Color CAP_COLOR>
 inline void Net::addSubSub(Position& pos, uint64_t cleanBitboard, uint64_t white, int onPiece, int onSquare, int offPiece, int offSquare, int capPiece, int capSq, int refreshPc, int refreshSq) {
-    uint64_t w = cleanBitboard &  white;
-    uint64_t b = cleanBitboard & ~white;
+    uint64_t wK = cleanBitboard & white & KINGSIDE;
+    uint64_t wQ = cleanBitboard & white & QUEENSIDE;
+    uint64_t bK = cleanBitboard & ~white & KINGSIDE;
+    uint64_t bQ = cleanBitboard & ~white & QUEENSIDE;
 
     constexpr bool RPC = ON_COLOR; // colorOf(refreshPc) == colorOf(movedPiece) == ON_COLOR
 
-    int biasIndex = L1_SIZE * 2 * typeOf(refreshPc) + (RPC ? refreshSq : refreshSq ^ 56) * MINI_ACC_SIZE * 2;
+    int rFlip = (refreshSq & 4) ? 7 : 0; 
+
+    int biasIndex = L1_SIZE * 2 * typeOf(refreshPc) + (RPC ? refreshSq ^ rFlip : refreshSq ^ 56 ^ rFlip) * MINI_ACC_SIZE * 2;
 
     int16_t* t = accumulatorStack[accumulatorHead + 1];
 
@@ -406,28 +469,64 @@ inline void Net::addSubSub(Position& pos, uint64_t cleanBitboard, uint64_t white
     for (int i = 0; i < NUM_REGS; i++)
         refreshAccs[i] = vec_loadu((vec_t *)(t + idx + I16_PER_REG * i));
 
-    while (w) {
-        int sq   = popLSB(w);
+    while (wK) {
+        int sq   = popLSB(wK);
         Piece pc = pos.pieceOn(sq);
 
-        int  onOffset     = index_new<WHITE, WHITE, ON_COLOR >(pc, sq,  onPiece,  onSquare);
-        int offOffset     = index_new<WHITE, WHITE, OFF_COLOR>(pc, sq, offPiece, offSquare);
-        int capOffset     = index_new<WHITE, WHITE, CAP_COLOR>(pc, sq, capPiece,     capSq);
-        int refreshOffset = index_new<WHITE, WHITE>(refreshPc, refreshSq, pc, sq);
+        int flip = 0;
+
+        int  onOffset     = index_new<WHITE, WHITE, ON_COLOR >(pc, sq ^ flip,  onPiece,  onSquare ^ flip);
+        int offOffset     = index_new<WHITE, WHITE, OFF_COLOR>(pc, sq ^ flip, offPiece, offSquare ^ flip);
+        int capOffset     = index_new<WHITE, WHITE, CAP_COLOR>(pc, sq ^ flip, capPiece,     capSq ^ flip);
+        int refreshOffset = index_new<WHITE, RPC, WHITE>(refreshPc, refreshSq ^ rFlip, pc, sq ^ rFlip);
 
         refreshSingle<WHITE>(this, refreshOffset, refreshAccs);
     
         addSubSubSingle<ON_COLOR, OFF_COLOR, CAP_COLOR>(sq, onOffset, offOffset, capOffset);
     }
 
-    while (b) {
-        int sq   = popLSB(b);
+    while (wQ) {
+        int sq   = popLSB(wQ);
         Piece pc = pos.pieceOn(sq);
 
-        int  onOffset = index_new<WHITE, BLACK, ON_COLOR >(pc, sq,  onPiece,  onSquare);
-        int offOffset = index_new<WHITE, BLACK, OFF_COLOR>(pc, sq, offPiece, offSquare);
-        int capOffset = index_new<WHITE, BLACK, CAP_COLOR>(pc, sq, capPiece,     capSq);
-        int refreshOffset = index_new<WHITE, BLACK>(refreshPc, refreshSq, pc, sq);
+        int flip = 7;
+
+        int  onOffset     = index_new<WHITE, WHITE, ON_COLOR >(pc, sq ^ flip,  onPiece,  onSquare ^ flip);
+        int offOffset     = index_new<WHITE, WHITE, OFF_COLOR>(pc, sq ^ flip, offPiece, offSquare ^ flip);
+        int capOffset     = index_new<WHITE, WHITE, CAP_COLOR>(pc, sq ^ flip, capPiece,     capSq ^ flip);
+        int refreshOffset = index_new<WHITE, RPC, WHITE>(refreshPc, refreshSq ^ rFlip, pc, sq ^ rFlip);
+
+        refreshSingle<WHITE>(this, refreshOffset, refreshAccs);
+    
+        addSubSubSingle<ON_COLOR, OFF_COLOR, CAP_COLOR>(sq, onOffset, offOffset, capOffset);
+    }
+
+    while (bK) {
+        int sq   = popLSB(bK);
+        Piece pc = pos.pieceOn(sq);
+
+        int flip = 0;
+
+        int  onOffset = index_new<WHITE, BLACK, ON_COLOR >(pc, sq ^ flip,  onPiece,  onSquare ^ flip);
+        int offOffset = index_new<WHITE, BLACK, OFF_COLOR>(pc, sq ^ flip, offPiece, offSquare ^ flip);
+        int capOffset = index_new<WHITE, BLACK, CAP_COLOR>(pc, sq ^ flip, capPiece,     capSq ^ flip);
+        int refreshOffset = index_new<WHITE, RPC, BLACK>(refreshPc, refreshSq ^ rFlip, pc, sq ^ rFlip);
+
+        refreshSingle<BLACK>(this, refreshOffset, refreshAccs);
+
+        addSubSubSingle<ON_COLOR, OFF_COLOR, CAP_COLOR>(sq, onOffset, offOffset, capOffset);
+    }
+
+    while (bQ) {
+        int sq   = popLSB(bQ);
+        Piece pc = pos.pieceOn(sq);
+
+        int flip = 7;
+
+        int  onOffset = index_new<WHITE, BLACK, ON_COLOR >(pc, sq ^ flip,  onPiece,  onSquare ^ flip);
+        int offOffset = index_new<WHITE, BLACK, OFF_COLOR>(pc, sq ^ flip, offPiece, offSquare ^ flip);
+        int capOffset = index_new<WHITE, BLACK, CAP_COLOR>(pc, sq ^ flip, capPiece,     capSq ^ flip);
+        int refreshOffset = index_new<WHITE, RPC, BLACK>(refreshPc, refreshSq ^ rFlip, pc, sq ^ rFlip);
 
         refreshSingle<BLACK>(this, refreshOffset, refreshAccs);
 
@@ -446,10 +545,12 @@ inline void Net::addaddSubSub(Position& pos, uint64_t cleanBitboard, int from, i
         int sq   = popLSB(cleanBitboard);
         Piece pc = pos.pieceOn(sq);
 
-        int add1Offset = index_new<WHITE>(pc, sq, king, to);
-        int add2Offset = index_new<WHITE>(pc, sq, rook, rTo);
-        int sub1Offset = index_new<WHITE>(pc, sq, king, from);
-        int sub2Offset = index_new<WHITE>(pc, sq, rook, rFrom);
+        int flip = (sq & 4) ? 7 : 0;
+
+        int add1Offset = index_new<WHITE>(pc, sq ^ flip, king, to ^ flip);
+        int add2Offset = index_new<WHITE>(pc, sq ^ flip, rook, rTo ^ flip);
+        int sub1Offset = index_new<WHITE>(pc, sq ^ flip, king, from ^ flip);
+        int sub2Offset = index_new<WHITE>(pc, sq ^ flip, rook, rFrom ^ flip);
 
         addaddSubSubSingle<C>(sq, add1Offset, add2Offset, sub1Offset, sub2Offset);
     }
@@ -542,7 +643,12 @@ inline void Net::refreshMiniAcc(Position& pos, Piece piece, int square) {
     uint64_t white = pos.getOccupied<WHITE>() & ~(1ULL << square);
     uint64_t black = pos.getOccupied<BLACK>() & ~(1ULL << square);
 
-    int biasIndex = L1_SIZE * 2 * typeOf(piece) + (colorOf(piece) ? square : square ^ 56) * MINI_ACC_SIZE * 2;
+    int flip = 0;
+    
+    if (square & 4)
+        flip = 7;
+
+    int biasIndex = L1_SIZE * 2 * typeOf(piece) + (colorOf(piece) ? square ^ flip : square ^ 56 ^ flip) * MINI_ACC_SIZE * 2;
 
     memcpy(&accumulator[square * MINI_ACC_SIZE * 2                ], &bias0[biasIndex + MINI_ACC_SIZE * !colorOf(piece)], MINI_ACC_SIZE * sizeof(int16_t));
     memcpy(&accumulator[square * MINI_ACC_SIZE * 2 + MINI_ACC_SIZE], &bias0[biasIndex + MINI_ACC_SIZE *  colorOf(piece)], MINI_ACC_SIZE * sizeof(int16_t));
@@ -551,7 +657,7 @@ inline void Net::refreshMiniAcc(Position& pos, Piece piece, int square) {
         int sq = popLSB(white);
         Piece pc = pos.pieceOn(sq);
 
-        int wOffset = index_new<WHITE>(piece, square, pc, sq);
+        int wOffset = index_new<WHITE>(piece, square ^ flip, pc, sq ^ flip);
 
         refreshSingle<WHITE>(this, wOffset, square, accumulator);
     }
@@ -560,7 +666,7 @@ inline void Net::refreshMiniAcc(Position& pos, Piece piece, int square) {
         int sq = popLSB(black);
         Piece pc = pos.pieceOn(sq);
 
-        int wOffset = index_new<WHITE>(piece, square, pc, sq);
+        int wOffset = index_new<WHITE>(piece, square ^ flip, pc, sq ^ flip);
 
         refreshSingle<BLACK>(this, wOffset, square, accumulator);
     }
