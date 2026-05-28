@@ -35,7 +35,22 @@ const Weights defaultWeights = *reinterpret_cast<const Weights*>(gnetworkData);
 const WDLHead defaultWdl     = *reinterpret_cast<const WDLHead*>(gwdlHeadData);
 
 void Net::loadDefaultNet() {
-    weights0 = defaultWeights.weights0;
+    for (int fpc = 0; fpc < 12; fpc++)
+        for (int fsq = 0; fsq < 64; fsq++)
+            for (int bpc = 0; bpc < 12; bpc++)
+                for (int bsq = 0; bsq < 64; bsq++)
+                    for (int i = 0; i < 32; i++) {
+                        int flip = (bsq & 4) ? 7 : 0;
+
+                        int indexWhite = index<WHITE>(fpc, fsq);
+                        int offset = indexWhite * L1_SIZE * 12 + bsq * 32 + L1_SIZE * bpc;
+
+                        int fOffset = index<WHITE>(fpc, fsq ^ flip) * L1_SIZE * 12 + (bsq ^ flip) * 32 + L1_SIZE * bpc;
+
+                        weights0[offset + i] = defaultWeights.weights0[fOffset + i];
+                    }
+
+
     weights1 = defaultWeights.weights1;
     bias0 = defaultWeights.bias0;
     bias1 = defaultWeights.bias1;
