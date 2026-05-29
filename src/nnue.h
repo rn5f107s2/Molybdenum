@@ -36,7 +36,8 @@ static_assert((MINI_ACC_SIZE * 2) % I16_PER_REG == 0);
 
 template<bool PREPROCESSED>
 struct NetWeights {
-    using T = std::conditional_t<PREPROCESSED, float, int16_t>;
+    using LW_T = std::conditional_t<PREPROCESSED, float, int16_t>;
+    using B_T  = std::conditional_t<PREPROCESSED, int  , int16_t>;
 
     constexpr static int N_WEIGHTS0 = PREPROCESSED ? L1_SIZE / 2 * INPUT_SIZE * 12
                                                    : L1_SIZE * INPUT_SIZE * 12;
@@ -44,11 +45,11 @@ struct NetWeights {
     std::array<int16_t, N_WEIGHTS0> weights0{};
     std::array<int16_t, L1_SIZE * 12> bias0{};
     std::array<int16_t, L1_SIZE * L2_SIZE * 2 * 12> weights1{};
-    std::array<int16_t, L2_SIZE> bias1{};
-    std::array<T, L2_SIZE * L3_SIZE> weights2{};
-    std::array<T, L3_SIZE> bias2{};
-    std::array<T, L3_SIZE * OUTPUT_SIZE> weights3{};
-    std::array<T, OUTPUT_SIZE> bias3{};
+    std::array<B_T , L2_SIZE> bias1{};
+    std::array<LW_T, L2_SIZE * L3_SIZE> weights2{};
+    std::array<LW_T, L3_SIZE> bias2{};
+    std::array<LW_T, L3_SIZE * OUTPUT_SIZE> weights3{};
+    std::array<LW_T, OUTPUT_SIZE> bias3{};
 };
 
 using Weights = NetWeights<true>;
@@ -66,7 +67,7 @@ public:
     const std::array<int16_t, L1_SIZE / 2 * INPUT_SIZE * 12>& weights0;
     const std::array<int16_t, L1_SIZE * 12>& bias0;
     const std::array<int16_t, L1_SIZE * L2_SIZE * 2 * 12>& weights1;
-    const std::array<int16_t, L2_SIZE>& bias1;
+    const std::array<int, L2_SIZE>& bias1;
     const std::array<float, L2_SIZE * L3_SIZE>& weights2;
     const std::array<float, L3_SIZE>& bias2;
     const std::array<float, L3_SIZE * OUTPUT_SIZE>& weights3;
@@ -118,7 +119,13 @@ public:
 };
 
 inline int screlu(int16_t input) {
-    int clamped = std::clamp(input, int16_t(0), int16_t(403));
+    int clamped = std::clamp(input, int16_t(0), int16_t(255));
+    return clamped * clamped;
+}
+
+
+inline float screlu(float input) {
+    float clamped = std::clamp(input, 0.0f, 1.0f);
     return clamped * clamped;
 }
 
@@ -577,7 +584,9 @@ inline void Net::addaddSubSub(Position& pos, uint64_t cleanBitboard, int from, i
 
 template<Color C> inline
 int Net::calculate(uint64_t occupied, Piece* mailbox) {
-    int output = 0;
+    std::array<int  , L2_SIZE> l1Out = bias1;
+    std::array<float, L3_SIZE> l2Out = bias2;
+    float output = bias3[0];
 
     while (occupied) {
         int sq = popLSB(occupied);
@@ -595,12 +604,23 @@ int Net::calculate(uint64_t occupied, Piece* mailbox) {
             int nSTM = ((sq ^ (56 * (C == BLACK))) * MINI_ACC_SIZE * 2) + i + (C == BLACK ? MINI_ACC_SIZE : 0);
             int nNTM = ((sq ^ (56 * (C == BLACK))) * MINI_ACC_SIZE * 2) + i + (C == WHITE ? MINI_ACC_SIZE : 0);;
 
-            output += screlu(accumulator[nSTM]) * weights1[L1_SIZE * 2 * ourPiece + (sq * MINI_ACC_SIZE * 2) + i                ];
-            output += screlu(accumulator[nNTM]) * weights1[L1_SIZE * 2 * ourPiece + (sq * MINI_ACC_SIZE * 2) + i + MINI_ACC_SIZE];
+            for (int m = 0; m < L2_SIZE; m++) {
+                int wUs = L1_SIZE * 2 * ourPiece + (sq * MINI_ACC_SIZE * 2) + i;
+
+                l1Out[m] += screlu(accumulator[nSTM]) * weights1[ wUs                  * L2_SIZE + m];
+                l1Out[m] += screlu(accumulator[nNTM]) * weights1[(wUs + MINI_ACC_SIZE) * L2_SIZE + m];
+            }
         }
     }
 
-    return ((output / 403) + bias1[0]) * 133 / (64 * 403);
+    for (int n = 0; n < L2_SIZE; n++)
+        for (int m = 0; m < L3_SIZE; m++)
+            l2Out[m] += screlu(float(l1Out[n]) / 255.0f / 255.0f / 100.0f) * weights2[n * L3_SIZE + m];
+
+    for (int i = 0; i < L3_SIZE; i++)
+        output += screlu(l2Out[i]) * weights3[i];
+
+    return output * 133;
 }
 
 inline void Net::refreshMiniAcc(Position& pos, Piece piece, int square) {
