@@ -600,22 +600,32 @@ int Net::calculate(uint64_t occupied, Piece* mailbox) {
             theirPiece = temp;
         }
 
+        int8_t activated[MINI_ACC_SIZE * 2];
+
         for (int i = 0; i < MINI_ACC_SIZE; i++) {
             int nSTM = ((sq ^ (56 * (C == BLACK))) * MINI_ACC_SIZE * 2) + i + (C == BLACK ? MINI_ACC_SIZE : 0);
-            int nNTM = ((sq ^ (56 * (C == BLACK))) * MINI_ACC_SIZE * 2) + i + (C == WHITE ? MINI_ACC_SIZE : 0);;
+            int nNTM = ((sq ^ (56 * (C == BLACK))) * MINI_ACC_SIZE * 2) + i + (C == WHITE ? MINI_ACC_SIZE : 0);
 
+            int16_t cUs   = std::clamp(accumulator[nSTM], int16_t(0), int16_t(255));
+            int16_t cThem = std::clamp(accumulator[nNTM], int16_t(0), int16_t(255));
+
+            activated[i                ] = (cUs   * (cUs   >> 1)) >> 8;
+            activated[i + MINI_ACC_SIZE] = (cThem * (cThem >> 1)) >> 8;
+        }
+
+        for (int i = 0; i < MINI_ACC_SIZE; i++) {
             for (int m = 0; m < L2_SIZE; m++) {
                 int wUs = L1_SIZE * 2 * ourPiece + (sq * MINI_ACC_SIZE * 2) + i;
 
-                l1Out[m] += screlu(accumulator[nSTM]) * weights1[ wUs                  * L2_SIZE + m];
-                l1Out[m] += screlu(accumulator[nNTM]) * weights1[(wUs + MINI_ACC_SIZE) * L2_SIZE + m];
+                l1Out[m] += activated[i                ] * weights1[ wUs                  * L2_SIZE + m];
+                l1Out[m] += activated[i + MINI_ACC_SIZE] * weights1[(wUs + MINI_ACC_SIZE) * L2_SIZE + m];
             }
         }
     }
 
     for (int n = 0; n < L2_SIZE; n++)
         for (int m = 0; m < L3_SIZE; m++)
-            l2Out[m] += screlu(float(l1Out[n]) / 255.0f / 255.0f / 100.0f) * weights2[n * L3_SIZE + m];
+            l2Out[m] += screlu(float(l1Out[n]) * 256.0f * 2.0f / 255.0f / 255.0f / 100.0f) * weights2[n * L3_SIZE + m];
 
     for (int i = 0; i < L3_SIZE; i++)
         output += screlu(l2Out[i]) * weights3[i];
