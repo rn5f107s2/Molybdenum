@@ -600,17 +600,27 @@ int Net::calculate(uint64_t occupied, Piece* mailbox) {
             theirPiece = temp;
         }
 
-        int8_t activated[MINI_ACC_SIZE * 2];
+        int16_t activated[MINI_ACC_SIZE * 2];
 
-        for (int i = 0; i < MINI_ACC_SIZE; i++) {
-            int nSTM = ((sq ^ (56 * (C == BLACK))) * MINI_ACC_SIZE * 2) + i + (C == BLACK ? MINI_ACC_SIZE : 0);
-            int nNTM = ((sq ^ (56 * (C == BLACK))) * MINI_ACC_SIZE * 2) + i + (C == WHITE ? MINI_ACC_SIZE : 0);
+        int nSTM = ((sq ^ (56 * (C == BLACK))) * MINI_ACC_SIZE * 2) + (C == BLACK ? MINI_ACC_SIZE : 0);
+        int nNTM = ((sq ^ (56 * (C == BLACK))) * MINI_ACC_SIZE * 2) + (C == WHITE ? MINI_ACC_SIZE : 0);
 
-            int16_t cUs   = std::clamp(accumulator[nSTM], int16_t(0), int16_t(255));
-            int16_t cThem = std::clamp(accumulator[nNTM], int16_t(0), int16_t(255));
+        vec_t zero = vec_setzero();
+        vec_t qa   = vet_set1_epi16(255);
 
-            activated[i                ] = (cUs   * (cUs   >> 1)) >> 8;
-            activated[i + MINI_ACC_SIZE] = (cThem * (cThem >> 1)) >> 8;
+        for (int i = 0; i < MINI_ACC_SIZE; i += I16_PER_REG) {
+            vec_t us1   = vec_loadu((vec_t*) &accumulator[nSTM + i]);
+            vec_t them1 = vec_loadu((vec_t*) &accumulator[nNTM + i]);
+
+            vec_t cUs1   = vec_min_epi16(vec_max_epi16(us1  , zero), qa);
+            vec_t cThem1 = vec_min_epi16(vec_max_epi16(them1, zero), qa);
+
+            // (cUs   * (cUs   >> 1)) >> 8;
+            vec_t actUs1   = _mm256_srai_epi16(vec_mullo_epi16(cUs1  , _mm256_srai_epi16(cUs1  , 1)), 8);
+            vec_t actThem1 = _mm256_srai_epi16(vec_mullo_epi16(cThem1, _mm256_srai_epi16(cThem1, 1)), 8);
+
+            vec_storeu((vec_t*) &activated[i                ], actUs1);
+            vec_storeu((vec_t*) &activated[i + MINI_ACC_SIZE], actThem1);
         }
 
         for (int i = 0; i < MINI_ACC_SIZE; i++) {
