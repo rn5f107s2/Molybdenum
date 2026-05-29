@@ -7,6 +7,7 @@
 #include <tuple>
 #include <algorithm>
 #include <immintrin.h>
+#include <type_traits>
 #include "BitStuff.h"
 #include "Utility.h"
 #include "Position.h"
@@ -19,6 +20,8 @@ enum Toggle {
 static constexpr int INPUT_SIZE = 12 * 64;
 static constexpr int MINI_ACC_SIZE = 32;
 static constexpr int L1_SIZE = MINI_ACC_SIZE * 64;
+static constexpr int L2_SIZE = 8;
+static constexpr int L3_SIZE = 16;
 static constexpr int OUTPUT_SIZE = 1;
 
 static constexpr int I16_PER_REG = (sizeof(vec_t) / sizeof(int16_t));
@@ -33,13 +36,19 @@ static_assert((MINI_ACC_SIZE * 2) % I16_PER_REG == 0);
 
 template<bool PREPROCESSED>
 struct NetWeights {
+    using T = std::conditional_t<PREPROCESSED, float, int16_t>;
+
     constexpr static int N_WEIGHTS0 = PREPROCESSED ? L1_SIZE / 2 * INPUT_SIZE * 12
                                                    : L1_SIZE * INPUT_SIZE * 12;
 
     std::array<int16_t, N_WEIGHTS0> weights0{};
     std::array<int16_t, L1_SIZE * 12> bias0{};
-    std::array<int16_t, L1_SIZE * OUTPUT_SIZE * 2 * 12> weights1{};
-    std::array<int16_t, OUTPUT_SIZE> bias1{};
+    std::array<int16_t, L1_SIZE * L2_SIZE * 2 * 12> weights1{};
+    std::array<int16_t, L2_SIZE> bias1{};
+    std::array<T, L2_SIZE * L3_SIZE> weights2{};
+    std::array<T, L3_SIZE> bias2{};
+    std::array<T, L3_SIZE * OUTPUT_SIZE> weights3{};
+    std::array<T, OUTPUT_SIZE> bias3{};
 };
 
 using Weights = NetWeights<true>;
@@ -56,8 +65,12 @@ class Net {
 public:
     const std::array<int16_t, L1_SIZE / 2 * INPUT_SIZE * 12>& weights0;
     const std::array<int16_t, L1_SIZE * 12>& bias0;
-    const std::array<int16_t, L1_SIZE * OUTPUT_SIZE * 2 * 12>& weights1;
-    const std::array<int16_t, OUTPUT_SIZE>& bias1;
+    const std::array<int16_t, L1_SIZE * L2_SIZE * 2 * 12>& weights1;
+    const std::array<int16_t, L2_SIZE>& bias1;
+    const std::array<float, L2_SIZE * L3_SIZE>& weights2;
+    const std::array<float, L3_SIZE>& bias2;
+    const std::array<float, L3_SIZE * OUTPUT_SIZE>& weights3;
+    const std::array<float, OUTPUT_SIZE>& bias3;
     std::array<int16_t, L1_SIZE * 3 * 2> wdlWeights{};
     std::array<int16_t, 3> wdlBias{};
 
@@ -65,7 +78,8 @@ public:
     int16_t  accumulatorStack[MAXDEPTH + 7][L1_SIZE * 2];
     int accumulatorHead = 0;
 
-    Net() : weights0(defaultWeights.weights0), bias0(defaultWeights.bias0), weights1(defaultWeights.weights1), bias1(defaultWeights.bias1) {}
+    Net() : weights0(defaultWeights.weights0), bias0(defaultWeights.bias0), weights1(defaultWeights.weights1), bias1(defaultWeights.bias1),
+    weights2(defaultWeights.weights2), bias2(defaultWeights.bias2), weights3(defaultWeights.weights3), bias3(defaultWeights.bias3) {}
 
     void initAccumulator(Position &pos);
     template<Color C>
