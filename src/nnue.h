@@ -585,7 +585,7 @@ inline void Net::addaddSubSub(Position& pos, uint64_t cleanBitboard, int from, i
 
 template<Color C> inline
 int Net::calculate(uint64_t occupied, Piece* mailbox) {
-    std::array<int  , L2_SIZE> l1Out = bias1;
+    int   l1Out[L2_SIZE];
     std::array<float, L3_SIZE> l2Out = bias2;
     float output = bias3[0];
 
@@ -594,7 +594,7 @@ int Net::calculate(uint64_t occupied, Piece* mailbox) {
     vec_t sums[L2_SIZE / I32_PER_REG];
 
     for (int i = 0; i < L2_SIZE; i += I32_PER_REG)
-        sums[i / I32_PER_REG] = vec_loadu((vec_t*) &l1Out[i]);
+        sums[i / I32_PER_REG] = vec_loadu((vec_t*) &bias1[i]);
 
     while (occupied) {
         int sq = popLSB(occupied);
