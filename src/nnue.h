@@ -36,15 +36,16 @@ static_assert((MINI_ACC_SIZE * 2) % I16_PER_REG == 0);
 
 template<bool PREPROCESSED>
 struct NetWeights {
-    using LW_T = std::conditional_t<PREPROCESSED, float, int16_t>;
-    using B_T  = std::conditional_t<PREPROCESSED, int  , int16_t>;
+    using FT_W = std::conditional_t<PREPROCESSED, int8_t, int16_t>;
+    using LW_T = std::conditional_t<PREPROCESSED, float , int16_t>;
+    using B_T  = std::conditional_t<PREPROCESSED, int   , int16_t>;
 
     constexpr static int N_WEIGHTS0 = PREPROCESSED ? L1_SIZE / 2 * INPUT_SIZE * 12
                                                    : L1_SIZE * INPUT_SIZE * 12;
 
     std::array<int16_t, N_WEIGHTS0> weights0{};
     std::array<int16_t, L1_SIZE * 12> bias0{};
-    std::array<int16_t, L1_SIZE * L2_SIZE * 2 * 12> weights1{};
+    std::array<FT_W, L1_SIZE * L2_SIZE * 2 * 12> weights1{};
     std::array<B_T , L2_SIZE> bias1{};
     std::array<LW_T, L2_SIZE * L3_SIZE> weights2{};
     std::array<LW_T, L3_SIZE> bias2{};
@@ -66,7 +67,7 @@ class Net {
 public:
     const std::array<int16_t, L1_SIZE / 2 * INPUT_SIZE * 12>& weights0;
     const std::array<int16_t, L1_SIZE * 12>& bias0;
-    const std::array<int16_t, L1_SIZE * L2_SIZE * 2 * 12>& weights1;
+    const std::array<int8_t, L1_SIZE * L2_SIZE * 2 * 12>& weights1;
     const std::array<int, L2_SIZE>& bias1;
     const std::array<float, L2_SIZE * L3_SIZE>& weights2;
     const std::array<float, L3_SIZE>& bias2;
@@ -632,22 +633,30 @@ int Net::calculate(uint64_t occupied, Piece* mailbox) {
             vec_storeu((vec_t*) &activated[i + MINI_ACC_SIZE], them);
         }
 
+        constexpr int I32_PER_REG = I16_PER_REG / 2;
+
+        vec_t sums[L2_SIZE / I32_PER_REG];
+
+        for (int i = 0; i < L2_SIZE / I32_PER_REG; i += I32_PER_REG)
+            sums[i] = vec_loadu((vec_t*) bias2.data());
+
         for (int i = 0; i < MINI_ACC_SIZE; i += 4) {
-            for (int m = 0; m < L2_SIZE; m++) {
-                int wUs = L1_SIZE * 2 * ourPiece + (sq * MINI_ACC_SIZE * 2) + (i / 4) * 4;
+            int32_t* inputs = (int32_t*) &activated[0];
+            int32_t wUs = L1_SIZE * 2 * ourPiece + (sq * MINI_ACC_SIZE * 2) + (i / 4) * 4;
 
-                //(n / 4) * L2_SIZE * 4 + m * 4 + np % 4
+            for (int m = 0; m < L2_SIZE; m += I32_PER_REG) {
+                vec_t inUs   = _mm256_set1_epi32(inputs[m / I32_PER_REG                ]);
+                vec_t inThem = _mm256_set1_epi32(inputs[m / I32_PER_REG + MINI_ACC_SIZE]);
+                vec_t wU = vec_loadu((vec_t*) &weights1[ wUs                  * L2_SIZE + 4 * m]);
+                vec_t wT = vec_loadu((vec_t*) &weights1[(wUs + MINI_ACC_SIZE) * L2_SIZE + 4 * m]);
 
-                l1Out[m] += activated[i                    ] * weights1[ wUs                  * L2_SIZE + 4 * m    ];
-                l1Out[m] += activated[i                 + 1] * weights1[ wUs                  * L2_SIZE + 4 * m + 1];
-                l1Out[m] += activated[i                 + 2] * weights1[ wUs                  * L2_SIZE + 4 * m + 2];
-                l1Out[m] += activated[i                 + 3] * weights1[ wUs                  * L2_SIZE + 4 * m + 3];
-                l1Out[m] += activated[i + MINI_ACC_SIZE    ] * weights1[(wUs + MINI_ACC_SIZE) * L2_SIZE + 4 * m    ];
-                l1Out[m] += activated[i + MINI_ACC_SIZE + 1] * weights1[(wUs + MINI_ACC_SIZE) * L2_SIZE + 4 * m + 1];
-                l1Out[m] += activated[i + MINI_ACC_SIZE + 2] * weights1[(wUs + MINI_ACC_SIZE) * L2_SIZE + 4 * m + 2];
-                l1Out[m] += activated[i + MINI_ACC_SIZE + 3] * weights1[(wUs + MINI_ACC_SIZE) * L2_SIZE + 4 * m + 3];
+                dpbusd(sums[m / I32_PER_REG], inUs  , wU);
+                dpbusd(sums[m / I32_PER_REG], inThem, wT);
             }
         }
+
+        for (int i = 0; i < L2_SIZE / I32_PER_REG; i += I32_PER_REG)
+            vec_storeu((vec_t*) &l1Out[i / I32_PER_REG], sums[i]);
     }
 
     for (int n = 0; n < L2_SIZE; n++)
