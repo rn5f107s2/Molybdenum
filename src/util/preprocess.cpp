@@ -65,7 +65,7 @@ void preprocess(std::ofstream& outfile) {
                     int newSTM = L1_SIZE * 2 * pc + (sq * MINI_ACC_SIZE * 2);
                     int newNTM = L1_SIZE * 2 * pc + (sq * MINI_ACC_SIZE * 2) + MINI_ACC_SIZE;
 
-                    int perm = (n / 4) * L2_SIZE * 4 + m * 4 + np % 4;
+                    int perm = (np / 4) * L2_SIZE * 4 + m * 4 + np % 4;
 
                     preprocessed.weights1[L2_SIZE * newSTM + perm] = weights.weights1[L2_SIZE * oldSTM + m];
                     preprocessed.weights1[L2_SIZE * newNTM + perm] = weights.weights1[L2_SIZE * oldNTM + m + L1_SIZE * L2_SIZE * 12];
