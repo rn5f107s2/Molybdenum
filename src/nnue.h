@@ -600,7 +600,7 @@ int Net::calculate(uint64_t occupied, Piece* mailbox) {
             theirPiece = temp;
         }
 
-        int16_t activated[MINI_ACC_SIZE * 2];
+        int8_t activated[MINI_ACC_SIZE * 2];
 
         int nSTM = ((sq ^ (56 * (C == BLACK))) * MINI_ACC_SIZE * 2) + (C == BLACK ? MINI_ACC_SIZE : 0);
         int nNTM = ((sq ^ (56 * (C == BLACK))) * MINI_ACC_SIZE * 2) + (C == WHITE ? MINI_ACC_SIZE : 0);
@@ -608,19 +608,28 @@ int Net::calculate(uint64_t occupied, Piece* mailbox) {
         vec_t zero = vec_setzero();
         vec_t qa   = vet_set1_epi16(255);
 
-        for (int i = 0; i < MINI_ACC_SIZE; i += I16_PER_REG) {
-            vec_t us1   = vec_loadu((vec_t*) &accumulator[nSTM + i]);
-            vec_t them1 = vec_loadu((vec_t*) &accumulator[nNTM + i]);
+        for (int i = 0; i < MINI_ACC_SIZE; i += I16_PER_REG * 2) {
+            vec_t us1   = vec_loadu((vec_t*) &accumulator[nSTM               + i]);
+            vec_t us2   = vec_loadu((vec_t*) &accumulator[nSTM + I16_PER_REG + i]);
+            vec_t them1 = vec_loadu((vec_t*) &accumulator[nNTM               + i]);
+            vec_t them2 = vec_loadu((vec_t*) &accumulator[nNTM + I16_PER_REG + i]);
 
             vec_t cUs1   = vec_min_epi16(vec_max_epi16(us1  , zero), qa);
+            vec_t cUs2   = vec_min_epi16(vec_max_epi16(us2  , zero), qa);
             vec_t cThem1 = vec_min_epi16(vec_max_epi16(them1, zero), qa);
+            vec_t cThem2 = vec_min_epi16(vec_max_epi16(them2, zero), qa);
 
             // (cUs   * (cUs   >> 1)) >> 8;
             vec_t actUs1   = _mm256_srai_epi16(vec_mullo_epi16(cUs1  , _mm256_srai_epi16(cUs1  , 1)), 8);
+            vec_t actUs2   = _mm256_srai_epi16(vec_mullo_epi16(cUs2  , _mm256_srai_epi16(cUs2  , 1)), 8);
             vec_t actThem1 = _mm256_srai_epi16(vec_mullo_epi16(cThem1, _mm256_srai_epi16(cThem1, 1)), 8);
+            vec_t actThem2 = _mm256_srai_epi16(vec_mullo_epi16(cThem2, _mm256_srai_epi16(cThem2, 1)), 8);
 
-            vec_storeu((vec_t*) &activated[i                ], actUs1);
-            vec_storeu((vec_t*) &activated[i + MINI_ACC_SIZE], actThem1);
+            vec_t us   = _mm256_packus_epi16(actUs1  , actUs2);
+            vec_t them = _mm256_packus_epi16(actThem1, actThem2);
+
+            vec_storeu((vec_t*) &activated[i                ], us);
+            vec_storeu((vec_t*) &activated[i + MINI_ACC_SIZE], them);
         }
 
         for (int i = 0; i < MINI_ACC_SIZE; i++) {

@@ -27,6 +27,24 @@ void preprocess(std::ofstream& outfile) {
     Weights* pp = new Weights();
     Weights& preprocessed = *pp;
 
+    int16_t packus_map[MINI_ACC_SIZE];
+    int16_t a[I16_PER_REG    ];
+    int16_t b[I16_PER_REG    ];
+    int8_t  c[I16_PER_REG * 2];
+
+    for (int i = 0; i < I16_PER_REG; i++) {
+        a[i] = i;
+        b[i] = i + I16_PER_REG;
+    }
+
+    vec_t v_a = vec_loadu((vec_t*) a);
+    vec_t v_b = vec_loadu((vec_t*) b);
+    vec_storeu((vec_t*) &c[0], _mm256_packus_epi16(v_a, v_b));
+
+    for (int i = 0; i < MINI_ACC_SIZE; i++)
+        packus_map[i] = c[i % (I16_PER_REG * 2)] + i / (I16_PER_REG * 2);
+
+
     for (int fpc = 0; fpc < 12; fpc++)
        for (int fsq = 0; fsq < 64; fsq++)
             for (int bpc = 0; bpc < 12; bpc++)
@@ -39,8 +57,8 @@ void preprocess(std::ofstream& outfile) {
         for (int pc = 0; pc < 12; pc++) {
             for (int n = 0; n < MINI_ACC_SIZE; n++) {
                 for (int m = 0; m < L2_SIZE; m++) {
-                    int oldSTM = L1_SIZE * pc + (sq * MINI_ACC_SIZE) + n;
-                    int oldNTM = L1_SIZE * makePiece(typeOf(pc), !colorOf(pc)) + ((sq ^ 56) * MINI_ACC_SIZE) + n;
+                    int oldSTM = L1_SIZE * pc + (sq * MINI_ACC_SIZE) + packus_map[n];
+                    int oldNTM = L1_SIZE * makePiece(typeOf(pc), !colorOf(pc)) + ((sq ^ 56) * MINI_ACC_SIZE) + packus_map[n];
 
                     int newSTM = L1_SIZE * 2 * pc + (sq * MINI_ACC_SIZE * 2) + n;
                     int newNTM = L1_SIZE * 2 * pc + (sq * MINI_ACC_SIZE * 2) + MINI_ACC_SIZE + n;
