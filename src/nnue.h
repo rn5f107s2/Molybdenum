@@ -565,10 +565,6 @@ template<Color C> inline
 int Net::calculate(uint64_t occupied, Piece* mailbox) {
     int output = 0;
 
-    vec_t sum  = vec_setzero();
-    vec_t zero = vec_setzero();
-    vec_t qa   = vet_set1_epi16(403);
-
     while (occupied) {
         int sq = popLSB(occupied);
 
@@ -581,60 +577,14 @@ int Net::calculate(uint64_t occupied, Piece* mailbox) {
             theirPiece = temp;
         }
 
-        constexpr int STEP  = I16_PER_REG;
-        constexpr int HALF  = STEP / 2;
-        constexpr int SPLIT = C == BLACK && NUM_REGS_DUAL != 0 ? NUM_REGS_PERS * STEP : -1; 
+        for (int i = 0; i < MINI_ACC_SIZE; i++) {
+            int nSTM = ((sq ^ (56 * (C == BLACK))) * MINI_ACC_SIZE * 2) + i + (C == BLACK ? MINI_ACC_SIZE : 0);
+            int nNTM = ((sq ^ (56 * (C == BLACK))) * MINI_ACC_SIZE * 2) + i + (C == WHITE ? MINI_ACC_SIZE : 0);;
 
-        for (int i = 0; i < MINI_ACC_SIZE; i += STEP) {
-            int wOffset = C == WHITE ? i : MINI_ACC_SIZE + i;
-
-            int n = ((sq ^ (56 * (C == BLACK))) * MINI_ACC_SIZE * 2) + i;
-
-            vec_t acc = vec_loadu((vec_t*) &accumulator[n]);
-            vec_t c   = vec_max_epi16(vec_min_epi16(acc, qa), zero);
-
-            vec_t w;
-
-            if (i != SPLIT) {
-                w = vec_loadu((vec_t*) &weights1[L1_SIZE * 2 * ourPiece + (sq * MINI_ACC_SIZE * 2) + wOffset]);
-            } else {
-                w = vec_loadu2(
-                    (const halfvec_t*)(&weights1[L1_SIZE * 2 * ourPiece + (sq * MINI_ACC_SIZE * 2) + wOffset       ]),
-                    (const halfvec_t*)(&weights1[L1_SIZE * 2 * ourPiece + (sq * MINI_ACC_SIZE * 2) + wOffset + HALF])
-                );
-            }
-
-            vec_t prod  = vec_madd_epi16(c, vec_mullo_epi16(c, w));
-
-            sum = vec_add_epi32(sum, prod);
-        }
-
-        for (int i = MINI_ACC_SIZE; i < MINI_ACC_SIZE * 2; i += STEP) {
-            int wOffset = C == BLACK ? i - MINI_ACC_SIZE : i;
-
-            int n = ((sq ^ (56 * (C == BLACK))) * MINI_ACC_SIZE * 2) + i;
-
-            vec_t acc = vec_loadu((vec_t*) &accumulator[n]);
-            vec_t c   = vec_max_epi16(vec_min_epi16(acc, qa), zero);
-
-            vec_t w;
-
-            if (i != SPLIT) {
-                w = vec_loadu((vec_t*) &weights1[L1_SIZE * 2 * ourPiece + (sq * MINI_ACC_SIZE * 2) + wOffset]);
-            } else {
-                w = vec_loadu2(
-                    (const halfvec_t*)(&weights1[L1_SIZE * 2 * ourPiece + (sq * MINI_ACC_SIZE * 2) + wOffset       ]),
-                    (const halfvec_t*)(&weights1[L1_SIZE * 2 * ourPiece + (sq * MINI_ACC_SIZE * 2) + wOffset + HALF])
-                );
-            }
-
-            vec_t prod  = vec_madd_epi16(c, vec_mullo_epi16(c, w));
-
-            sum = vec_add_epi32(sum, prod);
+            output += screlu(accumulator[nSTM]) * weights1[L1_SIZE * 2 * ourPiece + (sq * MINI_ACC_SIZE * 2) + i                ];
+            output += screlu(accumulator[nNTM]) * weights1[L1_SIZE * 2 * ourPiece + (sq * MINI_ACC_SIZE * 2) + i + MINI_ACC_SIZE];
         }
     }
-
-    output = hsum(sum);
 
     return ((output / 403) + bias1[0]) * 133 / (64 * 403);
 }
