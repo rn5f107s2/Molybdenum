@@ -589,6 +589,13 @@ int Net::calculate(uint64_t occupied, Piece* mailbox) {
     std::array<float, L3_SIZE> l2Out = bias2;
     float output = bias3[0];
 
+    constexpr int I32_PER_REG = I16_PER_REG / 2;
+
+    vec_t sums[L2_SIZE / I32_PER_REG];
+
+    for (int i = 0; i < L2_SIZE; i += I32_PER_REG)
+        sums[i / I32_PER_REG] = vec_loadu((vec_t*) &l1Out[i]);
+
     while (occupied) {
         int sq = popLSB(occupied);
 
@@ -626,19 +633,13 @@ int Net::calculate(uint64_t occupied, Piece* mailbox) {
             vec_t actThem1 = _mm256_srai_epi16(vec_mullo_epi16(cThem1, _mm256_srai_epi16(cThem1, 1)), 8);
             vec_t actThem2 = _mm256_srai_epi16(vec_mullo_epi16(cThem2, _mm256_srai_epi16(cThem2, 1)), 8);
 
+
             vec_t us   = _mm256_packus_epi16(actUs1  , actUs2);
             vec_t them = _mm256_packus_epi16(actThem1, actThem2);
 
             vec_storeu((vec_t*) &activated[i                ], us);
             vec_storeu((vec_t*) &activated[i + MINI_ACC_SIZE], them);
         }
-
-        constexpr int I32_PER_REG = I16_PER_REG / 2;
-
-        vec_t sums[L2_SIZE / I32_PER_REG];
-
-        for (int i = 0; i < L2_SIZE; i += I32_PER_REG)
-            sums[i / I32_PER_REG] = vec_loadu((vec_t*) &l1Out[i]);
 
         int32_t* inputsU = (int32_t*) &activated[0];
         int32_t* inputsT = (int32_t*) &activated[MINI_ACC_SIZE];
@@ -657,10 +658,10 @@ int Net::calculate(uint64_t occupied, Piece* mailbox) {
                 dpbusd(sums[m / I32_PER_REG], inThem, wT);
             }
         }
-
-        for (int i = 0; i < L2_SIZE; i += I32_PER_REG)
-            vec_storeu((vec_t*) &l1Out[i], sums[i / I32_PER_REG]);
     }
+
+    for (int i = 0; i < L2_SIZE; i += I32_PER_REG)
+        vec_storeu((vec_t*) &l1Out[i], sums[i / I32_PER_REG]);
 
     for (int n = 0; n < L2_SIZE; n++)
         for (int m = 0; m < L3_SIZE; m++)
