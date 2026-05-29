@@ -636,14 +636,16 @@ int Net::calculate(uint64_t occupied, Piece* mailbox) {
             for (int m = 0; m < L2_SIZE; m++) {
                 int wUs = L1_SIZE * 2 * ourPiece + (sq * MINI_ACC_SIZE * 2) + (i / 4) * 4;
 
-                l1Out[m] += activated[i                    ] * weights1[ wUs                  * L2_SIZE * 4 + 4 * m    ];
-                l1Out[m] += activated[i                 + 1] * weights1[ wUs                  * L2_SIZE * 4 + 4 * m + 1];
-                l1Out[m] += activated[i                 + 2] * weights1[ wUs                  * L2_SIZE * 4 + 4 * m + 2];
-                l1Out[m] += activated[i                 + 3] * weights1[ wUs                  * L2_SIZE * 4 + 4 * m + 3];
-                l1Out[m] += activated[i + MINI_ACC_SIZE    ] * weights1[(wUs + MINI_ACC_SIZE) * L2_SIZE * 4 + 4 * m    ];
-                l1Out[m] += activated[i + MINI_ACC_SIZE + 1] * weights1[(wUs + MINI_ACC_SIZE) * L2_SIZE * 4 + 4 * m + 1];
-                l1Out[m] += activated[i + MINI_ACC_SIZE + 2] * weights1[(wUs + MINI_ACC_SIZE) * L2_SIZE * 4 + 4 * m + 2];
-                l1Out[m] += activated[i + MINI_ACC_SIZE + 3] * weights1[(wUs + MINI_ACC_SIZE) * L2_SIZE * 4 + 4 * m + 3];
+                //(n / 4) * L2_SIZE * 4 + m * 4 + np % 4
+
+                l1Out[m] += activated[i                    ] * weights1[ wUs                  * L2_SIZE + 4 * m    ];
+                l1Out[m] += activated[i                 + 1] * weights1[ wUs                  * L2_SIZE + 4 * m + 1];
+                l1Out[m] += activated[i                 + 2] * weights1[ wUs                  * L2_SIZE + 4 * m + 2];
+                l1Out[m] += activated[i                 + 3] * weights1[ wUs                  * L2_SIZE + 4 * m + 3];
+                l1Out[m] += activated[i + MINI_ACC_SIZE    ] * weights1[(wUs + MINI_ACC_SIZE) * L2_SIZE + 4 * m    ];
+                l1Out[m] += activated[i + MINI_ACC_SIZE + 1] * weights1[(wUs + MINI_ACC_SIZE) * L2_SIZE + 4 * m + 1];
+                l1Out[m] += activated[i + MINI_ACC_SIZE + 2] * weights1[(wUs + MINI_ACC_SIZE) * L2_SIZE + 4 * m + 2];
+                l1Out[m] += activated[i + MINI_ACC_SIZE + 3] * weights1[(wUs + MINI_ACC_SIZE) * L2_SIZE + 4 * m + 3];
             }
         }
     }
