@@ -57,11 +57,11 @@ void preprocess(std::ofstream& outfile) {
         for (int pc = 0; pc < 12; pc++) {
             for (int n = 0; n < MINI_ACC_SIZE; n++) {
                 for (int m = 0; m < L2_SIZE; m++) {
-                    int oldSTM = L1_SIZE * pc + (sq * MINI_ACC_SIZE) + packus_map[n];
-                    int oldNTM = L1_SIZE * makePiece(typeOf(pc), !colorOf(pc)) + ((sq ^ 56) * MINI_ACC_SIZE) + packus_map[n];
+                    int oldSTM = L1_SIZE * pc + (sq * MINI_ACC_SIZE) + n;
+                    int oldNTM = L1_SIZE * makePiece(typeOf(pc), !colorOf(pc)) + ((sq ^ 56) * MINI_ACC_SIZE) + n;
 
-                    int newSTM = L1_SIZE * 2 * pc + (sq * MINI_ACC_SIZE * 2) + n;
-                    int newNTM = L1_SIZE * 2 * pc + (sq * MINI_ACC_SIZE * 2) + MINI_ACC_SIZE + n;
+                    int newSTM = L1_SIZE * 2 * pc + (sq * MINI_ACC_SIZE * 2) + packus_map[n];
+                    int newNTM = L1_SIZE * 2 * pc + (sq * MINI_ACC_SIZE * 2) + MINI_ACC_SIZE + packus_map[n];
 
                     preprocessed.weights1[L2_SIZE * newSTM + m] = weights.weights1[L2_SIZE * oldSTM + m];
                     preprocessed.weights1[L2_SIZE * newNTM + m] = weights.weights1[L2_SIZE * oldNTM + m + L1_SIZE * L2_SIZE * 12];
