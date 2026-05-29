@@ -637,16 +637,17 @@ int Net::calculate(uint64_t occupied, Piece* mailbox) {
 
         vec_t sums[L2_SIZE / I32_PER_REG];
 
-        for (int i = 0; i < L2_SIZE / I32_PER_REG; i += I32_PER_REG)
-            sums[i] = vec_loadu((vec_t*) bias2.data());
+        for (int i = 0; i < L2_SIZE; i += I32_PER_REG)
+            sums[i / I32_PER_REG] = vec_loadu((vec_t*) &bias1[i]);
 
         for (int i = 0; i < MINI_ACC_SIZE; i += 4) {
-            int32_t* inputs = (int32_t*) &activated[0];
+            int32_t* inputsU = (int32_t*) &activated[0];
+            int32_t* inputsT = (int32_t*) &activated[MINI_ACC_SIZE];
             int32_t wUs = L1_SIZE * 2 * ourPiece + (sq * MINI_ACC_SIZE * 2) + (i / 4) * 4;
 
             for (int m = 0; m < L2_SIZE; m += I32_PER_REG) {
-                vec_t inUs   = _mm256_set1_epi32(inputs[m / I32_PER_REG                ]);
-                vec_t inThem = _mm256_set1_epi32(inputs[m / I32_PER_REG + MINI_ACC_SIZE]);
+                vec_t inUs   = _mm256_set1_epi32(inputsU[i / 4]);
+                vec_t inThem = _mm256_set1_epi32(inputsT[i / 4]);
                 vec_t wU = vec_loadu((vec_t*) &weights1[ wUs                  * L2_SIZE + 4 * m]);
                 vec_t wT = vec_loadu((vec_t*) &weights1[(wUs + MINI_ACC_SIZE) * L2_SIZE + 4 * m]);
 
@@ -655,9 +656,12 @@ int Net::calculate(uint64_t occupied, Piece* mailbox) {
             }
         }
 
-        for (int i = 0; i < L2_SIZE / I32_PER_REG; i += I32_PER_REG)
-            vec_storeu((vec_t*) &l1Out[i / I32_PER_REG], sums[i]);
+        for (int i = 0; i < L2_SIZE; i += I32_PER_REG)
+            vec_storeu((vec_t*) &l1Out[i], sums[i / I32_PER_REG]);
     }
+
+    for (int i = 0; i < L2_SIZE; i++)
+        std::cout << (float(l1Out[i]) * 256.0f * 2.0f / 255.0f / 255.0f / 100.0f) << std::endl;
 
     for (int n = 0; n < L2_SIZE; n++)
         for (int m = 0; m < L3_SIZE; m++)
