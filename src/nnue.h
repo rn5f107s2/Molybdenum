@@ -628,11 +628,10 @@ int Net::calculate(uint64_t occupied, Piece* mailbox) {
             vec_t cThem2 = vec_min_epi16(vec_max_epi16(them2, zero), qa);
 
             // (cUs   * (cUs   >> 1)) >> 8;
-            vec_t actUs1   = _mm256_srai_epi16(vec_mullo_epi16(cUs1  , _mm256_srai_epi16(cUs1  , 1)), 8);
-            vec_t actUs2   = _mm256_srai_epi16(vec_mullo_epi16(cUs2  , _mm256_srai_epi16(cUs2  , 1)), 8);
-            vec_t actThem1 = _mm256_srai_epi16(vec_mullo_epi16(cThem1, _mm256_srai_epi16(cThem1, 1)), 8);
-            vec_t actThem2 = _mm256_srai_epi16(vec_mullo_epi16(cThem2, _mm256_srai_epi16(cThem2, 1)), 8);
-
+            vec_t actUs1   = _mm256_mulhi_epi16(cUs1, _mm256_slli_epi16(cUs1, 7));
+            vec_t actUs2   = _mm256_mulhi_epi16(cUs2, _mm256_slli_epi16(cUs2, 7));
+            vec_t actThem1 = _mm256_mulhi_epi16(cThem1, _mm256_slli_epi16(cThem1, 7));
+            vec_t actThem2 = _mm256_mulhi_epi16(cThem2, _mm256_slli_epi16(cThem2, 7));
 
             vec_t us   = _mm256_packus_epi16(actUs1  , actUs2);
             vec_t them = _mm256_packus_epi16(actThem1, actThem2);
