@@ -40,6 +40,13 @@ inline int hsum(__m256i v) {
     return _mm_cvtsi128_si32(sum32);
 }
 
+inline void dpbusd(vec_t& sum, vec_t inputs, vec_t weights) {
+    vec_t prod = _mm256_maddubs_epi16(inputs, weights);
+    vec_t wide = _mm256_madd_epi16(prod, _mm256_set1_epi16(1));
+
+    sum = _mm256_add_epi32(sum, wide);
+}
+
 #else 
 
 using vec_t     = __m128i;
@@ -75,6 +82,10 @@ inline int hsum(vec_t v) {
     __m128i sum32 = _mm_add_epi32(sum64, _mm_shufflelo_epi16(sum64, _MM_SHUFFLE(1, 0, 3, 2)));
 
     return _mm_cvtsi128_si32(sum32);
+}
+
+inline void dpbusd(vec_t& sum, vec_t inputs, vec_t weights) {
+    (void) inputs; (void) weights; (void) sum;
 }
 
 #endif

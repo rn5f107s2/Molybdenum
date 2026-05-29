@@ -97,7 +97,7 @@ void preprocess(std::ofstream& outfile) {
 
     outfile.write(reinterpret_cast<char*>(preprocessed.weights0.data()), preprocessed.weights0.size() * sizeof(int16_t));
     outfile.write(reinterpret_cast<char*>(preprocessed.bias0.data()), preprocessed.bias0.size() * sizeof(int16_t));
-    outfile.write(reinterpret_cast<char*>(preprocessed.weights1.data()), preprocessed.weights1.size() * sizeof(int16_t));
+    outfile.write(reinterpret_cast<char*>(preprocessed.weights1.data()), preprocessed.weights1.size() * sizeof(int8_t));
     outfile.write(reinterpret_cast<char*>(preprocessed.bias1.data()), preprocessed.bias1.size() * sizeof(int));
     outfile.write(reinterpret_cast<char*>(preprocessed.weights2.data()), preprocessed.weights2.size() * sizeof(float));
     outfile.write(reinterpret_cast<char*>(preprocessed.bias2.data()), preprocessed.bias2.size() * sizeof(float));
