@@ -89,6 +89,8 @@ public:
     std::tuple<float, float, float> getWDL(Color c);
     void loadDefaultNet();
 
+    int laterLayers(float* l1Out);
+
     template<Color C> inline
     void loadWeightsVecDual(vec_t& w, int offset, int i);
 
@@ -585,9 +587,7 @@ inline void Net::addaddSubSub(Position& pos, uint64_t cleanBitboard, int from, i
 
 template<Color C> inline
 int Net::calculate(uint64_t occupied, Piece* mailbox) {
-    float l1Out[L2_SIZE];
-    float l2Out[L3_SIZE];
-    float output = bias3[0];
+    alignas(32) float l1Out[L2_SIZE];
 
     constexpr int I32_PER_REG = I16_PER_REG / 2;
 
@@ -659,7 +659,6 @@ int Net::calculate(uint64_t occupied, Piece* mailbox) {
         }
     }
 
-    constexpr int F32_PER_REG = sizeof(vec_t) / sizeof(float);
     constexpr float DEQUANT_MUL = 256.0f * 2.0f / 255.0f / 255.0f / 193.0f;
 
     __m256 dequant = _mm256_set1_ps(DEQUANT_MUL);
@@ -671,6 +670,18 @@ int Net::calculate(uint64_t occupied, Piece* mailbox) {
 
         _mm256_store_ps(&l1Out[i], act);
     }
+
+    return laterLayers(l1Out);
+}
+
+
+inline int Net::laterLayers(float* l1Out) {
+    constexpr int F32_PER_REG = sizeof(vec_t) / sizeof(float);
+
+    float l2Out[L3_SIZE];
+    float output = bias3[0];
+
+    __m256 zero = _mm256_setzero_ps();
 
     __m256 damsk[L3_SIZE / F32_PER_REG];
 
