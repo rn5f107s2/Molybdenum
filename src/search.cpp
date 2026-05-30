@@ -492,7 +492,7 @@ int SearchState::qsearch(int alpha, int beta, Position &pos, SearchInfo &si, Sea
             || (ttBound == UPPER && ttScore <= alpha)))
             return ttScore;
 
-    int bestScore = staticEval = evaluate(pos);    
+    int bestScore = staticEval = !ttHit ? evaluate(pos) : tte->eval;    
 
     pvLength[stack->plysInSearch] = stack->plysInSearch;
 
