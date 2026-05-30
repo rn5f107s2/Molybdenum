@@ -11,17 +11,18 @@ enum TTBound : uint8_t {
 };
 
 struct TTEntry {
-    int score;
+    u64 key;
+    int16_t score;
+    int16_t eval;
+    Move move;
     uint8_t depth;
     TTBound bound;
-    Move move;
-    u64 key;
 };
 
 class TranspositionTable{
 public:
     TTEntry *probe(u64 key);
-    static void save(TTEntry *tte, u64 key, int score, TTBound flag, Move move, int depth, int plys);
+    static void save(TTEntry *tte, u64 key, int score, TTBound flag, Move move, int depth, int plys, int16_t eval);
     void setSize(int sizeInMb);
     void resize(int sizeInMb);
     void clear();

@@ -77,8 +77,8 @@ enum Slider {
 
 constexpr int MAXDEPTH  = 220;
 constexpr int STACKSIZE = MAXDEPTH + 3;
-constexpr int INFINITE  = 200000;
-constexpr int MATE      = 100000;
+constexpr int INFINITE  = 31000;
+constexpr int MATE      = 30000;
 constexpr int MAXMATE   = MATE - MAXDEPTH;
 constexpr int DRAW      = 0;
 

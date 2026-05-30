@@ -244,7 +244,7 @@ int SearchState::search(int alpha, int beta, Position &pos, int depth, SearchInf
         return ttScore;
 
     if (!excluded)
-        stack->staticEval = evaluate(pos);
+        stack->staticEval = !ttHit ? evaluate(pos) : tte->eval;
 
     improving       = stack->staticEval > (stack-2)->staticEval;
     whatAreYouDoing = stack->staticEval + (stack-1)->staticEval > 0;
@@ -414,7 +414,7 @@ int SearchState::search(int alpha, int beta, Position &pos, int depth, SearchInf
                     if (!pos.isCapture(bestMove))
                         updateHistory(mainHistory[pos.sideToMove], *(stack-1)->contHist, *(stack-2)->contHist, bestMove, historyUpdates, depth, pos, (stack-1)->currMove && (stack-1)->currMove != NULL_MOVE, (stack-2)->currMove && (stack-2)->currMove != NULL_MOVE);
 
-                    TT.save(tte, key, bestScore, LOWER, bestMove, depth, stack->plysInSearch);
+                    TT.save(tte, key, bestScore, LOWER, bestMove, depth, stack->plysInSearch, stack->staticEval);
                     return bestScore;
                 }
 
@@ -443,7 +443,7 @@ int SearchState::search(int alpha, int beta, Position &pos, int depth, SearchInf
         bestScore = ttScore;
 
     if (!excluded)
-        TT.save(tte, key, bestScore, exact ? EXACT : UPPER, bestMove, depth, stack->plysInSearch);
+        TT.save(tte, key, bestScore, exact ? EXACT : UPPER, bestMove, depth, stack->plysInSearch, stack->staticEval);
 
     return bestScore;
 }
