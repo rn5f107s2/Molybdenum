@@ -81,7 +81,7 @@ void preprocess(std::ofstream& outfile) {
                 = weights.bias0[sq * MINI_ACC_SIZE + L1_SIZE * pc + n] + preprocessed.weights0[index_new<WHITE>(pc, sq, pc, sq) + n];
 
     for (size_t i = 0; i < weights.bias1.size(); i++)
-        preprocessed.bias1[i] = weights.bias1[i] * 255 / 512;
+        preprocessed.bias1[i] = weights.bias1[i] * 255 * 193 / 127 / 512;
 
     for (size_t i = 0; i < weights.weights2.size(); i++)
         preprocessed.weights2[i] = float(weights.weights2[i]) / 8192.0f;

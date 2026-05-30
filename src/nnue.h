@@ -21,7 +21,7 @@ static constexpr int INPUT_SIZE = 12 * 64;
 static constexpr int MINI_ACC_SIZE = 32;
 static constexpr int L1_SIZE = MINI_ACC_SIZE * 64;
 static constexpr int L2_SIZE = 8;
-static constexpr int L3_SIZE = 16;
+static constexpr int L3_SIZE = 32;
 static constexpr int OUTPUT_SIZE = 1;
 
 static constexpr int I16_PER_REG = (sizeof(vec_t) / sizeof(int16_t));
@@ -664,7 +664,7 @@ int Net::calculate(uint64_t occupied, Piece* mailbox) {
 
     for (int n = 0; n < L2_SIZE; n++)
         for (int m = 0; m < L3_SIZE; m++)
-            l2Out[m] += screlu(float(l1Out[n]) * 256.0f * 2.0f / 255.0f / 255.0f / 100.0f) * weights2[n * L3_SIZE + m];
+            l2Out[m] += std::max(float(l1Out[n]) * 256.0f * 2.0f / 255.0f / 255.0f / 193.0f, 0.0f) * weights2[n * L3_SIZE + m];
 
     for (int i = 0; i < L3_SIZE; i++)
         output += screlu(l2Out[i]) * weights3[i];
