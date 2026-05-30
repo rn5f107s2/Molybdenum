@@ -585,7 +585,7 @@ inline void Net::addaddSubSub(Position& pos, uint64_t cleanBitboard, int from, i
 
 template<Color C> inline
 int Net::calculate(uint64_t occupied, Piece* mailbox) {
-    int   l1Out[L2_SIZE];
+    float l1Out[L2_SIZE];
     std::array<float, L3_SIZE> l2Out = bias2;
     float output = bias3[0];
 
@@ -659,12 +659,24 @@ int Net::calculate(uint64_t occupied, Piece* mailbox) {
         }
     }
 
-    for (int i = 0; i < L2_SIZE; i += I32_PER_REG)
-        vec_storeu((vec_t*) &l1Out[i], sums[i / I32_PER_REG]);
+    constexpr int F32_PER_REG = sizeof(vec_t) / sizeof(float);
+    constexpr float DEQUANT_MUL = 256.0f * 2.0f / 255.0f / 255.0f / 193.0f;
 
-    for (int n = 0; n < L2_SIZE; n++)
-        for (int m = 0; m < L3_SIZE; m++)
-            l2Out[m] += std::max(float(l1Out[n]) * 256.0f * 2.0f / 255.0f / 255.0f / 193.0f, 0.0f) * weights2[n * L3_SIZE + m];
+    __m256 dequant = _mm256_set1_ps(DEQUANT_MUL);
+    __m256 zero    = _mm256_set1_ps(0);
+
+    for (int i = 0; i < L2_SIZE; i += I32_PER_REG) {
+        __m256 val = _mm256_mul_ps(_mm256_cvtepi32_ps(sums[i / I32_PER_REG]), dequant);
+        __m256 act = _mm256_max_ps(val, zero);
+
+        _mm256_store_ps(&l1Out[i], act);
+    }
+
+    for (int n = 0; n < L2_SIZE; n++) {
+        for (int m = 0; m < L3_SIZE; m++) {
+            l2Out[m] += l1Out[n] * weights2[n * L3_SIZE + m];
+        }
+    }
 
     for (int i = 0; i < L3_SIZE; i++)
         output += screlu(l2Out[i]) * weights3[i];
