@@ -119,6 +119,8 @@ public:
     inline void moveFeature(int piece, int from, int to);
     inline void pushAccToStack(uint64_t occupied);
     inline void popAccStack();
+
+    int8_t activated[MINI_ACC_SIZE * 2];
 };
 
 inline int screlu(int16_t input) {
@@ -607,8 +609,6 @@ int Net::calculate(uint64_t occupied, Piece* mailbox) {
             ourPiece = theirPiece;
             theirPiece = temp;
         }
-
-        int8_t activated[MINI_ACC_SIZE * 2];
 
         int nSTM = ((sq ^ (56 * (C == BLACK))) * MINI_ACC_SIZE * 2) + (C == BLACK ? MINI_ACC_SIZE : 0);
         int nNTM = ((sq ^ (56 * (C == BLACK))) * MINI_ACC_SIZE * 2) + (C == WHITE ? MINI_ACC_SIZE : 0);
