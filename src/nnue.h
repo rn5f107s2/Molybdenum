@@ -586,7 +586,7 @@ inline void Net::addaddSubSub(Position& pos, uint64_t cleanBitboard, int from, i
 template<Color C> inline
 int Net::calculate(uint64_t occupied, Piece* mailbox) {
     float l1Out[L2_SIZE];
-    std::array<float, L3_SIZE> l2Out = bias2;
+    float l2Out[L3_SIZE];
     float output = bias3[0];
 
     constexpr int I32_PER_REG = I16_PER_REG / 2;
@@ -672,11 +672,22 @@ int Net::calculate(uint64_t occupied, Piece* mailbox) {
         _mm256_store_ps(&l1Out[i], act);
     }
 
+    __m256 damsk[L3_SIZE / F32_PER_REG];
+
+    for (int i = 0; i < L3_SIZE; i += F32_PER_REG)
+        damsk[i / F32_PER_REG] = _mm256_loadu_ps(&bias2[i]);
+
     for (int n = 0; n < L2_SIZE; n++) {
-        for (int m = 0; m < L3_SIZE; m++) {
-            l2Out[m] += l1Out[n] * weights2[n * L3_SIZE + m];
+        __m256 in = _mm256_set1_ps(l1Out[n]);
+
+        for (int m = 0; m < L3_SIZE; m += F32_PER_REG) {
+            __m256 w = _mm256_loadu_ps(&weights2[n * L3_SIZE + m]);
+            damsk[m / F32_PER_REG] = _mm256_fmadd_ps(in, w, damsk[m / F32_PER_REG]);
         }
     }
+
+    for (int i = 0; i < L3_SIZE; i += F32_PER_REG)
+        _mm256_storeu_ps(&l2Out[i], damsk[i / F32_PER_REG]);
 
     for (int i = 0; i < L3_SIZE; i++)
         output += screlu(l2Out[i]) * weights3[i];
