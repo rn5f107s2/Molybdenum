@@ -686,11 +686,32 @@ int Net::calculate(uint64_t occupied, Piece* mailbox) {
         }
     }
 
-    for (int i = 0; i < L3_SIZE; i += F32_PER_REG)
-        _mm256_storeu_ps(&l2Out[i], damsk[i / F32_PER_REG]);
+    __m256 one = _mm256_set1_ps(1.0f);
 
-    for (int i = 0; i < L3_SIZE; i++)
-        output += screlu(l2Out[i]) * weights3[i];
+    for (int i = 0; i < L3_SIZE; i += F32_PER_REG) {
+        __m256 c = _mm256_min_ps(_mm256_max_ps(damsk[i / F32_PER_REG], zero), one);
+
+        _mm256_storeu_ps(&l2Out[i], _mm256_mul_ps(c, c));
+    }
+
+    __m256 acc = _mm256_setzero_ps();
+
+    for (int i = 0; i < L3_SIZE; i += F32_PER_REG) {
+        __m256 l2 = _mm256_loadu_ps(&l2Out[i]);
+        __m256 w  = _mm256_loadu_ps(&weights3[i]);
+        
+        acc = _mm256_fmadd_ps(l2, w, acc);
+    }
+
+    __m128 hi = _mm256_extractf128_ps(acc, 1);
+    __m128 lo = _mm256_castps256_ps128(acc);
+
+    __m128 sum = _mm_add_ps(hi, lo);
+
+    sum = _mm_hadd_ps(sum, sum);
+    sum = _mm_hadd_ps(sum, sum);
+
+    output += _mm_cvtss_f32(sum);
 
     return output * 133;
 }
