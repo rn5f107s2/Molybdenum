@@ -47,7 +47,7 @@ struct NetWeights {
     std::array<int16_t, L1_SIZE * 12> bias0{};
     std::array<FT_W, L1_SIZE * L2_SIZE * 2 * 12> weights1{};
     std::array<B_T , L2_SIZE> bias1{};
-    std::array<LW_T, L2_SIZE * L3_SIZE> weights2{};
+    std::array<LW_T, L2_SIZE * 2 * L3_SIZE> weights2{};
     std::array<LW_T, L3_SIZE> bias2{};
     std::array<LW_T, L3_SIZE * OUTPUT_SIZE> weights3{};
     std::array<LW_T, OUTPUT_SIZE> bias3{};
@@ -69,7 +69,7 @@ public:
     const std::array<int16_t, L1_SIZE * 12>& bias0;
     const std::array<int8_t, L1_SIZE * L2_SIZE * 2 * 12>& weights1;
     const std::array<int, L2_SIZE>& bias1;
-    const std::array<float, L2_SIZE * L3_SIZE>& weights2;
+    const std::array<float, L2_SIZE * 2 * L3_SIZE>& weights2;
     const std::array<float, L3_SIZE>& bias2;
     const std::array<float, L3_SIZE * OUTPUT_SIZE>& weights3;
     const std::array<float, OUTPUT_SIZE>& bias3;
@@ -589,7 +589,7 @@ inline void Net::addaddSubSub(Position& pos, uint64_t cleanBitboard, int from, i
 
 template<Color C> inline
 int Net::calculate(uint64_t occupied, Piece* mailbox) {
-    alignas(32) float l1Out[L2_SIZE];
+    alignas(32) float l1Out[L2_SIZE * 2];
 
     constexpr int I32_PER_REG = I16_PER_REG / 2;
 
@@ -665,10 +665,12 @@ int Net::calculate(uint64_t occupied, Piece* mailbox) {
     __m256 zero    = _mm256_set1_ps(0);
 
     for (int i = 0; i < L2_SIZE; i += I32_PER_REG) {
-        __m256 val = _mm256_mul_ps(_mm256_cvtepi32_ps(sums[i / I32_PER_REG]), dequant);
-        __m256 act = _mm256_max_ps(val, zero);
+        __m256 val  = _mm256_mul_ps(_mm256_cvtepi32_ps(sums[i / I32_PER_REG]), dequant);
+        __m256 act1 = _mm256_max_ps(val, zero);
+        __m256 act2 = _mm256_max_ps(_mm256_sub_ps(zero, val), zero);
 
-        _mm256_store_ps(&l1Out[i], act);
+        _mm256_store_ps(&l1Out[i          ], act1);
+        _mm256_store_ps(&l1Out[i + L2_SIZE], act2);
     }
 
     return laterLayers(l1Out);
@@ -688,7 +690,7 @@ inline int Net::laterLayers(float* l1Out) {
     for (int i = 0; i < L3_SIZE; i += F32_PER_REG)
         damsk[i / F32_PER_REG] = _mm256_loadu_ps(&bias2[i]);
 
-    for (int n = 0; n < L2_SIZE; n++) {
+    for (int n = 0; n < L2_SIZE * 2; n++) {
         __m256 in = _mm256_set1_ps(l1Out[n]);
 
         for (int m = 0; m < L3_SIZE; m += F32_PER_REG) {
