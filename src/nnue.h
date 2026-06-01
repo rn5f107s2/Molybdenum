@@ -662,12 +662,15 @@ int Net::calculate(uint64_t occupied, Piece* mailbox) {
     constexpr float DEQUANT_MUL = 256.0f * 2.0f / 255.0f / 255.0f / 193.0f;
 
     __m256 dequant = _mm256_set1_ps(DEQUANT_MUL);
-    __m256 zero    = _mm256_set1_ps(0);
+    __m256 zero    = _mm256_set1_ps(0.0);
+    __m256 one     = _mm256_set1_ps(1.0);
 
     for (int i = 0; i < L2_SIZE; i += I32_PER_REG) {
         __m256 val  = _mm256_mul_ps(_mm256_cvtepi32_ps(sums[i / I32_PER_REG]), dequant);
-        __m256 act1 = _mm256_max_ps(val, zero);
-        __m256 act2 = _mm256_max_ps(_mm256_sub_ps(zero, val), zero);
+        __m256 c1   = _mm256_max_ps(_mm256_min_ps(                    val , one), zero);
+        __m256 c2   = _mm256_max_ps(_mm256_min_ps(_mm256_sub_ps(zero, val), one), zero);
+        __m256 act1 = _mm256_mul_ps(c1, c1);
+        __m256 act2 = _mm256_mul_ps(c2, c2);
 
         _mm256_store_ps(&l1Out[i          ], act1);
         _mm256_store_ps(&l1Out[i + L2_SIZE], act2);
