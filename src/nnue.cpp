@@ -94,12 +94,15 @@ int Net::calculate(Color c, uint64_t occupied, Piece* mailbox) {
             theirPiece = temp;
         }
 
+        int iUs   = ((ourPiece   < 6) * L1_SIZE);
+        int iThem = ((theirPiece < 6) * L1_SIZE);
+
         for (int i = 0; i < 32; i++) {
             int nUs   = (sq * 32) + i;
             int nThem = ((sq ^ 56) * 32) + i;
 
-            output += screlu(accumulator[ c][nUs  ]) * weights1[L1_SIZE * ourPiece   + nUs                 ];
-            output += screlu(accumulator[!c][nThem]) * weights1[L1_SIZE * theirPiece + nThem + L1_SIZE * 12];
+            output += screlu(accumulator[ c][nUs  ]) * weights1[iUs   + nUs                ];
+            output += screlu(accumulator[!c][nThem]) * weights1[iThem + nThem + L1_SIZE * 2];
         }
     }
 
