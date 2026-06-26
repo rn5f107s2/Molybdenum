@@ -14,15 +14,15 @@ enum Toggle {
     Off, On
 };
 
-static const int INPUT_SIZE = 12 * 64;
+static const int INPUT_SIZE = 12 * 64 * 6;
 static const int L1_SIZE = 32 * 64;
 static const int OUTPUT_SIZE = 1;
 static const int NET_SIZE = 3;
 static const std::array<int, NET_SIZE> LAYER_SIZE = {INPUT_SIZE, L1_SIZE, OUTPUT_SIZE};
 
 struct Weights {
-    std::array<int16_t , L1_SIZE * INPUT_SIZE * 12> weights0{};
-    std::array<int16_t, L1_SIZE * 12> bias0{};
+    std::array<int16_t , L1_SIZE * INPUT_SIZE * 6> weights0{};
+    std::array<int16_t, L1_SIZE * 6> bias0{};
     std::array<int16_t, L1_SIZE * OUTPUT_SIZE * 2 * 2> weights1{};
     std::array<int16_t, OUTPUT_SIZE> bias1{};
 };
@@ -34,8 +34,8 @@ struct WDLHead {
 
 class Net {
 public:
-    std::array<int16_t , L1_SIZE * INPUT_SIZE * 12> weights0{};
-    std::array<int16_t, L1_SIZE * 12> bias0{};
+    std::array<int16_t , L1_SIZE * INPUT_SIZE * 6> weights0{};
+    std::array<int16_t, L1_SIZE * 6> bias0{};
     std::array<int16_t, L1_SIZE * OUTPUT_SIZE * 2 * 2> weights1{};
     std::array<int16_t, OUTPUT_SIZE> bias1{};
     std::array<std::array<int16_t, L1_SIZE>, 2> accumulator{};
@@ -108,6 +108,8 @@ void Net::toggleFeature(Position& pos, uint64_t cleanBitboard, int piece, int sq
 inline void Net::refreshMiniAcc(Position& pos, Piece piece, int square) {
     uint64_t occupied = pos.getOccupied();
 
+    int flip = (square & 4) ? 7 : 0;
+
     int bSquare = square ^ 56;
     Piece bPiece = makePiece(typeOf(piece), !colorOf(piece));
 
@@ -118,15 +120,18 @@ inline void Net::refreshMiniAcc(Position& pos, Piece piece, int square) {
         int sq = popLSB(occupied);
         Piece pc = pos.pieceOn(sq);
         
-        int indexWhite = index<WHITE>(pc, sq);
-        int indexBlack = index<BLACK>(pc, sq);
+        int indexWhite = index<WHITE>(pc, sq ^ flip);
+        int indexBlack = index<BLACK>(pc, sq ^ flip);
 
-        int wOffset = indexWhite * L1_SIZE * 12 +  square * 32 + L1_SIZE *  piece;
-        int bOffset = indexBlack * L1_SIZE * 12 + bSquare * 32 + L1_SIZE * bPiece;
+        int wOffset = indexWhite * L1_SIZE * 12 + (  square ^ flip) * 32 + L1_SIZE *  piece;
+        int bOffset = indexBlack * L1_SIZE * 12 + (bSquare  ^ flip) * 32 + L1_SIZE * bPiece;
 
         for (int i = 0; i < 32; i++) {
             accumulator[WHITE][ square * 32 + i] += weights0[wOffset + i];
             accumulator[BLACK][bSquare * 32 + i] += weights0[bOffset + i];
+
+            // std::cout << wOffset + i << std::endl;
+            // std::cout << bOffset + i << std::endl;
         }
     }
 }
