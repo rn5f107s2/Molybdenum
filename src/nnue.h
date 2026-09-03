@@ -21,8 +21,10 @@ static const int NET_SIZE = 3;
 static const std::array<int, NET_SIZE> LAYER_SIZE = {INPUT_SIZE, L1_SIZE, OUTPUT_SIZE};
 
 struct Weights {
-    std::array<int16_t , L1_SIZE * INPUT_SIZE * 6> weights0{};
-    std::array<int16_t, L1_SIZE * 6> bias0{};
+    std::array<int16_t, L1_SIZE * INPUT_SIZE * 2> weights0{};
+    std::array<int16_t, L1_SIZE * INPUT_SIZE * 4> padding{};
+    std::array<int16_t, L1_SIZE * 2> bias0{};
+    std::array<int16_t, L1_SIZE * 4> padding2{};
     std::array<int16_t, L1_SIZE * OUTPUT_SIZE * 2 * 2> weights1{};
     std::array<int16_t, OUTPUT_SIZE> bias1{};
 };
@@ -34,8 +36,8 @@ struct WDLHead {
 
 class Net {
 public:
-    std::array<int16_t , L1_SIZE * INPUT_SIZE * 6> weights0{};
-    std::array<int16_t, L1_SIZE * 6> bias0{};
+    std::array<int16_t, L1_SIZE * INPUT_SIZE * 2> weights0{};
+    std::array<int16_t, L1_SIZE * 2> bias0{};
     std::array<int16_t, L1_SIZE * OUTPUT_SIZE * 2 * 2> weights1{};
     std::array<int16_t, OUTPUT_SIZE> bias1{};
     std::array<std::array<int16_t, L1_SIZE>, 2> accumulator{};
@@ -113,8 +115,10 @@ inline void Net::refreshMiniAcc(Position& pos, Piece piece, int square) {
     int bSquare = square ^ 56;
     Piece bPiece = makePiece(typeOf(piece), !colorOf(piece));
 
-    memcpy(&accumulator[WHITE][ square * 32], &bias0[square  * 32 + L1_SIZE * piece ], 32 * sizeof(int16_t));
-    memcpy(&accumulator[BLACK][bSquare * 32], &bias0[bSquare * 32 + L1_SIZE * bPiece], 32 * sizeof(int16_t));
+    // std::cout << sizeof(Weights) << std::endl;
+
+    memset(&accumulator[WHITE][ square * 32], 0, 32 * sizeof(int16_t));
+    memset(&accumulator[BLACK][bSquare * 32], 0, 32 * sizeof(int16_t));
 
     while (occupied) {
         int sq = popLSB(occupied);
@@ -130,8 +134,11 @@ inline void Net::refreshMiniAcc(Position& pos, Piece piece, int square) {
             accumulator[WHITE][ square * 32 + i] += weights0[wOffset + i];
             accumulator[BLACK][bSquare * 32 + i] += weights0[bOffset + i];
 
-            // std::cout << wOffset + i << std::endl;
-            // std::cout << bOffset + i << std::endl;
+            // if (wOffset + i >= L1_SIZE * INPUT_SIZE * 2)
+            //     std::cerr << " s´dasdsa" << std::endl;
+
+            // std::cout << (wOffset + i) << " " << weights0[wOffset + i] << std::endl;
+            // std::cout << (bOffset + i) << " " << weights0[bOffset + i] << std::endl;
         }
     }
 }
