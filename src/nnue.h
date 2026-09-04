@@ -22,9 +22,7 @@ static const std::array<int, NET_SIZE> LAYER_SIZE = {INPUT_SIZE, L1_SIZE, OUTPUT
 
 struct Weights {
     std::array<int16_t, L1_SIZE * INPUT_SIZE * 2> weights0{};
-    std::array<int16_t, L1_SIZE * INPUT_SIZE * 4> padding{};
     std::array<int16_t, L1_SIZE * 2> bias0{};
-    std::array<int16_t, L1_SIZE * 4> padding2{};
     std::array<int16_t, L1_SIZE * OUTPUT_SIZE * 2 * 2> weights1{};
     std::array<int16_t, OUTPUT_SIZE> bias1{};
 };
