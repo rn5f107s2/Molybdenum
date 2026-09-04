@@ -38,10 +38,10 @@ void preprocess(std::ofstream& outfile) {
                             preprocessed.weights0[index_new<WHITE>(bpc, bsq, fpc, fsq) + n] = weights.weights0[index_old<WHITE>(bpc, bsq, fpc, fsq) + n];
 
     for (int sq = 0; sq < 64; sq++) {
-        for (int pc = 0; pc < 12; pc++) {
+        for (int c = 0; c < 2; c++) {
             for (int n = 0; n < MINI_ACC_SIZE; n++) {
-                preprocessed.weights1[L1_SIZE * 2 * pc + (sq * MINI_ACC_SIZE * 2) +                 n] = weights.weights1[L1_SIZE * pc + (sq * MINI_ACC_SIZE) + n];
-                preprocessed.weights1[L1_SIZE * 2 * pc + (sq * MINI_ACC_SIZE * 2) + MINI_ACC_SIZE + n] = weights.weights1[L1_SIZE * makePiece(typeOf(pc), !colorOf(pc)) + ((sq ^ 56) * MINI_ACC_SIZE) + n + L1_SIZE * 12];
+                preprocessed.weights1[L1_SIZE * 2 * c + (sq * MINI_ACC_SIZE * 2) +                 n] = weights.weights1[L1_SIZE *  c + (sq * MINI_ACC_SIZE) + n];
+                preprocessed.weights1[L1_SIZE * 2 * c + (sq * MINI_ACC_SIZE * 2) + MINI_ACC_SIZE + n] = weights.weights1[L1_SIZE * !c + ((sq ^ 56) * MINI_ACC_SIZE) + n + L1_SIZE * 2];
             }
         }
     }
@@ -50,7 +50,7 @@ void preprocess(std::ofstream& outfile) {
         for (int pc = 0; pc < 12; pc++)
             for (int n = 0; n < MINI_ACC_SIZE; n++)
                 preprocessed.bias0[L1_SIZE * 2 * typeOf(pc) + (colorOf(pc) ? sq : sq ^ 56) * MINI_ACC_SIZE * 2 + MINI_ACC_SIZE * (!colorOf(pc)) + n]
-                = weights.bias0[sq * MINI_ACC_SIZE + L1_SIZE * pc + n] + preprocessed.weights0[index_new<WHITE>(pc, sq, pc, sq) + n];
+                = preprocessed.weights0[index_new<WHITE>(pc, sq, pc, sq) + n];
 
     outfile.write(reinterpret_cast<char*>(preprocessed.weights0.data()), preprocessed.weights0.size() * sizeof(int16_t));
     outfile.write(reinterpret_cast<char*>(preprocessed.bias0.data()), preprocessed.bias0.size() * sizeof(int16_t));

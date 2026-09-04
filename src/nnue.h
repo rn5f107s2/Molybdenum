@@ -36,9 +36,12 @@ struct NetWeights {
     constexpr static int N_WEIGHTS0 = PREPROCESSED ? L1_SIZE / 2 * INPUT_SIZE * 12
                                                    : L1_SIZE * INPUT_SIZE * 12;
 
+    constexpr static int N_BIAS0 = PREPROCESSED ? L1_SIZE * 12
+                                                : L1_SIZE * 2;
+
     std::array<int16_t, N_WEIGHTS0> weights0{};
-    std::array<int16_t, L1_SIZE * 12> bias0{};
-    std::array<int16_t, L1_SIZE * OUTPUT_SIZE * 2 * 12> weights1{};
+    std::array<int16_t, N_BIAS0> bias0{};
+    std::array<int16_t, L1_SIZE * OUTPUT_SIZE * 2 * 2> weights1{};
     std::array<int16_t, OUTPUT_SIZE> bias1{};
 };
 
@@ -56,7 +59,7 @@ class Net {
 public:
     const std::array<int16_t, L1_SIZE / 2 * INPUT_SIZE * 12>& weights0;
     const std::array<int16_t, L1_SIZE * 12>& bias0;
-    const std::array<int16_t, L1_SIZE * OUTPUT_SIZE * 2 * 12>& weights1;
+    const std::array<int16_t, L1_SIZE * OUTPUT_SIZE * 2 * 2>& weights1;
     const std::array<int16_t, OUTPUT_SIZE>& bias1;
     std::array<int16_t, L1_SIZE * 3 * 2> wdlWeights{};
     std::array<int16_t, 3> wdlBias{};
@@ -585,6 +588,8 @@ int Net::calculate(uint64_t occupied, Piece* mailbox) {
         constexpr int HALF  = STEP / 2;
         constexpr int SPLIT = C == BLACK && NUM_REGS_DUAL != 0 ? NUM_REGS_PERS * STEP : -1; 
 
+        const int o = L1_SIZE * 2 * (ourPiece < 6);
+
         for (int i = 0; i < MINI_ACC_SIZE; i += STEP) {
             int wOffset = C == WHITE ? i : MINI_ACC_SIZE + i;
 
@@ -596,11 +601,11 @@ int Net::calculate(uint64_t occupied, Piece* mailbox) {
             vec_t w;
 
             if (i != SPLIT) {
-                w = vec_loadu((vec_t*) &weights1[L1_SIZE * 2 * ourPiece + (sq * MINI_ACC_SIZE * 2) + wOffset]);
+                w = vec_loadu((vec_t*) &weights1[o + (sq * MINI_ACC_SIZE * 2) + wOffset]);
             } else {
                 w = vec_loadu2(
-                    (const halfvec_t*)(&weights1[L1_SIZE * 2 * ourPiece + (sq * MINI_ACC_SIZE * 2) + wOffset       ]),
-                    (const halfvec_t*)(&weights1[L1_SIZE * 2 * ourPiece + (sq * MINI_ACC_SIZE * 2) + wOffset + HALF])
+                    (const halfvec_t*)(&weights1[o + (sq * MINI_ACC_SIZE * 2) + wOffset       ]),
+                    (const halfvec_t*)(&weights1[o + (sq * MINI_ACC_SIZE * 2) + wOffset + HALF])
                 );
             }
 
@@ -620,11 +625,11 @@ int Net::calculate(uint64_t occupied, Piece* mailbox) {
             vec_t w;
 
             if (i != SPLIT) {
-                w = vec_loadu((vec_t*) &weights1[L1_SIZE * 2 * ourPiece + (sq * MINI_ACC_SIZE * 2) + wOffset]);
+                w = vec_loadu((vec_t*) &weights1[o + (sq * MINI_ACC_SIZE * 2) + wOffset]);
             } else {
                 w = vec_loadu2(
-                    (const halfvec_t*)(&weights1[L1_SIZE * 2 * ourPiece + (sq * MINI_ACC_SIZE * 2) + wOffset       ]),
-                    (const halfvec_t*)(&weights1[L1_SIZE * 2 * ourPiece + (sq * MINI_ACC_SIZE * 2) + wOffset + HALF])
+                    (const halfvec_t*)(&weights1[o + (sq * MINI_ACC_SIZE * 2) + wOffset       ]),
+                    (const halfvec_t*)(&weights1[o + (sq * MINI_ACC_SIZE * 2) + wOffset + HALF])
                 );
             }
 
