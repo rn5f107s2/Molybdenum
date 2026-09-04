@@ -108,7 +108,6 @@ void Net::toggleFeature(Position& pos, uint64_t cleanBitboard, int piece, int sq
 inline void Net::refreshMiniAcc(Position& pos, Piece piece, int square) {
     uint64_t occupied = pos.getOccupied();
 
-    int flip = (square & 4) ? 7 : 0;
 
     int bSquare = square ^ 56;
     Piece bPiece = makePiece(typeOf(piece), !colorOf(piece));
@@ -122,11 +121,11 @@ inline void Net::refreshMiniAcc(Position& pos, Piece piece, int square) {
         int sq = popLSB(occupied);
         Piece pc = pos.pieceOn(sq);
         
-        int indexWhite = index<WHITE>(pc, sq ^ flip);
-        int indexBlack = index<BLACK>(pc, sq ^ flip);
+        int indexWhite = index<WHITE>(pc, sq);
+        int indexBlack = index<BLACK>(pc, sq);
 
-        int wOffset = indexWhite * L1_SIZE * 12 + (  square ^ flip) * 32 + L1_SIZE *  piece;
-        int bOffset = indexBlack * L1_SIZE * 12 + (bSquare  ^ flip) * 32 + L1_SIZE * bPiece;
+        int wOffset = indexWhite * L1_SIZE * 12 + (  square) * 32 + L1_SIZE *  piece;
+        int bOffset = indexBlack * L1_SIZE * 12 + (bSquare ) * 32 + L1_SIZE * bPiece;
 
         for (int i = 0; i < 32; i++) {
             accumulator[WHITE][ square * 32 + i] += weights0[wOffset + i];
