@@ -649,7 +649,7 @@ int Net::calculate(uint64_t occupied, Piece* mailbox) {
         int32_t* inputsT = (int32_t*) &activated[MINI_ACC_SIZE];
 
         for (int i = 0; i < MINI_ACC_SIZE; i += 4) {
-            int32_t wUs = L1_SIZE * 2 * ourPiece + (sq * MINI_ACC_SIZE * 2) + (i / 4) * 4;
+            int32_t wUs = o + (sq * MINI_ACC_SIZE * 2) + (i / 4) * 4;
 
             vec_t inUs   = _mm256_set1_epi32(inputsU[i / 4]);
             vec_t inThem = _mm256_set1_epi32(inputsT[i / 4]);
