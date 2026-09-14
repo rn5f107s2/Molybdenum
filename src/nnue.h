@@ -48,7 +48,7 @@ struct NetWeights {
 
     std::array<int16_t, N_WEIGHTS0> weights0{};
     std::array<int16_t, N_BIAS0> bias0{};
-    std::array<FT_W, L1_SIZE * L2_SIZE * 2 * 12> weights1{};
+    std::array<FT_W, L1_SIZE * L2_SIZE * 2 * 2> weights1{};
     std::array<B_T , L2_SIZE> bias1{};
     std::array<LW_T, L2_SIZE * L3_SIZE> weights2{};
     std::array<LW_T, L3_SIZE> bias2{};
