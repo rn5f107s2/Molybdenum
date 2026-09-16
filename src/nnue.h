@@ -88,7 +88,7 @@ public:
 
     void initAccumulator(Position &pos);
     template<Color C>
-    int calculate(uint64_t occupied, Piece* mailbox);
+    int calculate(Position& pos);
     std::tuple<float, float, float> getWDL(Color c);
     void loadDefaultNet();
 
@@ -591,7 +591,11 @@ inline void Net::addaddSubSub(Position& pos, uint64_t cleanBitboard, int from, i
 }
 
 template<Color C> inline
-int Net::calculate(uint64_t occupied, Piece* mailbox) {
+int Net::calculate(Position& pos) {
+    uint64_t usOcc   = C == WHITE ? pos.getOccupied<WHITE>() : __builtin_bswap64(pos.getOccupied<BLACK>());
+    uint64_t themOcc = C == WHITE ? pos.getOccupied<BLACK>() : __builtin_bswap64(pos.getOccupied<WHITE>());
+    Piece* mailbox = &pos.pieceLocations[0];
+
     alignas(32) float l1Out[L2_SIZE];
 
     constexpr int I32_PER_REG = I16_PER_REG / 2;
@@ -601,19 +605,64 @@ int Net::calculate(uint64_t occupied, Piece* mailbox) {
     for (int i = 0; i < L2_SIZE; i += I32_PER_REG)
         sums[i / I32_PER_REG] = vec_loadu((vec_t*) &bias1[i]);
 
-    while (occupied) {
-        int sq = popLSB(occupied);
+    while (usOcc) {
+        int sq = popLSB(usOcc);
 
-        int ourPiece   = mailbox[sq ^ (56 * (C == BLACK))];
-        int theirPiece = makePiece(typeOf(ourPiece), !colorOf(ourPiece));
+        const int o = L1_SIZE * 2;
 
-        if (C == BLACK) {
-            int temp = ourPiece;
-            ourPiece = theirPiece;
-            theirPiece = temp;
+        int nSTM = ((sq ^ (56 * (C == BLACK))) * MINI_ACC_SIZE * 2) + (C == BLACK ? MINI_ACC_SIZE : 0);
+        int nNTM = ((sq ^ (56 * (C == BLACK))) * MINI_ACC_SIZE * 2) + (C == WHITE ? MINI_ACC_SIZE : 0);
+
+        vec_t zero = vec_setzero();
+        vec_t qa   = vet_set1_epi16(255);
+
+        for (int i = 0; i < MINI_ACC_SIZE; i += I16_PER_REG * 2) {
+            vec_t us1   = vec_loadu((vec_t*) &accumulator[nSTM               + i]);
+            vec_t us2   = vec_loadu((vec_t*) &accumulator[nSTM + I16_PER_REG + i]);
+            vec_t them1 = vec_loadu((vec_t*) &accumulator[nNTM               + i]);
+            vec_t them2 = vec_loadu((vec_t*) &accumulator[nNTM + I16_PER_REG + i]);
+
+            vec_t cUs1   = vec_min_epi16(vec_max_epi16(us1  , zero), qa);
+            vec_t cUs2   = vec_min_epi16(vec_max_epi16(us2  , zero), qa);
+            vec_t cThem1 = vec_min_epi16(vec_max_epi16(them1, zero), qa);
+            vec_t cThem2 = vec_min_epi16(vec_max_epi16(them2, zero), qa);
+
+            // (cUs   * (cUs   >> 1)) >> 8;
+            vec_t actUs1   = _mm256_mulhi_epi16(cUs1, _mm256_slli_epi16(cUs1, 7));
+            vec_t actUs2   = _mm256_mulhi_epi16(cUs2, _mm256_slli_epi16(cUs2, 7));
+            vec_t actThem1 = _mm256_mulhi_epi16(cThem1, _mm256_slli_epi16(cThem1, 7));
+            vec_t actThem2 = _mm256_mulhi_epi16(cThem2, _mm256_slli_epi16(cThem2, 7));
+
+            vec_t us   = _mm256_packus_epi16(actUs1  , actUs2);
+            vec_t them = _mm256_packus_epi16(actThem1, actThem2);
+
+            vec_storeu((vec_t*) &activated[i                ], us);
+            vec_storeu((vec_t*) &activated[i + MINI_ACC_SIZE], them);
         }
 
-        const int o = L1_SIZE * 2 * (ourPiece < 6);
+        int32_t* inputsU = (int32_t*) &activated[0];
+        int32_t* inputsT = (int32_t*) &activated[MINI_ACC_SIZE];
+
+        for (int i = 0; i < MINI_ACC_SIZE; i += 4) {
+            int32_t wUs = o + (sq * MINI_ACC_SIZE * 2) + (i / 4) * 4;
+
+            vec_t inUs   = _mm256_set1_epi32(inputsU[i / 4]);
+            vec_t inThem = _mm256_set1_epi32(inputsT[i / 4]);
+
+            for (int m = 0; m < L2_SIZE; m += I32_PER_REG) {
+                vec_t wU = vec_loadu((vec_t*) &weights1[ wUs                  * L2_SIZE + 4 * m]);
+                vec_t wT = vec_loadu((vec_t*) &weights1[(wUs + MINI_ACC_SIZE) * L2_SIZE + 4 * m]);
+
+                dpbusd(sums[m / I32_PER_REG], inUs  , wU);
+                dpbusd(sums[m / I32_PER_REG], inThem, wT);
+            }
+        }
+    }
+
+    while (themOcc) {
+        int sq = popLSB(themOcc);
+
+        const int o = 0;
 
         int nSTM = ((sq ^ (56 * (C == BLACK))) * MINI_ACC_SIZE * 2) + (C == BLACK ? MINI_ACC_SIZE : 0);
         int nNTM = ((sq ^ (56 * (C == BLACK))) * MINI_ACC_SIZE * 2) + (C == WHITE ? MINI_ACC_SIZE : 0);

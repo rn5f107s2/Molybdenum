@@ -5,8 +5,8 @@
 #include "nnue.h"
 
 inline int evaluate(Position &pos) {
-    int val = pos.sideToMove == WHITE ? pos.net->calculate<WHITE>(pos.getOccupied(), &pos.pieceLocations[0])
-                                      : pos.net->calculate<BLACK>(__builtin_bswap64(pos.getOccupied()), &pos.pieceLocations[0]);
+    int val = pos.sideToMove == WHITE ? pos.net->calculate<WHITE>(pos)
+                                      : pos.net->calculate<BLACK>(pos);
 
     return std::clamp(val, -MAXMATE + 1, MAXMATE - 1);
 }           
